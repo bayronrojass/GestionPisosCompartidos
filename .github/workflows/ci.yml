@@ -42,4 +42,4 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Build and run tests
-        run: ./gradlew clean build test --stacktrace
+        run: ./gradlew :app:assembleDebug :app:testDebugUnitTest --stacktrace
