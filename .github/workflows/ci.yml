@@ -23,6 +23,14 @@ jobs:
           java-version: 21
           distribution: temurin
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v2
+        with:
+          api-level: 35
+          build-tools: 33.0.2
+          ndk: 23.1.7779620
+          cache: true
+
       - name: Grant Gradle permissions
         run: chmod +x ./gradlew
 
