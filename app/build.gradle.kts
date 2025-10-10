@@ -72,4 +72,5 @@ dependencies {
     implementation(libs.androidx.legacy.support.v4)
     implementation("com.github.hannesa2:paho.mqtt.android:4.1")
     implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
+    implementation ("com.google.android.material:material:1.6.0")
 }
