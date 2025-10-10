@@ -1,15 +1,14 @@
 package com.example.gestionpisoscompartidos.ui.piso.crearPiso
 
-import androidx.fragment.app.viewModels
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import com.example.gestionpisoscompartidos.R
 
 class CrearPiso : Fragment() {
-
     companion object {
         fun newInstance() = CrearPiso()
     }
@@ -23,9 +22,8 @@ class CrearPiso : Fragment() {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        return inflater.inflate(R.layout.fragment_crear_piso, container, false)
-    }
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View = inflater.inflate(R.layout.fragment_crear_piso, container, false)
 }

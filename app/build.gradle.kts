@@ -7,7 +7,6 @@ plugins {
 android {
     namespace = "com.example.gestionpisoscompartidos"
     compileSdk = 35
-
     defaultConfig {
         applicationId = "com.example.gestionpisoscompartidos"
         minSdk = 21
@@ -23,7 +22,7 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -43,12 +42,12 @@ android {
 dependencies {
 
     // Kotlin + Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation(libs.kotlinx.coroutines.android)
 
     // Jetpack Compose
-    implementation("androidx.compose.ui:ui:1.5.4")
-    implementation("androidx.compose.material3:material3:1.2.0")
-    implementation("androidx.activity:activity-compose:1.8.0")
+    implementation(libs.ui)
+    implementation(libs.material3)
+    implementation(libs.androidx.activity.compose.v1100)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -70,4 +69,7 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    implementation(libs.androidx.legacy.support.v4)
+    implementation("com.github.hannesa2:paho.mqtt.android:4.1")
+    implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
 }
