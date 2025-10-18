@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white"
-    tools:context=".ui.tareas.Tareas">
+    tools:context=".ui.item.Item">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/topBar"
@@ -68,7 +68,7 @@
         android:fontFamily="sans-serif-light"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
-        android:text="Tareas de esta semana"
+        android:text="Lista de la compra"
         android:textAlignment="center"
         android:textColor="@color/black"
         android:textSize="28sp"
@@ -93,7 +93,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="24dp"
-        android:contentDescription="Añadir tarea"
+        android:contentDescription="Añadir item"
         android:src="@drawable/ic_add"
         app:backgroundTint="@color/purple_500"
         app:elevation="6dp"
