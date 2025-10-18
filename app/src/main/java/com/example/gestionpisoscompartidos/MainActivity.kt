@@ -13,11 +13,29 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.lifecycleScope
+import com.example.gestionpisoscompartidos.data.remote.NetworkModule
+import com.example.gestionpisoscompartidos.data.remote.RemoteRepository
+import com.example.gestionpisoscompartidos.data.repository.DatabaseAPI
+import com.example.gestionpisoscompartidos.model.LoginRequest
 import com.example.gestionpisoscompartidos.ui.theme.GestionPisosCompartidosTheme
+import com.example.gestionpisoscompartidos.utils.ApiResult
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        lifecycleScope.launch {
+            val repository = RemoteRepository(NetworkModule.retrofit.create(DatabaseAPI::class.java))
+            val result = repository.request { login(LoginRequest("test", "test")) }
+
+            when (result) {
+                is ApiResult.Success -> println("Usuario: ${result.data}")
+                is ApiResult.Error -> println("Error HTTP ${result.code}: ${result.message}")
+                is ApiResult.Throws -> println("Excepción: ${result.exception.message}")
+            }
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {

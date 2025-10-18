@@ -19,6 +19,7 @@ material3 = "1.4.0"
 orgEclipsePahoAndroidService = "1.1.1"
 orgEclipsePahoClientMqttv3 = "1.2.4"
 ui = "1.9.3"
+firebaseAppdistributionGradle = "5.1.1"
 
 [libraries]
 androidx-activity-compose-v1100 = { module = "androidx.activity:activity-compose", version.ref = "activityComposeVersion" }
@@ -44,6 +45,7 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
 material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
 ui = { module = "androidx.compose.ui:ui", version.ref = "ui" }
+firebase-appdistribution-gradle = { group = "com.google.firebase", name = "firebase-appdistribution-gradle", version.ref = "firebaseAppdistributionGradle" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

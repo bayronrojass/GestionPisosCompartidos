@@ -5,19 +5,17 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import com.example.gestionpisoscompartidos.data.Repository
+import com.example.gestionpisoscompartidos.data.repository.Repository
 import com.example.gestionpisoscompartidos.databinding.FragmentLoginBinding
-import com.example.gestionpisoscompartidos.di.NetworkModule
+import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.model.LoginResponse
 
 /**
  * Fragmento de la pantalla de inicio de sesión.
  */
 class Login : Fragment() {
-
     // Usar View Binding para acceder a los elementos del layout
     private var _binding: FragmentLoginBinding? = null
     private val binding get() = _binding!!
@@ -38,14 +36,18 @@ class Login : Fragment() {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
     ): View {
         _binding = FragmentLoginBinding.inflate(inflater, container, false)
         return binding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
 
         setupListeners()

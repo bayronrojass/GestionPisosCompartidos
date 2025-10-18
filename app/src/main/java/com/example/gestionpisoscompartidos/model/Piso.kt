@@ -1,5 +1,5 @@
 package com.example.gestionpisoscompartidos.model
 
-data class Piso (
-    val id: Int
+data class Piso(
+    val id: Int,
 )

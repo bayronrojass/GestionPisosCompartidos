@@ -1,7 +1,8 @@
-package com.example.gestionpisoscompartidos.di
+package com.example.gestionpisoscompartidos.data.remote
 
-import com.example.gestionpisoscompartidos.data.DatabaseAPI
+import com.example.gestionpisoscompartidos.data.repository.DatabaseAPI
 import retrofit2.Retrofit
+import retrofit2.Retrofit.Builder
 import retrofit2.converter.gson.GsonConverterFactory
 
 /**
@@ -9,13 +10,10 @@ import retrofit2.converter.gson.GsonConverterFactory
  * y proporciona las instancias de los servicios API.
  */
 object NetworkModule {
-
-    // IMPORTANTE: Reemplaza con la IP y puerto de tu backend
     private const val BASE_URL = "http://192.168.1.131:8080/api/"
 
-    // Cliente Retrofit configurado (se crea solo una vez)
-    private val retrofit: Retrofit by lazy {
-        Retrofit.Builder()
+    public val retrofit: Retrofit by lazy {
+        Builder()
             .baseUrl(BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
