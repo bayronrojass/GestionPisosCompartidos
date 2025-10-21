@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import com.example.gestionpisoscompartidos.data.repository.repositories.Repository
+import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryLogin
 import com.example.gestionpisoscompartidos.databinding.FragmentLoginBinding
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.model.LoginResponse
@@ -26,10 +26,10 @@ class Login : Fragment() {
     // Ejemplo manual (simplificado, no recomendado en apps grandes):
     private val viewModel: LoginViewModel by viewModels {
         // 1. Obtener la API del módulo de red
-        val apiService = NetworkModule.databaseApiService
+        val apiService = NetworkModule.loginApiService
 
         // 2. Crear el Repositorio con la API
-        val repository = Repository(apiService)
+        val repository = RepositoryLogin(apiService)
 
         // 3. Devolver la fábrica con el Repositorio
         LoginViewModelFactory(repository)

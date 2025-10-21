@@ -1,6 +1,7 @@
 package com.example.gestionpisoscompartidos.data.remote
 
 import com.example.gestionpisoscompartidos.data.repository.APIs.DatabaseAPI
+import com.example.gestionpisoscompartidos.data.repository.APIs.LoginAPI
 import retrofit2.Retrofit
 import retrofit2.Retrofit.Builder
 import retrofit2.converter.gson.GsonConverterFactory
@@ -25,5 +26,9 @@ object NetworkModule {
      */
     val databaseApiService: DatabaseAPI by lazy {
         retrofit.create(DatabaseAPI::class.java)
+    }
+
+    val loginApiService: LoginAPI by lazy {
+        retrofit.create(LoginAPI::class.java)
     }
 }
