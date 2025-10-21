@@ -16,6 +16,10 @@ import com.example.gestionpisoscompartidos.model.LoginResponse
  * Fragmento de la pantalla de inicio de sesión.
  */
 class Login : Fragment() {
+    companion object {
+        fun newInstance() = Login()
+    }
+
     // Usar View Binding para acceder a los elementos del layout
     private var _binding: FragmentLoginBinding? = null
     private val binding get() = _binding!!

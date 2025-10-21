@@ -23,6 +23,7 @@ firebaseAppdistributionGradle = "5.1.1"
 material = "1.13.0"
 activity = "1.10.0"
 constraintlayout = "2.2.1"
+animationCoreAndroid = "1.8.1"
 
 [libraries]
 androidx-activity-compose-v1100 = { module = "androidx.activity:activity-compose", version.ref = "activityComposeVersion" }
@@ -52,6 +53,7 @@ firebase-appdistribution-gradle = { group = "com.google.firebase", name = "fireb
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+androidx-animation-core-android = { group = "androidx.compose.animation", name = "animation-core-android", version.ref = "animationCoreAndroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
