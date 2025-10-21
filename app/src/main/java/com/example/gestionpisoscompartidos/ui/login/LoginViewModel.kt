@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionpisoscompartidos.model.LoginRequest
 import com.example.gestionpisoscompartidos.model.LoginResponse
-import com.example.gestionpisoscompartidos.data.repository.Repository
+import com.example.gestionpisoscompartidos.data.repository.repositories.Repository
 import kotlinx.coroutines.launch
 
 // Necesitarás una factoría de ViewModel si no usas Hilt o Koin

@@ -1,12 +1,11 @@
-package com.example.gestionpisoscompartidos.data.repository
+package com.example.gestionpisoscompartidos.data.repository.repositories
 
+import com.example.gestionpisoscompartidos.data.repository.APIs.LoginAPI
 import com.example.gestionpisoscompartidos.model.LoginRequest
 import com.example.gestionpisoscompartidos.model.LoginResponse
-import com.example.gestionpisoscompartidos.model.PisoRequest
-import com.example.gestionpisoscompartidos.model.PisoResponse
 
-class Repository(
-    private val apiService: DatabaseAPI,
+class RepositoryLogin(
+    private val apiService: LoginAPI,
 ) {
     suspend fun login(request: LoginRequest): LoginResponse {
         // 1. Realizar la llamada a la API de forma asíncrona
@@ -29,15 +28,6 @@ class Repository(
         }
     }
 
-    suspend fun crearPiso(request: PisoRequest): PisoResponse {
-        val response = apiService.crearPiso(request)
-        if (response.isSuccessful) {
-            return response.body() ?: throw Exception("Respuesta vacía al crear piso")
-        } else {
-            val msg = response.errorBody()?.string() ?: "Error desconocido"
-            throw Exception("Error al crear piso (${response.code()}): $msg")
-        }
-    }
 
 
 }

@@ -1,6 +1,6 @@
 package com.example.gestionpisoscompartidos.data.remote
 
-import com.example.gestionpisoscompartidos.data.repository.DatabaseAPI
+import com.example.gestionpisoscompartidos.data.repository.APIs.DatabaseAPI
 import retrofit2.Retrofit
 import retrofit2.Retrofit.Builder
 import retrofit2.converter.gson.GsonConverterFactory

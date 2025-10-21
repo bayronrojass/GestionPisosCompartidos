@@ -16,7 +16,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.lifecycleScope
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.remote.RemoteRepository
-import com.example.gestionpisoscompartidos.data.repository.DatabaseAPI
+import com.example.gestionpisoscompartidos.data.repository.APIs.DatabaseAPI
 import com.example.gestionpisoscompartidos.model.LoginRequest
 import com.example.gestionpisoscompartidos.ui.theme.GestionPisosCompartidosTheme
 import com.example.gestionpisoscompartidos.utils.ApiResult

@@ -3,7 +3,7 @@ package com.example.gestionpisoscompartidos.ui.piso.crearPiso
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
-import com.example.gestionpisoscompartidos.data.repository.Repository
+import com.example.gestionpisoscompartidos.data.repository.repositories.Repository
 import com.example.gestionpisoscompartidos.model.PisoRequest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
