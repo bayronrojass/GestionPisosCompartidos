@@ -11,5 +11,4 @@ interface LoginAPI {
     suspend fun login(
         @Body credenciales: LoginRequest,
     ): Response<LoginResponse>
-
 }

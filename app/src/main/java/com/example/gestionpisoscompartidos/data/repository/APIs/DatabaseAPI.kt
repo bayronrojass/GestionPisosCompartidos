@@ -11,5 +11,4 @@ interface DatabaseAPI {
     suspend fun login(
         @Body credenciales: LoginRequest,
     ): Response<LoginResponse>
-
 }

@@ -8,6 +8,7 @@ import retrofit2.http.POST
 
 interface PisoAPI {
     @POST("pisos")
-    suspend fun crearPiso(@Body nuevoPiso: PisoRequest):
-            Response<PisoResponse>
+    suspend fun crearPiso(
+        @Body nuevoPiso: PisoRequest,
+    ): Response<PisoResponse>
 }
