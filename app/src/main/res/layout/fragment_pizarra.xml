@@ -5,9 +5,10 @@
     android:layout_height="match_parent"
     tools:context=".ui.pizarra.Pizarra">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="Hello" />
+    <com.example.gestionpisoscompartidos.ui.pizarra.PizarraView
+            android:id="@+id/pizarraView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#FFFFFF" />
 
 </FrameLayout>
