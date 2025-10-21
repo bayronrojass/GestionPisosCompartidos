@@ -2,6 +2,8 @@ package com.example.gestionpisoscompartidos.data.repository
 
 import com.example.gestionpisoscompartidos.model.LoginRequest
 import com.example.gestionpisoscompartidos.model.LoginResponse
+import com.example.gestionpisoscompartidos.model.PisoRequest
+import com.example.gestionpisoscompartidos.model.PisoResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
