@@ -11,4 +11,9 @@ interface DatabaseAPI {
     suspend fun login(
         @Body credenciales: LoginRequest,
     ): Response<LoginResponse>
+
+    @POST("pisos")
+    suspend fun crearPiso(@Body nuevoPiso: PisoRequest):
+            Response<PisoResponse>
+
 }

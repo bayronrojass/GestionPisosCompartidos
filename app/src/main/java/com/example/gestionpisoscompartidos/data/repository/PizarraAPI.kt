@@ -11,5 +11,7 @@ interface PizarraAPI {
     suspend fun getLienzo(): Response<ByteArray>
 
     @POST("lienzo/1/delta")
-    suspend fun postDelta(@Body request: List<PointDeltaDTO>): Response<Boolean>
+    suspend fun postDelta(
+        @Body request: List<PointDeltaDTO>,
+    ): Response<Boolean>
 }
