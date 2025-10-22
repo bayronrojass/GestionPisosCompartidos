@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:id="@+id/nav_graph"
+            app:startDestination="@id/homeFragment">
+
+    <fragment
+            android:id="@+id/homeFragment"
+            android:name="com.example.gestionpisoscompartidos.ui.home.HomeFragment"
+            android:label="Inicio"
+            tools:layout="@layout/fragment_home">
+        <action
+                android:id="@+id/action_homeFragment_to_loginFragment"
+                app:destination="@id/loginFragment" />
+        <action
+                android:id="@+id/action_homeFragment_to_crearPisoFragment"
+                app:destination="@id/crearPisoFragment" />
+        <action
+                android:id="@+id/action_homeFragment_to_pizarraFragment"
+                app:destination="@id/pizarraFragment" />
+    </fragment>
+
+    <fragment
+            android:id="@+id/loginFragment"
+            android:name="com.example.gestionpisoscompartidos.ui.login.Login"
+            android:label="Login"
+            tools:layout="@layout/fragment_login" />
+
+    <fragment
+            android:id="@+id/crearPisoFragment"
+            android:name="com.example.gestionpisoscompartidos.ui.piso.crearPiso.CrearPiso"
+            android:label="Crear Piso"
+            tools:layout="@layout/fragment_crear_piso" />
+
+    <fragment
+            android:id="@+id/pizarraFragment"
+            android:name="com.example.gestionpisoscompartidos.ui.pizarra.Pizarra"
+            android:label="Pizarra"
+            tools:layout="@layout/fragment_pizarra" />
+</navigation>

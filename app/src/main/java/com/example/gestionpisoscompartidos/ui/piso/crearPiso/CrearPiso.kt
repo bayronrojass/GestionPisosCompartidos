@@ -15,6 +15,10 @@ import kotlinx.coroutines.launch
 class CrearPiso : Fragment() {
     private val viewModel: CrearPisoViewModel by viewModels()
 
+    companion object {
+        fun newInstance() = CrearPiso()
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
