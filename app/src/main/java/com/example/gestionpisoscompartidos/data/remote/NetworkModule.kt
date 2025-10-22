@@ -33,7 +33,7 @@ object NetworkModule {
         retrofit.create(LoginAPI::class.java)
     }
 
-    val pisoApiService: PisoAPI by lazy {
+    val flatApiService: PisoAPI by lazy {
         retrofit.create(PisoAPI::class.java)
     }
 }
