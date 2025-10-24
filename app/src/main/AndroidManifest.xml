@@ -22,7 +22,7 @@
             android:theme="@style/Theme.GestionPisosCompartidos"
             tools:targetApi="31">
         <activity
-                android:name=".ui.activities.TestPizarra"
+                android:name=".MainActivity"
                 android:exported="true"
                 android:theme="@style/Theme.AppCompat.Light.NoActionBar">
             <!--            <intent-filter>-->
@@ -35,7 +35,7 @@
             </intent-filter>
         </activity>
         <activity
-                android:name=".MainActivity"
+                android:name=".ui.activities.TestPizarra"
                 android:exported="true"
                 android:theme="@style/Theme.GestionPisosCompartidos">
 

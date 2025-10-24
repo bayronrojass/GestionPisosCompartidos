@@ -3,7 +3,8 @@ package com.example.gestionpisoscompartidos
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
+
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.lifecycleScope
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
@@ -13,7 +14,7 @@ import com.example.gestionpisoscompartidos.model.LoginRequest
 import com.example.gestionpisoscompartidos.utils.ApiResult
 import kotlinx.coroutines.launch
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
