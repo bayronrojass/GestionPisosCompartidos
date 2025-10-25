@@ -53,13 +53,13 @@ class CrearPiso : Fragment() {
         selectedImage.scaleType = ImageView.ScaleType.CENTER_CROP
         selectedImage.adjustViewBounds = true
 
-        updateButtonState(editTextName.text?.toString() ?: "", pickedPhoto)
+        updateButtonState(editTextName.text?.toString() ?: "")
 
         editTextName.addTextChangedListener(
             object : TextWatcher {
                 override fun afterTextChanged(s: Editable?) {
                     val apartmentName = s?.toString() ?: ""
-                    updateButtonState(apartmentName, pickedPhoto)
+                    updateButtonState(apartmentName)
                     showError(apartmentName)
                 }
 
@@ -111,10 +111,8 @@ class CrearPiso : Fragment() {
     ): View = inflater.inflate(R.layout.fragment_crear_piso, container, false)
 
     private fun updateButtonState(
-        apartmentName: String,
-        photoUri: Uri?,
-    ) {
-        val isEnabled = viewModel.buttonConditions(apartmentName, photoUri)
+        apartmentName: String) {
+        val isEnabled = viewModel.buttonConditions(apartmentName)
         createFlatButton.isEnabled = isEnabled
         createFlatButton.isClickable = isEnabled
 
@@ -199,7 +197,6 @@ class CrearPiso : Fragment() {
                 }
             }
         }
-        updateButtonState(editTextName.text.trim().toString(), pickedPhoto)
         super.onActivityResult(requestCode, resultCode, data)
     }
 }
