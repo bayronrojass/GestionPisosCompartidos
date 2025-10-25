@@ -12,15 +12,13 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionpisoscompartidos.R
 // Asegúrate de que tu NavGraph y Safe Args estén configurados correctamente
-// import com.example.gestionpisoscompartidos.ui.piso.gestionUsuarios.GestionUsuariosPisoDirections 
+// import com.example.gestionpisoscompartidos.ui.piso.gestionUsuarios.GestionUsuariosPisoDirections
 import kotlinx.coroutines.launch
 
 class GestionUsuariosPiso : Fragment() {
-
     private val viewModel: GestionUsuariosPisoViewModel by viewModels()
     private lateinit var miembrosAdapter: MiembrosPisoAdapter
     private lateinit var recyclerView: RecyclerView
@@ -30,22 +28,24 @@ class GestionUsuariosPiso : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View? {
-        return inflater.inflate(R.layout.fragment_gestion_usuarios_piso, container, false)
-    }
+    ): View? = inflater.inflate(R.layout.fragment_gestion_usuarios_piso, container, false)
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
 
         recyclerView = view.findViewById(R.id.recycler_view_members)
         buttonInviteQr = view.findViewById(R.id.button_invite_qr_main)
 
         // Inicializa el adaptador
-        miembrosAdapter = MiembrosPisoAdapter { miembro ->
-            // Acción al hacer clic en eliminar miembro
-            Toast.makeText(requireContext(), "Eliminar ${miembro.nombre}", Toast.LENGTH_SHORT).show()
-            viewModel.removeMiembro(miembro.id)
-        }
+        miembrosAdapter =
+            MiembrosPisoAdapter { miembro ->
+                // Acción al hacer clic en eliminar miembro
+                Toast.makeText(requireContext(), "Eliminar ${miembro.nombre}", Toast.LENGTH_SHORT).show()
+                viewModel.removeMiembro(miembro.id)
+            }
         recyclerView.adapter = miembrosAdapter
 
         // Observa los miembros del ViewModel
