@@ -9,8 +9,8 @@ import kotlinx.coroutines.launch
 
 class GestionUsuariosPisoViewModel : ViewModel() {
     // 1. El StateFlow expone el Modelo de UI
-    private val _miembros = MutableStateFlow<List<MiembroPisoUI>>(emptyList())
-    val miembros: StateFlow<List<MiembroPisoUI>> = _miembros
+    private val _miembros = MutableStateFlow<List<MiembroPiso>>(emptyList())
+    val miembros: StateFlow<List<MiembroPiso>> = _miembros
 
     // Inyecta tus repositorios y gestor de sesión aquí
     // private val pisoRepository: PisoRepository
@@ -44,7 +44,7 @@ class GestionUsuariosPisoViewModel : ViewModel() {
             // Convierte List<Usuario> en List<MiembroPisoUI>
             val listaMiembrosUI =
                 usuariosDelPiso.map { usuario ->
-                    MiembroPisoUI(
+                    MiembroPiso(
                         id = usuario.id,
                         nombre = usuario.nombre,
                         esAdmin = usuario.id in adminIds,

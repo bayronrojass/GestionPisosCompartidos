@@ -13,8 +13,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionpisoscompartidos.R
 
 class MiembrosPisoAdapter(
-    private val onRemoveClick: (MiembroPisoUI) -> Unit,
-) : ListAdapter<MiembroPisoUI, MiembrosPisoAdapter.MiembroViewHolder>(MiembroDiffCallback()) {
+    private val onRemoveClick: (MiembroPiso) -> Unit,
+) : ListAdapter<MiembroPiso, MiembrosPisoAdapter.MiembroViewHolder>(MiembroDiffCallback()) {
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int,
@@ -43,7 +43,7 @@ class MiembrosPisoAdapter(
         private val removeButton: ImageView = itemView.findViewById(R.id.member_remove_button)
         private val colorIndicator: View = itemView.findViewById(R.id.member_color_indicator)
 
-        fun bind(miembro: MiembroPisoUI) {
+        fun bind(miembro: MiembroPiso) {
             nameTextView.text = miembro.nombre
             adminTag.visibility = if (miembro.esAdmin) View.VISIBLE else View.GONE
             youTag.visibility = if (miembro.esTu) View.VISIBLE else View.GONE
@@ -64,14 +64,14 @@ class MiembrosPisoAdapter(
 }
 
 // 3. El DiffUtil compara el Modelo de UI (usa el ID: Long)
-class MiembroDiffCallback : DiffUtil.ItemCallback<MiembroPisoUI>() {
+class MiembroDiffCallback : DiffUtil.ItemCallback<MiembroPiso>() {
     override fun areItemsTheSame(
-        oldItem: MiembroPisoUI,
-        newItem: MiembroPisoUI,
+        oldItem: MiembroPiso,
+        newItem: MiembroPiso,
     ): Boolean = oldItem.id == newItem.id
 
     override fun areContentsTheSame(
-        oldItem: MiembroPisoUI,
-        newItem: MiembroPisoUI,
+        oldItem: MiembroPiso,
+        newItem: MiembroPiso,
     ): Boolean = oldItem == newItem
 }

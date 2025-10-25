@@ -33,7 +33,7 @@
 
     <fragment
             android:id="@+id/crearPisoFragment"
-            android:name="com.example.gestionpisoscompartidos.ui.piso.crearPiso.CrearPiso"
+            android:name="com.example.gestionpisoscompartidos.ui.piso.crearPiso.CrearCasa"
             android:label="Crear Piso"
             tools:layout="@layout/fragment_crear_piso" />
 

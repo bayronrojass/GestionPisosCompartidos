@@ -6,7 +6,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@android:color/white"
-        tools:context=".ui.piso.crearPiso.CrearPiso">
+        tools:context=".ui.piso.crearPiso.CrearCasa">
 
     <View
             android:id="@+id/header_background"
@@ -163,27 +163,24 @@
                     android:translationZ="4dp"
                     android:textSize="18sp"
                     style="@style/Widget.AppCompat.Button.Borderless"/>
+            <Button
+                    android:id="@+id/button_create_flat"
+                    android:layout_width="312dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="24dp"
+                    android:layout_marginEnd="24dp"
+                    android:layout_marginBottom="24dp"
+                    android:text="Crear Piso"
+                    android:textColor="@android:color/white"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:background="#6A5ACD"
+                    android:padding="16dp"
+                    android:elevation="8dp"
+                    android:translationZ="8dp"
+            />
         </LinearLayout>
     </ScrollView>
 
-
-    <Button
-            android:id="@+id/button_create_flat"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="24dp"
-            android:layout_marginEnd="24dp"
-            android:layout_marginBottom="24dp"
-            android:text="Crear Piso"
-            android:textColor="@android:color/white"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:background="#6A5ACD"
-            android:padding="16dp"
-            android:elevation="8dp"
-            android:translationZ="8dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

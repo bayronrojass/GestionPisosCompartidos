@@ -3,7 +3,7 @@ package com.example.gestionpisoscompartidos.ui.activities
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.example.gestionpisoscompartidos.R
-import com.example.gestionpisoscompartidos.ui.piso.crearPiso.CrearPiso
+import com.example.gestionpisoscompartidos.ui.piso.crearPiso.CrearCasa
 
 class TestPiso : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -12,7 +12,7 @@ class TestPiso : AppCompatActivity() {
 
         supportFragmentManager
             .beginTransaction()
-            .replace(R.id.fragment_container_view, CrearPiso.newInstance())
+            .replace(R.id.fragment_container_view, CrearCasa.newInstance())
             .commit()
     }
 }

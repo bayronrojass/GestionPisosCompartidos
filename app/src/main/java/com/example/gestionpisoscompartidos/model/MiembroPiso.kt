@@ -1,6 +1,6 @@
 package com.example.gestionpisoscompartidos.ui.piso.gestionUsuarios
 
-data class MiembroPisoUI(
+data class MiembroPiso(
     val id: Long,
     val nombre: String,
     val esAdmin: Boolean,

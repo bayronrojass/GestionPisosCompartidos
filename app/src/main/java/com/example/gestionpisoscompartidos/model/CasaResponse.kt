@@ -1,7 +1,8 @@
 package com.example.gestionpisoscompartidos.model
 
-data class PisoRequest(
+data class CasaResponse(
+    val id: Long,
     val nombre: String,
     val descripcion: String?,
-    val fotoURI: String?,
+    val fechaCreacion: String,
 )

@@ -25,9 +25,10 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.example.gestionpisoscompartidos.R
 import kotlinx.coroutines.launch
+import com.example.gestionpisoscompartidos.ui.piso.crearCasa.CrearCasaViewModel
 
-class CrearPiso : Fragment() {
-    private val viewModel: CrearPisoViewModel by viewModels()
+class CrearCasa : Fragment() {
+    private val viewModel: CrearCasaViewModel by viewModels()
     private lateinit var editTextName: EditText
     private lateinit var descriptionTextName: EditText
     private lateinit var createFlatButton: Button
@@ -86,7 +87,7 @@ class CrearPiso : Fragment() {
         createFlatButton.setOnClickListener {
             lifecycleScope.launch {
                 val success =
-                    viewModel.createFlat(
+                    viewModel.CrearCasa(
                         editTextName.text.toString(),
                         descriptionTextName.text.toString(),
                         pickedPhoto!!,
@@ -101,7 +102,7 @@ class CrearPiso : Fragment() {
     }
 
     companion object {
-        fun newInstance() = CrearPiso()
+        fun newInstance() = CrearCasa()
     }
 
     override fun onCreateView(
