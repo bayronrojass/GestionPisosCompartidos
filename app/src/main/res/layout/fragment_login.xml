@@ -84,15 +84,24 @@
                 android:layout_marginTop="12dp"
                 android:layout_marginBottom="6dp" />
 
-            <EditText
-                android:id="@+id/etContrasena"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:inputType="textPassword"
-                android:hint="Introduce tu contraseña"
-                android:paddingLeft="12dp"
-                android:background="@drawable/bg_edittext"
-                android:imeOptions="actionDone" />
+            <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilPassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:endIconMode="password_toggle"
+                    app:endIconContentDescription="Mostrar u ocultar contraseña">
+
+                <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etContrasena"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:hint="Introduce tu contraseña"
+                        android:inputType="textPassword"
+                        android:paddingLeft="12dp"
+                        android:imeOptions="actionDone"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
 
             <TextView
                 android:id="@+id/tvRecuperar"
