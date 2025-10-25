@@ -85,17 +85,11 @@ class CrearPiso : Fragment() {
 
         createFlatButton.setOnClickListener {
             lifecycleScope.launch {
-                val success =
                     viewModel.createFlat(
                         editTextName.text.toString(),
                         descriptionTextName.text.toString(),
                         pickedPhoto!!,
                     )
-                if (success) {
-                    Toast.makeText(requireContext(), "Flat created", Toast.LENGTH_LONG).show()
-                } else {
-                    Toast.makeText(requireContext(), "Error creating flat", Toast.LENGTH_LONG).show()
-                }
             }
         }
     }
