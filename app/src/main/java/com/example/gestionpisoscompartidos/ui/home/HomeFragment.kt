@@ -39,6 +39,10 @@ class HomeFragment : Fragment() {
         binding.btnPizarra.setOnClickListener {
             findNavController().navigate(R.id.action_homeFragment_to_pizarraFragment)
         }
+
+        binding.btnGestionPiso.setOnClickListener {
+            findNavController().navigate(R.id.action_homeFragment_to_gestionUsuariosPisoFragment)
+        }
     }
 
     override fun onDestroyView() {

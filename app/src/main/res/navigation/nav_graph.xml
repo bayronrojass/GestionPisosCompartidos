@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
-            xmlns:app="http://schemas.android.com/apk/res-auto"
+            xmlns:app="http://schemas.android.com/apk/res/auto"
             xmlns:tools="http://schemas.android.com/tools"
             android:id="@+id/nav_graph"
             app:startDestination="@id/homeFragment">
@@ -19,6 +19,10 @@
         <action
                 android:id="@+id/action_homeFragment_to_pizarraFragment"
                 app:destination="@id/pizarraFragment" />
+
+        <action
+                android:id="@+id/action_homeFragment_to_gestionUsuariosPisoFragment"
+                app:destination="@id/gestionUsuariosPisoFragment" />
     </fragment>
 
     <fragment
@@ -38,4 +42,10 @@
             android:name="com.example.gestionpisoscompartidos.ui.pizarra.Pizarra"
             android:label="Pizarra"
             tools:layout="@layout/fragment_pizarra" />
+
+    <fragment
+            android:id="@+id/gestionUsuariosPisoFragment"
+            android:name="com.example.gestionpisoscompartidos.ui.piso.gestionUsuarios.GestionUsuariosPiso"
+            android:label="Gestión del Piso"
+            tools:layout="@layout/fragment_gestion_usuarios_piso" />
 </navigation>
