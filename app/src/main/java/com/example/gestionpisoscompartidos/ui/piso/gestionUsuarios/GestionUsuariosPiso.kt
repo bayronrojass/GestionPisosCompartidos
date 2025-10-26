@@ -1,4 +1,3 @@
-// com.example.gestionpisoscompartidos.ui.piso.gestionUsuarios.GestionUsuariosPiso.kt
 package com.example.gestionpisoscompartidos.ui.piso.gestionUsuarios
 
 import android.os.Bundle
@@ -14,8 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionpisoscompartidos.R
-// Asegúrate de que tu NavGraph y Safe Args estén configurados correctamente
-// import com.example.gestionpisoscompartidos.ui.piso.gestionUsuarios.GestionUsuariosPisoDirections
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
 
 class GestionUsuariosPiso : Fragment() {
@@ -39,12 +37,9 @@ class GestionUsuariosPiso : Fragment() {
         recyclerView = view.findViewById(R.id.recycler_view_members)
         buttonInviteQr = view.findViewById(R.id.button_invite_qr_main)
 
-        // Inicializa el adaptador
         miembrosAdapter =
             MiembrosPisoAdapter { miembro ->
-                // Acción al hacer clic en eliminar miembro
-                Toast.makeText(requireContext(), "Eliminar ${miembro.nombre}", Toast.LENGTH_SHORT).show()
-                viewModel.removeMiembro(miembro.id)
+                mostrarDialogoDeConfirmacion(miembro)
             }
         recyclerView.adapter = miembrosAdapter
 
@@ -57,18 +52,20 @@ class GestionUsuariosPiso : Fragment() {
             }
         }
 
-        // Listener para el botón de invitar QR
         buttonInviteQr.setOnClickListener {
-            // Aquí necesitarás el ID del piso actual.
-            // Si este fragmento siempre se muestra dentro de un piso ya creado,
-            // puedes pasarlo como argumento al fragmento.
-            // Por ejemplo, si el ID del piso es "piso123"
-            val currentPisoId = "piso123" // <-- ¡IMPORTANTE! Reemplaza esto con el ID real del piso
-            // Asegúrate de que la acción exista en tu nav_graph.xml
-            // y que CodigoQR reciba un argumento "pisoId"
-            // val action = GestionUsuariosPisoDirections.actionGestionUsuariosPisoToCodigoQR(currentPisoId)
-            // findNavController().navigate(action)
+            val currentPisoId = "piso123"
             Toast.makeText(requireContext(), "Navegar a generar QR para piso: $currentPisoId", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun mostrarDialogoDeConfirmacion(miembro: MiembroPiso) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Confirmar eliminación")
+            .setMessage("¿Estás seguro de que quieres eliminar a ${miembro.nombre} del piso?")
+            .setNegativeButton("Cancelar") { dialog, _ ->
+                dialog.dismiss()
+            }.setPositiveButton("Eliminar") { dialog, _ ->
+                viewModel.removeMiembro(miembro.id)
+            }.show()
     }
 }

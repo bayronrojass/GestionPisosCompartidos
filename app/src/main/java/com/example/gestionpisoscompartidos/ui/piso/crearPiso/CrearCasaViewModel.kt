@@ -25,13 +25,13 @@ class CrearCasaViewModel(
     fun buttonConditions(
         apartmentName: String,
         pickedPhoto: Uri?,
-    ): Boolean = !nameNull(apartmentName) && pickedPhoto != null
+    ): // Boolean = !nameNull(apartmentName) && pickedPhoto != null
+        Boolean = !nameNull(apartmentName)
 
-    // 3. Renombra la función (tenías "createFlat" en el VM y "CrearCasa" en el Fragment)
     suspend fun CrearCasa(
         name: String,
         description: String,
-        pickedPhoto: Uri, // Recibe la Uri como antes
+        pickedPhoto: Uri,
     ): Boolean =
         try {
             // 4. Crea el request, pero rutaImagen va nulo. El backend lo generará.
