@@ -11,7 +11,7 @@ data class LoginResponse(
     val authToken: String,
     // Lista de pisos asociados al usuario
     @SerializedName("flats")
-    val flats: List<Piso>,
+    val flats: List<Casa>,
     // Objeto Usuario
     @SerializedName("user")
     val user: Usuario,

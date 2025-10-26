@@ -1,6 +1,7 @@
 package com.example.gestionpisoscompartidos.ui.login
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -110,10 +111,15 @@ class Login : Fragment() {
 
         // 2. Manejar la lista de pisos
         if (response.flats.isNotEmpty()) {
+            Toast.makeText(context, "Pisos encontrados: ${response.flats.size}", Toast.LENGTH_LONG).show()
+            response.flats.forEach { piso ->
+                Log.d("LoginSuccess", "ID de Piso/Casa recibido: ${piso.id}") // Verifica el ID en Logcat
+            }
             // TODO: Navegar a una pantalla de selección de piso
             // O si solo tiene uno, seleccionarlo automáticamente e iniciar el servicio MQTT
             // startMqttService(response.flats.first().id)
         } else {
+            Log.d("LoginSuccess", "La lista 'flats' está vacía.")
             Toast.makeText(context, "No tienes pisos asignados.", Toast.LENGTH_LONG).show()
             // TODO: Navegar a una pantalla para crear/unirse a un piso
         }
