@@ -13,6 +13,6 @@ interface CasaAPI {
     @POST("casas")
     suspend fun crearCasa(
         @Part("casa") nuevoPiso: RequestBody,
-        @Part file: MultipartBody.Part,
+        @Part file: MultipartBody.Part?,
     ): Response<CasaResponse>
 }

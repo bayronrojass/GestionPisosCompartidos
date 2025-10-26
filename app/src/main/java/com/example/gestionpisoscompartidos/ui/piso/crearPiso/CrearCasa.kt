@@ -115,7 +115,7 @@ class CrearCasa : Fragment() {
         apartmentName: String,
         photoUri: Uri?,
     ) {
-        val isEnabled = viewModel.buttonConditions(apartmentName, photoUri)
+        val isEnabled = viewModel.buttonConditions(apartmentName)
         createFlatButton.isEnabled = isEnabled
         createFlatButton.isClickable = isEnabled
 

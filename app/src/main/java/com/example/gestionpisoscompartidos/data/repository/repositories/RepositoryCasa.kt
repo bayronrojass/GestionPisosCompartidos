@@ -2,6 +2,7 @@ package com.example.gestionpisoscompartidos.data.repository.repositories
 
 import android.content.ContentResolver
 import android.net.Uri
+import android.webkit.MimeTypeMap
 import com.example.gestionpisoscompartidos.data.repository.APIs.CasaAPI
 import com.example.gestionpisoscompartidos.model.CasaRequest
 import com.example.gestionpisoscompartidos.model.CasaResponse
@@ -9,35 +10,29 @@ import com.google.gson.Gson
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import retrofit2.Response
+import java.io.IOException
 import java.util.UUID
 
 class RepositoryCasa(
     private val apiService: CasaAPI,
 ) {
-    // La función ahora necesita la Uri y el ContentResolver
     suspend fun crearCasa(
         request: CasaRequest,
-        fileUri: Uri,
+        fileUri: Uri?,
         contentResolver: ContentResolver,
     ): CasaResponse {
-        // 1. Convierte el objeto CasaRequest a JSON y luego a RequestBody
         val casaJson = Gson().toJson(request)
         val casaRequestBody = casaJson.toRequestBody("application/json".toMediaTypeOrNull())
 
-        // 2. Convierte la Uri del archivo a un MultipartBody.Part
-        // Lee los bytes del archivo
-        val fileStream = contentResolver.openInputStream(fileUri)
-        val fileBytes = fileStream!!.readBytes()
-        fileStream.close()
+        val response = if(fileUri != null) {
+            val filePart = createFilePart(fileUri, contentResolver)
+            apiService.crearCasa(nuevoPiso = casaRequestBody, file = filePart)
+        }
 
-        val mimeType = contentResolver.getType(fileUri)
-        val fileReqBody = fileBytes.toRequestBody(mimeType?.toMediaTypeOrNull())
-
-        val filename = "${UUID.randomUUID()}.jpg"
-        val filePart = MultipartBody.Part.createFormData("file", filename, fileReqBody)
-
-        // 3. Llama a la API con las dos partes
-        val response = apiService.crearCasa(nuevoPiso = casaRequestBody, file = filePart)
+        else{
+            apiService.crearCasa(nuevoPiso = casaRequestBody, file = null)
+        }
 
         if (response.isSuccessful) {
             return response.body() ?: throw Exception("Respuesta vacía al crear piso")
@@ -45,5 +40,20 @@ class RepositoryCasa(
             val msg = response.errorBody()?.string() ?: "Error desconocido"
             throw Exception("Error al crear piso (${response.code()}): $msg")
         }
+    }
+
+    private fun createFilePart(fileUri: Uri, contentResolver: ContentResolver): MultipartBody.Part {
+        return contentResolver.openInputStream(fileUri)?.use { inputStream ->
+            val fileBytes = inputStream.readBytes()
+
+            val mimeType = contentResolver.getType(fileUri) ?: "application/octet-stream"
+            val extension = MimeTypeMap.getSingleton()
+                .getExtensionFromMimeType(mimeType) ?: "bin"
+
+            val filename = "${UUID.randomUUID()}.$extension"
+            val fileReqBody = fileBytes.toRequestBody(mimeType.toMediaTypeOrNull())
+
+            MultipartBody.Part.createFormData("file", filename, fileReqBody)
+        } ?: throw IOException("Cannot open file from URI: $fileUri")
     }
 }
