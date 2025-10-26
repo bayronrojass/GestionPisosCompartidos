@@ -10,7 +10,6 @@ import com.google.gson.Gson
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import retrofit2.Response
 import java.io.IOException
 import java.util.UUID
 
@@ -25,14 +24,13 @@ class RepositoryCasa(
         val casaJson = Gson().toJson(request)
         val casaRequestBody = casaJson.toRequestBody("application/json".toMediaTypeOrNull())
 
-        val response = if(fileUri != null) {
-            val filePart = createFilePart(fileUri, contentResolver)
-            apiService.crearCasa(nuevoPiso = casaRequestBody, file = filePart)
-        }
-
-        else{
-            apiService.crearCasa(nuevoPiso = casaRequestBody, file = null)
-        }
+        val response =
+            if (fileUri != null) {
+                val filePart = createFilePart(fileUri, contentResolver)
+                apiService.crearCasa(casa = casaRequestBody, file = filePart)
+            } else {
+                apiService.crearCasa(casa = casaRequestBody, file = null)
+            }
 
         if (response.isSuccessful) {
             return response.body() ?: throw Exception("Respuesta vacía al crear piso")
@@ -42,18 +40,22 @@ class RepositoryCasa(
         }
     }
 
-    private fun createFilePart(fileUri: Uri, contentResolver: ContentResolver): MultipartBody.Part {
-        return contentResolver.openInputStream(fileUri)?.use { inputStream ->
+    private fun createFilePart(
+        fileUri: Uri,
+        contentResolver: ContentResolver,
+    ): MultipartBody.Part =
+        contentResolver.openInputStream(fileUri)?.use { inputStream ->
             val fileBytes = inputStream.readBytes()
 
             val mimeType = contentResolver.getType(fileUri) ?: "application/octet-stream"
-            val extension = MimeTypeMap.getSingleton()
-                .getExtensionFromMimeType(mimeType) ?: "bin"
+            val extension =
+                MimeTypeMap
+                    .getSingleton()
+                    .getExtensionFromMimeType(mimeType) ?: "bin"
 
             val filename = "${UUID.randomUUID()}.$extension"
             val fileReqBody = fileBytes.toRequestBody(mimeType.toMediaTypeOrNull())
 
             MultipartBody.Part.createFormData("file", filename, fileReqBody)
         } ?: throw IOException("Cannot open file from URI: $fileUri")
-    }
 }

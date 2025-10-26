@@ -20,10 +20,7 @@ class CrearCasaViewModel(
 
     fun nameNull(s: String): Boolean = s.trim().isEmpty()
 
-    fun buttonConditions(
-        apartmentName: String
-    ):
-        Boolean = !nameNull(apartmentName)
+    fun buttonConditions(apartmentName: String): Boolean = !nameNull(apartmentName)
 
     suspend fun CrearCasa(
         name: String,

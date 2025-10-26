@@ -90,7 +90,7 @@ class CrearCasa : Fragment() {
                     viewModel.CrearCasa(
                         editTextName.text.toString(),
                         descriptionTextName.text.toString(),
-                        pickedPhoto!!,
+                        pickedPhoto,
                     )
                 if (success) {
                     Toast.makeText(requireContext(), "Flat created", Toast.LENGTH_LONG).show()
