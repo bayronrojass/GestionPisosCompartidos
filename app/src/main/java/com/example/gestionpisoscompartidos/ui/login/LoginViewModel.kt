@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionpisoscompartidos.model.LoginRequest
 import com.example.gestionpisoscompartidos.model.LoginResponse
-import com.example.gestionpisoscompartidos.data.repository.Repository
+import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryLogin
 import kotlinx.coroutines.launch
 
 // Necesitarás una factoría de ViewModel si no usas Hilt o Koin
@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
  * ViewModel para gestionar la lógica de la pantalla de inicio de sesión.
  */
 class LoginViewModel(
-    private val repository: Repository,
+    private val repository: RepositoryLogin,
 ) : ViewModel() {
     private val _loginResult = MutableLiveData<LoginResponse?>()
     val loginResult: LiveData<LoginResponse?> = _loginResult

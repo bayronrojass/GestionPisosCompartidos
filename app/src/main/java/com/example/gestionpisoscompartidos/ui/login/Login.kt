@@ -1,13 +1,14 @@
 package com.example.gestionpisoscompartidos.ui.login
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import com.example.gestionpisoscompartidos.data.repository.Repository
+import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryLogin
 import com.example.gestionpisoscompartidos.databinding.FragmentLoginBinding
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.model.LoginResponse
@@ -16,6 +17,10 @@ import com.example.gestionpisoscompartidos.model.LoginResponse
  * Fragmento de la pantalla de inicio de sesión.
  */
 class Login : Fragment() {
+    companion object {
+        fun newInstance() = Login()
+    }
+
     // Usar View Binding para acceder a los elementos del layout
     private var _binding: FragmentLoginBinding? = null
     private val binding get() = _binding!!
@@ -26,10 +31,10 @@ class Login : Fragment() {
     // Ejemplo manual (simplificado, no recomendado en apps grandes):
     private val viewModel: LoginViewModel by viewModels {
         // 1. Obtener la API del módulo de red
-        val apiService = NetworkModule.databaseApiService
+        val apiService = NetworkModule.loginApiService
 
         // 2. Crear el Repositorio con la API
-        val repository = Repository(apiService)
+        val repository = RepositoryLogin(apiService)
 
         // 3. Devolver la fábrica con el Repositorio
         LoginViewModelFactory(repository)
@@ -106,10 +111,15 @@ class Login : Fragment() {
 
         // 2. Manejar la lista de pisos
         if (response.flats.isNotEmpty()) {
+            Toast.makeText(context, "Pisos encontrados: ${response.flats.size}", Toast.LENGTH_LONG).show()
+            response.flats.forEach { piso ->
+                Log.d("LoginSuccess", "ID de Piso/Casa recibido: ${piso.id}") // Verifica el ID en Logcat
+            }
             // TODO: Navegar a una pantalla de selección de piso
             // O si solo tiene uno, seleccionarlo automáticamente e iniciar el servicio MQTT
             // startMqttService(response.flats.first().id)
         } else {
+            Log.d("LoginSuccess", "La lista 'flats' está vacía.")
             Toast.makeText(context, "No tienes pisos asignados.", Toast.LENGTH_LONG).show()
             // TODO: Navegar a una pantalla para crear/unirse a un piso
         }

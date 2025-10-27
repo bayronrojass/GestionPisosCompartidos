@@ -2,10 +2,10 @@ package com.example.gestionpisoscompartidos.ui.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.gestionpisoscompartidos.data.repository.Repository
+import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryLogin
 
 class LoginViewModelFactory(
-    private val repository: Repository,
+    private val repository: RepositoryLogin,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(LoginViewModel::class.java)) {

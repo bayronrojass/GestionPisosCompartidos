@@ -1,13 +1,107 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".ui.piso.gestionUsuarios.GestionUsuariosPiso">
-
-    <TextView
+<androidx.constraintlayout.widget.ConstraintLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="Hello" />
+        android:background="@android:color/white"
+        tools:context=".ui.piso.gestionUsuarios.GestionUsuariosPiso">
 
-</FrameLayout>
+    <View
+            android:id="@+id/header_top_background"
+            android:layout_width="0dp"
+            android:layout_height="60dp"
+            android:background="#6A5ACD"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+            android:id="@+id/header_menu_icon"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:src="@drawable/ic_menu"
+            app:tint="@android:color/white"
+            android:layout_marginStart="16dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/header_top_background"
+            app:layout_constraintBottom_toBottomOf="@id/header_top_background"
+            android:contentDescription="Menu" />
+
+    <TextView
+            android:id="@+id/header_app_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Matías Perelló 15"
+            android:textColor="@android:color/white"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginStart="16dp"
+            app:layout_constraintStart_toEndOf="@id/header_menu_icon"
+            app:layout_constraintTop_toTopOf="@id/header_top_background"
+            app:layout_constraintBottom_toBottomOf="@id/header_top_background" />
+
+    <ImageView
+            android:id="@+id/header_profile_icon"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:src="@drawable/ic_user"
+            app:tint="@android:color/white"
+            android:layout_marginEnd="16dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/header_top_background"
+            app:layout_constraintBottom_toBottomOf="@id/header_top_background"
+            android:contentDescription="Profile" />
+
+    <TextView
+            android:id="@+id/title_members"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Miembros"
+            android:textColor="#6A5ACD"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:layout_marginTop="24dp"
+            app:layout_constraintTop_toBottomOf="@id/header_top_background"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view_members"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp"
+            app:layout_constraintTop_toBottomOf="@id/title_members"
+            app:layout_constraintBottom_toTopOf="@id/button_invite_qr_main"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:listitem="@layout/item_miembro_piso"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+    <Button
+            android:id="@+id/button_invite_qr_main"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp"
+            android:layout_marginBottom="24dp"
+            android:text="Invitar usando QR"
+            android:drawableEnd="@drawable/ic_qr_code"
+            android:drawablePadding="8dp"
+            android:textColor="@android:color/black"
+            app:backgroundTint="@android:color/white"
+            android:padding="16dp"
+            android:elevation="4dp"
+            android:translationZ="4dp"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

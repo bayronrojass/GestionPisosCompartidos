@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.remote.RemoteRepository
 import com.example.gestionpisoscompartidos.data.repository.PizarraAPI
+import com.example.gestionpisoscompartidos.model.Point
 import com.example.gestionpisoscompartidos.model.dtos.PointDeltaDTO
 import com.example.gestionpisoscompartidos.utils.ApiResult
 import kotlinx.coroutines.Dispatchers

@@ -1,10 +1,11 @@
-package com.example.gestionpisoscompartidos.data.repository
+package com.example.gestionpisoscompartidos.data.repository.repositories
 
+import com.example.gestionpisoscompartidos.data.repository.APIs.LoginAPI
 import com.example.gestionpisoscompartidos.model.LoginRequest
 import com.example.gestionpisoscompartidos.model.LoginResponse
 
-class Repository(
-    private val apiService: DatabaseAPI,
+class RepositoryLogin(
+    private val apiService: LoginAPI,
 ) {
     suspend fun login(request: LoginRequest): LoginResponse {
         // 1. Realizar la llamada a la API de forma asíncrona

@@ -1,4 +1,4 @@
-package com.example.gestionpisoscompartidos.data.repository
+package com.example.gestionpisoscompartidos.data.repository.APIs
 
 import com.example.gestionpisoscompartidos.model.dtos.PointDeltaDTO
 import retrofit2.Response

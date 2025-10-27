@@ -7,12 +7,12 @@ import com.google.gson.annotations.SerializedName
  */
 data class LoginResponse(
     // Token de autenticación
-    @SerializedName("token")
+    @SerializedName("authToken")
     val authToken: String,
     // Lista de pisos asociados al usuario
-    @SerializedName("pisos")
-    val flats: List<Piso>,
+    @SerializedName("flats")
+    val flats: List<Casa>,
     // Objeto Usuario
-    @SerializedName("usuario")
+    @SerializedName("user")
     val user: Usuario,
 )

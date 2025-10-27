@@ -59,28 +59,27 @@ class PizarraView
             val y = event.y
             onTouchCallback?.let { it(x, y) }
 
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    path.moveTo(x, y)
-                    lastPoint = Point(x, y)
-                    model.add(PointDeltaDTO(x.toInt().toShort(), y.toInt().toShort(), 10f, 1))
-                    performClick()
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    path.quadTo(lastPoint!!.x, lastPoint!!.y, (x + lastPoint!!.x) / 2, (y + lastPoint!!.y) / 2)
-                    canvasBitmap.drawPath(path, paint)
-                    lastPoint = Point(x, y)
-                    model.add(PointDeltaDTO(x.toInt().toShort(), y.toInt().toShort(), 10f, 1))
-                    invalidate()
-                }
-                MotionEvent.ACTION_UP -> {
-                    model.add(PointDeltaDTO(x.toInt().toShort(), y.toInt().toShort(), 0f, 0))
-                    lastPoint = null
-                    save()
-                }
+        when (event.action) {
+            MotionEvent.ACTION_DOWN -> {
+                path.moveTo(x, y)
+                lastPoint = Point(x, y)
+                model.add(PointDeltaDTO(x, y, 10f, 1))
+                performClick()
             }
-            return true
+            MotionEvent.ACTION_MOVE -> {
+                path.quadTo(lastPoint!!.x, lastPoint!!.y, (x + lastPoint!!.x) / 2, (y + lastPoint!!.y) / 2)
+                canvasBitmap.drawPath(path, paint)
+                lastPoint = Point(x, y)
+                model.add(PointDeltaDTO(x, y, 10f, 1))
+                invalidate()
+            }
+            MotionEvent.ACTION_UP -> {
+                lastPoint = null
+                save()
+            }
         }
+        return true
+    }
 
         override fun performClick(): Boolean {
             super.performClick()
