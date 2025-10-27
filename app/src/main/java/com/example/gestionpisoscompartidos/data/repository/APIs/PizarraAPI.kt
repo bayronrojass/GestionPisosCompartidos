@@ -1,0 +1,17 @@
+package com.example.gestionpisoscompartidos.data.repository.APIs
+
+import com.example.gestionpisoscompartidos.model.dtos.PointDeltaDTO
+import retrofit2.Response
+import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.POST
+
+interface PizarraAPI {
+    @GET("lienzos/1")
+    suspend fun getLienzo(): Response<ByteArray>
+
+    @POST("lienzos/1/deltas")
+    suspend fun postDelta(
+        @Body request: List<PointDeltaDTO>,
+    ): Response<Boolean>
+}

@@ -1,19 +1,19 @@
-package com.example.gestionpisoscompartidos.ui.piso.crearPiso
+package com.example.gestionpisoscompartidos.ui.item
 
+import androidx.fragment.app.viewModels
 import android.os.Bundle
+import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
 import com.example.gestionpisoscompartidos.R
 
-class CrearPiso : Fragment() {
+class Item : Fragment() {
     companion object {
-        fun newInstance() = CrearPiso()
+        fun newInstance() = Item()
     }
 
-    private val viewModel: CrearPisoViewModel by viewModels()
+    private val viewModel: ItemViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,5 +25,5 @@ class CrearPiso : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View = inflater.inflate(R.layout.fragment_crear_piso, container, false)
+    ): View = inflater.inflate(R.layout.fragment_item, container, false)
 }

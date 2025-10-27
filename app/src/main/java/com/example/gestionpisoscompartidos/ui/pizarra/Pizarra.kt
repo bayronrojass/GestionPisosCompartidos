@@ -1,6 +1,7 @@
 package com.example.gestionpisoscompartidos.ui.pizarra
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,15 +16,33 @@ class Pizarra : Fragment() {
 
     private val viewModel: PizarraViewModel by viewModels()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        // TODO: Use the ViewModel
-    }
+    private var drawView: PizarraView? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View = inflater.inflate(R.layout.fragment_pizarra, container, false)
+    ): View {
+        val rootView = inflater.inflate(R.layout.fragment_pizarra, container, false)
+        drawView = rootView.findViewById(R.id.pizarraView)
+
+        return rootView
+    }
+
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
+        super.onViewCreated(view, savedInstanceState)
+
+        drawView?.setModel(viewModel)
+        drawView?.onTouchCallback = { x, y ->
+            Log.d("Pizarra", "Tocado en: ($x, $y)")
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        drawView = null // evita fugas de memoria
+    }
 }

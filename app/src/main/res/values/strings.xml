@@ -1,3 +1,8 @@
 <resources>
-    <string name="app_name">GestionPisosCompartidos</string>
+    <string name="app_name">MiRumi</string>
+    <string name="username">Usuario</string>
+    <string name="password">Contraseña</string>
+    <string name="forgot_password">Recuperar Contraseña</string>
+    <string name="login">Inicio de sesión</string>
+    <string name="register_prompt">No tienes cuenta? ¡Regístrate hoy!</string>
 </resources>
