@@ -6,10 +6,12 @@ import android.graphics.Canvas
 import android.graphics.Path
 import android.graphics.Paint
 import android.graphics.Color
+import android.os.Build
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
+import androidx.annotation.RequiresApi
 import com.example.gestionpisoscompartidos.model.Point
 import androidx.core.graphics.createBitmap
 import com.example.gestionpisoscompartidos.model.dtos.PointDeltaDTO
@@ -50,6 +52,7 @@ class PizarraView
                 strokeJoin = Paint.Join.ROUND
             }
 
+        @RequiresApi(Build.VERSION_CODES.O)
         override fun onSizeChanged(
             w: Int,
             h: Int,
@@ -120,22 +123,25 @@ class PizarraView
             model.save()
         }
 
+        @RequiresApi(Build.VERSION_CODES.O)
         private fun load() {
             loadJob?.cancel()
 
-            loadJob = loadScope.launch {
-                while (isActive) {
-                    try {
-                        model.load()
-                        delay(3000L)
-                    } catch (e: CancellationException) {
-                        break
-                    } catch (e: Exception) {
-                        Log.e("Load", "Error en carga: ${e.message}")
-                        delay(3000L)
+            loadJob =
+                loadScope.launch {
+                    while (isActive) {
+                        try {
+                            model.load()
+                            delay(3000L)
+                        } catch (e: CancellationException) {
+                            Log.e("Load", "Error en carga: ${e.message}")
+                            break
+                        } catch (e: Exception) {
+                            Log.e("Load", "Error en carga: ${e.message}")
+                            delay(3000L)
+                        }
                     }
                 }
-            }
         }
 
         fun clear() {
