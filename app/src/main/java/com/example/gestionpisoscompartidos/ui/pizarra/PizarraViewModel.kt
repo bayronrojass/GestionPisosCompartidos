@@ -2,21 +2,27 @@ package com.example.gestionpisoscompartidos.ui.pizarra
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
+import androidx.core.graphics.set
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.remote.RemoteRepository
-import com.example.gestionpisoscompartidos.data.repository.PizarraAPI
-import com.example.gestionpisoscompartidos.model.Point
+import com.example.gestionpisoscompartidos.data.repository.APIs.PizarraAPI
 import com.example.gestionpisoscompartidos.model.dtos.PointDeltaDTO
 import com.example.gestionpisoscompartidos.utils.ApiResult
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.ResponseBody
 
-class PizarraViewModel constructor() : ViewModel() {
+class PizarraViewModel : ViewModel() {
     private val puntos: MutableList<PointDeltaDTO> = mutableListOf()
     private val repository = RemoteRepository(NetworkModule.retrofit.create(PizarraAPI::class.java))
+    private val _bitmapState = MutableStateFlow<Bitmap?>(null)
+    val bitmapState: StateFlow<Bitmap?> = _bitmapState.asStateFlow()
 
     fun add(p: PointDeltaDTO?) {
         if (p != null) puntos.add(p)
@@ -43,26 +49,44 @@ class PizarraViewModel constructor() : ViewModel() {
         }
     }
 
-    suspend fun load(): Bitmap? =
-        withContext(Dispatchers.IO) {
-            try {
-                val result = repository.request { getLienzo() }
-                when (result) {
-                    is ApiResult.Error -> {
-                        Log.d("PizarraViewModel", "Error sending deltas ${result.message}")
-                        null
+    fun load() =
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                try {
+                    val result = repository.request { getLienzo() }
+                    when (result) {
+                        is ApiResult.Error -> {
+                            Log.d("PizarraViewModel", "Error loading ${result.message}")
+                        }
+
+                        is ApiResult.Success<*> -> {
+                            val responseBody = result.data as? ResponseBody
+                            responseBody?.let { body ->
+                                Log.d("PNG", "Content-Type: ${body.contentType()}")
+                                val bytes = body.bytes()
+                                Log.d("PNG", "Bytes recibidos: ${bytes.size}")
+
+                                if (bytes.isNotEmpty()) {
+                                    _bitmapState.value =
+                                        BitmapFactory.decodeByteArray(
+                                            bytes,
+                                            0,
+                                            bytes.size,
+                                        )
+                                }
+                            }
+                        }
+
+                        is ApiResult.Throws -> {
+                            Log.d(
+                                "PizarraViewModel",
+                                "Throwed loading ${result.exception.message}",
+                            )
+                        }
                     }
-                    is ApiResult.Success<*> -> {
-                        (result.data as ByteArray?)?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
-                    }
-                    is ApiResult.Throws -> {
-                        Log.d("PizarraViewModel", "Throwed sending deltas ${result.exception.message}")
-                        null
-                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                null
             }
         }
 }

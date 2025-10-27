@@ -1,13 +1,14 @@
 package com.example.gestionpisoscompartidos.ui.pizarra
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import com.example.gestionpisoscompartidos.R
+import kotlinx.coroutines.launch
 
 class Pizarra : Fragment() {
     companion object {
@@ -15,7 +16,6 @@ class Pizarra : Fragment() {
     }
 
     private val viewModel: PizarraViewModel by viewModels()
-
     private var drawView: PizarraView? = null
 
     override fun onCreateView(
@@ -36,9 +36,16 @@ class Pizarra : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         drawView?.setModel(viewModel)
-        drawView?.onTouchCallback = { x, y ->
-            Log.d("Pizarra", "Tocado en: ($x, $y)")
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.bitmapState.collect { bitmap ->
+                bitmap?.let {
+                    drawView?.setBackgroundBitmap(it)
+                }
+            }
         }
+
+        viewModel.load()
     }
 
     override fun onDestroyView() {

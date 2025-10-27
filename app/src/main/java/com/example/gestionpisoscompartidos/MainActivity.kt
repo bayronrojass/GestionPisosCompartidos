@@ -23,7 +23,7 @@ class MainActivity : AppCompatActivity() {
             val result = repository.request { login(LoginRequest("test", "test")) }
 
             when (result) {
-                is ApiResult.Success -> println("Usuario: ${result.data}")
+                is ApiResult.Success<*> -> println("Usuario: ${result.data}")
                 is ApiResult.Error -> println("Error HTTP ${result.code}: ${result.message}")
                 is ApiResult.Throws -> println("Excepción: ${result.exception.message}")
             }
@@ -37,7 +37,6 @@ class MainActivity : AppCompatActivity() {
 
         enableEdgeToEdge()
 
-        // ⚡ Cambiado de Compose a layout XML
         setContentView(R.layout.activity_main)
     }
 }
