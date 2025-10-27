@@ -10,9 +10,9 @@ import retrofit2.converter.gson.GsonConverterFactory
  * y proporciona las instancias de los servicios API.
  */
 object NetworkModule {
-    private const val BASE_URL = "http://192.168.1.131:8080/api/"
+    private const val BASE_URL = "http://localhost:8080/"
 
-    public val retrofit: Retrofit by lazy {
+    val retrofit: Retrofit by lazy {
         Builder()
             .baseUrl(BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())

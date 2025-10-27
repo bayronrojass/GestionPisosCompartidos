@@ -7,9 +7,11 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 
 interface PizarraAPI {
-    @GET("lienzo/1")
+    @GET("lienzos/1")
     suspend fun getLienzo(): Response<ByteArray>
 
-    @POST("lienzo/1/delta")
-    suspend fun postDelta(@Body request: List<PointDeltaDTO>): Response<Boolean>
+    @POST("lienzos/1/deltas")
+    suspend fun postDelta(
+        @Body request: List<PointDeltaDTO>,
+    ): Response<Boolean>
 }
