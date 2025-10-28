@@ -5,7 +5,8 @@
         android:orientation="vertical"
         android:padding="16dp"
         android:layout_marginBottom="8dp"
-        android:background="@drawable/bg_task_pending"> <TextView
+        android:background="@drawable/bg_task_pending">
+    <TextView
         android:id="@+id/tvNombreCasa"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -22,5 +23,13 @@
             android:textColor="@android:color/white"
             android:layout_marginTop="4dp"
             android:text="Descripción corta..."/>
+
+    <TextView
+            android:id="@+id/tvFechaCreacionCasa"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="#BDBDBD" android:layout_marginTop="8dp"
+            android:text="Creada el: dd/mm/aaaa"/>
 
 </LinearLayout>
