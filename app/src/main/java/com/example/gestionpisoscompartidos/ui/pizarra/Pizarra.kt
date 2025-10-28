@@ -5,12 +5,13 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.LinearLayout
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.example.gestionpisoscompartidos.R
-import com.example.gestionpisoscompartidos.databinding.ActivityTestPizarraBinding
 import kotlinx.coroutines.launch
 
 class Pizarra : Fragment() {
@@ -20,7 +21,6 @@ class Pizarra : Fragment() {
 
     private val viewModel: PizarraViewModel by viewModels()
     private var drawView: PizarraView? = null
-    private lateinit var binding: ActivityTestPizarraBinding
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -29,6 +29,8 @@ class Pizarra : Fragment() {
     ): View {
         val rootView = inflater.inflate(R.layout.fragment_pizarra, container, false)
         drawView = rootView.findViewById(R.id.pizarraView)
+        val buttonContainer: LinearLayout = rootView.findViewById(R.id.buttonContainer)
+        buttonContainer.bringToFront()
 
         return rootView
     }
@@ -50,11 +52,9 @@ class Pizarra : Fragment() {
             }
         }
 
-        binding = ActivityTestPizarraBinding.inflate(layoutInflater)
+        setupClickListeners(view)
 
-        setupClickListeners()
-
-        viewModel.load()
+        drawView?.load()
     }
 
     override fun onDestroyView() {
@@ -62,25 +62,25 @@ class Pizarra : Fragment() {
         drawView = null // evita fugas de memoria
     }
 
-    private fun setupClickListeners() {
-        binding.btnBlack.setOnClickListener {
+    private fun setupClickListeners(view: View) {
+        view.findViewById<Button>(R.id.btnBlack).setOnClickListener {
             viewModel.onColorSelected(1)
         }
 
-        binding.btnWhite.setOnClickListener {
-            viewModel.onColorSelected(8)
-        }
-
-        binding.btnRed.setOnClickListener {
+        view.findViewById<Button>(R.id.btnRed).setOnClickListener {
             viewModel.onColorSelected(2)
         }
 
-        binding.btnBlue.setOnClickListener {
+        view.findViewById<Button>(R.id.btnBlue).setOnClickListener {
             viewModel.onColorSelected(4)
         }
 
-        binding.btnGreen.setOnClickListener {
+        view.findViewById<Button>(R.id.btnGreen).setOnClickListener {
             viewModel.onColorSelected(3)
+        }
+
+        view.findViewById<Button>(R.id.btnWhite).setOnClickListener {
+            viewModel.onColorSelected(8)
         }
     }
 }

@@ -1,14 +1,146 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".ui.pizarra.Pizarra">
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".ui.pizarra.Pizarra">
+
 
     <com.example.gestionpisoscompartidos.ui.pizarra.PizarraView
             android:id="@+id/pizarraView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="#FFFFFF" />
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="#FFFFFF"
+            app:layout_constraintBottom_toTopOf="@+id/buttonContainer"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-</FrameLayout>
+    <!-- Contenedor principal de botones -->
+    <LinearLayout
+            android:id="@+id/buttonContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:elevation="10dp"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
+
+        <!-- Fila 1: Colores básicos -->
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:weightSum="5">
+
+            <Button
+                    android:id="@+id/btnBlack"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_margin="2dp"
+                    android:background="@drawable/button_custom"
+                    android:backgroundTint="@android:color/black"
+                    android:text="negro"
+                    style="@style/FlatButton"
+                    android:backgroundTintMode="add"
+                    app:strokeColor="#000000" />
+
+            <Button
+                    android:id="@+id/btnWhite"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_margin="2dp"
+                    android:background="@drawable/button_custom"
+                    android:backgroundTint="@android:color/white"
+                    android:text=""
+                    style="@style/FlatButton"
+                    tools:text="blanco" />
+
+            <Button
+                    android:id="@+id/btnRed"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_margin="2dp"
+                    android:background="@drawable/button_custom"
+                    android:backgroundTint="#FFFF0000"
+                    android:text="rojo"
+                    style="@style/FlatButton" />
+
+            <Button
+                    android:id="@+id/btnBlue"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_margin="2dp"
+                    android:background="@drawable/button_custom"
+                    android:backgroundTint="#FF0000FF"
+                    android:text="azul"
+                    style="@style/FlatButton" />
+
+            <Button
+                    android:id="@+id/btnGreen"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_margin="2dp"
+                    android:background="@drawable/button_custom"
+                    android:backgroundTint="#FF00FF00"
+                    android:text="verde"
+                    style="@style/FlatButton" />
+        </LinearLayout>
+
+        <!-- Fila 2: Herramientas adicionales -->
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:weightSum="3"
+                android:focusableInTouchMode="true"
+                android:layout_marginTop="8dp">
+
+            <Button
+                    android:id="@+id/btnClear"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_margin="2dp"
+                    android:background="@drawable/button_custom"
+                    android:text="Limpiar"
+                    android:textColor="@android:color/black"
+                    style="@style/FlatButton" />
+
+            <Button
+                    android:id="@+id/btnSave"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_margin="2dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="@drawable/button_custom"
+                    android:text="Guardar"
+                    android:textColor="@android:color/black"
+                    style="@style/FlatButton" />
+
+            <Button
+                    android:id="@+id/btnUndo"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_margin="2dp"
+                    android:background="@drawable/button_custom"
+                    android:text="Deshacer"
+                    android:textColor="@android:color/black"
+                    style="@style/FlatButton" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

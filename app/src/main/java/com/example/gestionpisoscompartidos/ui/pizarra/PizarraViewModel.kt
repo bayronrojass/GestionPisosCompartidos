@@ -10,7 +10,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.remote.RemoteRepository
 import com.example.gestionpisoscompartidos.data.repository.APIs.PizarraAPI
-import com.example.gestionpisoscompartidos.model.dtos.DateDTO
 import com.example.gestionpisoscompartidos.model.dtos.PointDeltaDTO
 import com.example.gestionpisoscompartidos.utils.ApiResult
 import kotlinx.coroutines.Dispatchers
@@ -21,6 +20,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
 import java.time.LocalDateTime
+import java.time.ZoneId
 
 class PizarraViewModel : ViewModel() {
     private val puntos: MutableList<PointDeltaDTO> = mutableListOf()
@@ -30,7 +30,7 @@ class PizarraViewModel : ViewModel() {
     var color: Byte = 1
 
     @RequiresApi(Build.VERSION_CODES.O)
-    val lastLoaded: LocalDateTime = LocalDateTime.MIN
+    var lastLoaded: LocalDateTime = LocalDateTime.of(1970, 1, 1, 0, 0)
 
     fun add(p: PointDeltaDTO?) {
         if (p != null) puntos.add(p)
@@ -58,63 +58,85 @@ class PizarraViewModel : ViewModel() {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun load() =
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                try {
-                    val check = repository.request { isUpdated(DateDTO(lastLoaded)) }
-                    when (check) {
-                        is ApiResult.Error -> {
-                            Log.d("PizarraViewModel", "Not need loading")
-                        }
-                        is ApiResult.Success<*> -> {
-                            if (check.data as Boolean) {
-                                Log.d("PizarraViewModel", "Loading")
-                                executeLoading()
+    suspend fun load() {
+        try {
+            val check =
+                withContext(Dispatchers.IO) {
+                    val safeTimestamp = lastLoaded.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    repository.request { isUpdated(safeTimestamp) }
+                }
+
+            when (check) {
+                is ApiResult.Error -> {
+                    Log.d("PizarraViewModel", "No need loading: ${check.message}")
+                }
+                is ApiResult.Success<*> -> {
+                    if (check.data as Boolean) {
+                        Log.d("PizarraViewModel", "Data updated, loading new content")
+
+                        val result =
+                            withContext(Dispatchers.IO) {
+                                repository.request { getLienzo() }
                             }
-                            Log.d("PizarraViewModel", "Not loading")
-                        }
-                        is ApiResult.Throws -> {
-                            "Throwed loading ${check.exception.message}"
+
+                        when (result) {
+                            is ApiResult.Error -> {
+                                Log.e("PizarraViewModel", "Error loading: ${result.message}")
+                            }
+                            is ApiResult.Success<*> -> {
+                                val responseBody = result.data as? ResponseBody
+                                responseBody?.let { body ->
+
+                                    try {
+                                        withContext(Dispatchers.IO) {
+                                            val bytes = body.bytes()
+
+                                            if (bytes.isNotEmpty()) {
+                                                val bitmap =
+                                                    BitmapFactory.decodeByteArray(
+                                                        bytes,
+                                                        0,
+                                                        bytes.size,
+                                                    )
+
+                                                if (bitmap != null) {
+                                                    withContext(Dispatchers.Main) {
+                                                        _bitmapState.value = bitmap
+                                                        lastLoaded = LocalDateTime.now()
+                                                        Log.d(
+                                                            "PizarraViewModel",
+                                                            "Image loaded successfully",
+                                                        )
+                                                    }
+                                                } else {
+                                                    Log.e(
+                                                        "PizarraViewModel",
+                                                        "Failed to decode bitmap",
+                                                    )
+                                                }
+                                            } else {
+                                                Log.e("PizarraViewModel", "Empty bytes array")
+                                            }
+                                        }
+                                    } catch (e: Exception) {
+                                        Log.e("PizarraViewModel", "Error processing image bytes", e)
+                                    }
+                                } ?: run {
+                                    Log.e("PizarraViewModel", "Response body is null")
+                                }
+                            }
+                            is ApiResult.Throws -> {
+                                Log.e("PizarraViewModel", "Throwed loading: ${result.exception.message}")
+                            }
                         }
                     }
-                } catch (e: Exception) {
-                    e.printStackTrace()
+                }
+                is ApiResult.Throws -> {
+                    Log.e("PizarraViewModel", "Throwed checking updates: ${check.exception.message}")
                 }
             }
-        }
-
-    private suspend fun executeLoading() {
-        val result = repository.request { getLienzo() }
-        when (result) {
-            is ApiResult.Error -> {
-                Log.d("PizarraViewModel", "Error loading ${result.message}")
-            }
-
-            is ApiResult.Success<*> -> {
-                val responseBody = result.data as? ResponseBody
-                responseBody?.let { body ->
-                    Log.d("PNG", "Content-Type: ${body.contentType()}")
-                    val bytes = body.bytes()
-                    Log.d("PNG", "Bytes recibidos: ${bytes.size}")
-
-                    if (bytes.isNotEmpty()) {
-                        _bitmapState.value =
-                            BitmapFactory.decodeByteArray(
-                                bytes,
-                                0,
-                                bytes.size,
-                            )
-                    }
-                }
-            }
-
-            is ApiResult.Throws -> {
-                Log.d(
-                    "PizarraViewModel",
-                    "Throwed loading ${result.exception.message}",
-                )
-            }
+        } catch (e: Exception) {
+            Log.e("PizarraViewModel", "Unexpected error in load function", e)
         }
     }
 

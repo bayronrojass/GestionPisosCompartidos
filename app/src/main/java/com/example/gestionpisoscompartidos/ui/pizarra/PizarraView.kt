@@ -39,10 +39,10 @@ class PizarraView
         private var lastPoint: Point? = null
         private var saveJob: Job? = null
         private val saveScope = CoroutineScope(Dispatchers.Main)
-
         private var loadJob: Job? = null
         private val loadScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-        private val paint =
+
+        private var paint =
             Paint().apply {
                 color = Color.BLACK
                 style = Paint.Style.STROKE
@@ -81,7 +81,7 @@ class PizarraView
             val x = event.x
             val y = event.y
 
-            paint.color =
+            val c =
                 when (model.color) {
                     1.toByte() -> Color.BLACK
                     2.toByte() -> Color.RED
@@ -91,12 +91,23 @@ class PizarraView
                     else -> Color.BLACK
                 }
 
+            paint =
+                Paint().apply {
+                    color = c
+                    style = Paint.Style.STROKE
+                    isAntiAlias = true
+                    strokeWidth = 10f
+                    strokeCap = Paint.Cap.ROUND
+                    strokeJoin = Paint.Join.ROUND
+                }
+
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     path.moveTo(x, y)
                     lastPoint = Point(x, y)
                     model.add(PointDeltaDTO(x, y, 10f, model.color))
                     performClick()
+                    return true
                 }
                 MotionEvent.ACTION_MOVE -> {
                     path.quadTo(lastPoint!!.x, lastPoint!!.y, (x + lastPoint!!.x) / 2, (y + lastPoint!!.y) / 2)
@@ -104,14 +115,16 @@ class PizarraView
                     lastPoint = Point(x, y)
                     model.add(PointDeltaDTO(x, y, 10f, model.color))
                     invalidate()
+                    return true
                 }
                 MotionEvent.ACTION_UP -> {
                     model.add(PointDeltaDTO(x, y, 0f, model.color))
                     lastPoint = null
                     save()
+                    return true
                 }
             }
-            return true
+            return false
         }
 
         override fun performClick(): Boolean {
@@ -134,7 +147,7 @@ class PizarraView
         }
 
         @RequiresApi(Build.VERSION_CODES.O)
-        private fun load() {
+        fun load() {
             loadJob?.cancel()
 
             loadJob =
