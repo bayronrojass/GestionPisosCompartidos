@@ -27,6 +27,7 @@ class PizarraViewModel : ViewModel() {
     private val repository = RemoteRepository(NetworkModule.retrofit.create(PizarraAPI::class.java))
     private val _bitmapState = MutableStateFlow<Bitmap?>(null)
     val bitmapState: StateFlow<Bitmap?> = _bitmapState.asStateFlow()
+    var color: Byte = 1
 
     @RequiresApi(Build.VERSION_CODES.O)
     val lastLoaded: LocalDateTime = LocalDateTime.MIN
@@ -68,8 +69,10 @@ class PizarraViewModel : ViewModel() {
                         }
                         is ApiResult.Success<*> -> {
                             if (check.data as Boolean) {
+                                Log.d("PizarraViewModel", "Loading")
                                 executeLoading()
                             }
+                            Log.d("PizarraViewModel", "Not loading")
                         }
                         is ApiResult.Throws -> {
                             "Throwed loading ${check.exception.message}"
@@ -113,5 +116,9 @@ class PizarraViewModel : ViewModel() {
                 )
             }
         }
+    }
+
+    fun onColorSelected(c: Byte) {
+        color = c
     }
 }

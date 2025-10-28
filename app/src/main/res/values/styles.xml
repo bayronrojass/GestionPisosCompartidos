@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Estilo base de tu app -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Tus customizaciones del tema -->
+    </style>
+
+    <!-- Añade este estilo -->
+    <style name="FlatButton" parent="Widget.AppCompat.Button.Borderless">
+        <item name="android:background">@drawable/button_border</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="android:elevation">0dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:minWidth">0dp</item>
+    </style>
+</resources>

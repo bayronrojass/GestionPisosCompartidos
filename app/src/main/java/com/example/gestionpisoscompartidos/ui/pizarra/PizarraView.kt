@@ -81,22 +81,32 @@ class PizarraView
             val x = event.x
             val y = event.y
 
+            paint.color =
+                when (model.color) {
+                    1.toByte() -> Color.BLACK
+                    2.toByte() -> Color.RED
+                    3.toByte() -> Color.GREEN
+                    4.toByte() -> Color.BLUE
+                    8.toByte() -> Color.WHITE
+                    else -> Color.BLACK
+                }
+
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     path.moveTo(x, y)
                     lastPoint = Point(x, y)
-                    model.add(PointDeltaDTO(x, y, 10f, 1))
+                    model.add(PointDeltaDTO(x, y, 10f, model.color))
                     performClick()
                 }
                 MotionEvent.ACTION_MOVE -> {
                     path.quadTo(lastPoint!!.x, lastPoint!!.y, (x + lastPoint!!.x) / 2, (y + lastPoint!!.y) / 2)
                     canvasBitmap.drawPath(path, paint)
                     lastPoint = Point(x, y)
-                    model.add(PointDeltaDTO(x, y, 10f, 1))
+                    model.add(PointDeltaDTO(x, y, 10f, model.color))
                     invalidate()
                 }
                 MotionEvent.ACTION_UP -> {
-                    model.add(PointDeltaDTO(x, y, 0f, 0))
+                    model.add(PointDeltaDTO(x, y, 0f, model.color))
                     lastPoint = null
                     save()
                 }
@@ -114,7 +124,7 @@ class PizarraView
 
             saveJob =
                 saveScope.launch {
-                    delay(3000L)
+                    delay(1000L)
                     performActualSave()
                 }
         }
@@ -131,6 +141,7 @@ class PizarraView
                 loadScope.launch {
                     while (isActive) {
                         try {
+                            Log.d("Load", "Cargando...")
                             model.load()
                             delay(3000L)
                         } catch (e: CancellationException) {
