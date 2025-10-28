@@ -81,25 +81,7 @@ class PizarraView
             val x = event.x
             val y = event.y
 
-            val c =
-                when (model.color) {
-                    1.toByte() -> Color.BLACK
-                    2.toByte() -> Color.RED
-                    3.toByte() -> Color.GREEN
-                    4.toByte() -> Color.BLUE
-                    8.toByte() -> Color.WHITE
-                    else -> Color.BLACK
-                }
-
-            paint =
-                Paint().apply {
-                    color = c
-                    style = Paint.Style.STROKE
-                    isAntiAlias = true
-                    strokeWidth = 10f
-                    strokeCap = Paint.Cap.ROUND
-                    strokeJoin = Paint.Join.ROUND
-                }
+            val paint = createPaint(model.color)
 
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
@@ -110,7 +92,12 @@ class PizarraView
                     return true
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    path.quadTo(lastPoint!!.x, lastPoint!!.y, (x + lastPoint!!.x) / 2, (y + lastPoint!!.y) / 2)
+                    path.quadTo(
+                        lastPoint!!.x,
+                        lastPoint!!.y,
+                        (x + lastPoint!!.x) / 2,
+                        (y + lastPoint!!.y) / 2,
+                    )
                     canvasBitmap.drawPath(path, paint)
                     lastPoint = Point(x, y)
                     model.add(PointDeltaDTO(x, y, 10f, model.color))
@@ -118,8 +105,10 @@ class PizarraView
                     return true
                 }
                 MotionEvent.ACTION_UP -> {
+                    canvasBitmap.drawPath(path, paint)
                     model.add(PointDeltaDTO(x, y, 0f, model.color))
                     lastPoint = null
+                    path.reset()
                     save()
                     return true
                 }
@@ -127,18 +116,42 @@ class PizarraView
             return false
         }
 
+        private fun createPaint(colorByte: Byte): Paint {
+            val c =
+                when (colorByte) {
+                    1.toByte() -> Color.BLACK
+                    2.toByte() -> Color.RED
+                    3.toByte() -> Color.GREEN
+                    4.toByte() -> Color.BLUE
+                    8.toByte() -> Color.WHITE
+                    else -> Color.BLACK
+                }
+
+            return Paint().apply {
+                color = c
+                style = Paint.Style.STROKE
+                isAntiAlias = true
+                strokeWidth = 10f
+                strokeCap = Paint.Cap.ROUND
+                strokeJoin = Paint.Join.ROUND
+            }
+        }
+
         override fun performClick(): Boolean {
             super.performClick()
             return true
         }
 
+        @RequiresApi(Build.VERSION_CODES.O)
         private fun save() {
             saveJob?.cancel()
+            loadJob?.cancel()
 
             saveJob =
                 saveScope.launch {
                     delay(1000L)
                     performActualSave()
+                    load()
                 }
         }
 
