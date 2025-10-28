@@ -1,0 +1,103 @@
+package com.example.gestionpisoscompartidos.ui.listas
+
+import android.os.Bundle
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Toast
+import androidx.core.view.isVisible
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
+import com.example.gestionpisoscompartidos.databinding.FragmentListasBinding
+
+class Listas : Fragment() {
+    private var _binding: FragmentListasBinding? = null
+    private val binding get() = _binding!!
+
+    private val args: ListasArgs by navArgs() // Para recibir casaId
+    private val viewModel: ListasViewModel by viewModels {
+        ListasViewModelFactory(args.casaId) // Pasa el casaId a la Factory
+    }
+    private lateinit var listasAdapter: ListasAdapter
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View {
+        _binding = FragmentListasBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
+        super.onViewCreated(view, savedInstanceState)
+        Log.d("ListaDeListasFragment", "Recibido casaId: ${args.casaId}") // Verifica ID
+
+        setupRecyclerView()
+        setupViewModelObservers()
+        setupListeners()
+    }
+
+    private fun setupRecyclerView() {
+        listasAdapter =
+            ListasAdapter(emptyList()) { listaSeleccionada ->
+                // Navegar a ItemFragment pasando el ID de la lista
+                Log.d("ListaDeListasFragment", "Navegando a ItemFragment con listaId: ${listaSeleccionada.id}")
+                val action = ListasDirections.actionListaDeListasFragmentToItemFragment(listaSeleccionada.id)
+                findNavController().navigate(action)
+            }
+        binding.recyclerViewListas.adapter = listasAdapter
+    }
+
+    private fun setupViewModelObservers() {
+        viewModel.listas.observe(viewLifecycleOwner) { listaListas ->
+            listasAdapter.updateData(listaListas)
+            Log.d("ListaDeListasFragment", "Datos del adaptador actualizados: ${listaListas.size} listas")
+        }
+
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            binding.progressBarListas.isVisible = isLoading
+            if (isLoading) { // Oculta otros elementos mientras carga
+                binding.recyclerViewListas.isVisible = false
+                binding.tvMensajeVacioListas.isVisible = false
+            }
+            Log.d("ListaDeListasFragment", "isLoading: $isLoading")
+        }
+
+        viewModel.error.observe(viewLifecycleOwner) { errorMsg ->
+            if (errorMsg != null) {
+                Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
+                Log.e("ListaDeListasFragment", "Error: $errorMsg")
+            }
+        }
+
+        viewModel.mostrarMensajeVacio.observe(viewLifecycleOwner) { mostrar ->
+            // Solo muestra/oculta si no está cargando
+            if (viewModel.isLoading.value == false) {
+                binding.tvMensajeVacioListas.isVisible = mostrar
+                binding.recyclerViewListas.isVisible = !mostrar
+                Log.d("ListaDeListasFragment", "Mostrar mensaje vacío: $mostrar")
+            }
+        }
+    }
+
+    private fun setupListeners() {
+        binding.fabCrearLista.setOnClickListener {
+            // TODO: Navegar a una futura pantalla CrearListaFragment
+            Toast.makeText(context, "TODO: Ir a crear lista", Toast.LENGTH_SHORT).show()
+            // val action = ListaDeListasFragmentDirections.actionListaDeListasFragmentToCrearListaFragment(args.casaId)
+            // findNavController().navigate(action)
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+}

@@ -44,10 +44,11 @@ class ListaCasas : Fragment() {
     private fun setupRecyclerView() {
         casasAdapter =
             CasasAdapter(emptyList()) { casaSeleccionada ->
-                // Acción al hacer clic en una casa (ej. navegar a detalles de la casa)
+                // Acción al hacer clic en una casa
                 Toast.makeText(context, "Has seleccionado: ${casaSeleccionada.nombre}", Toast.LENGTH_SHORT).show()
-                // val action = ListaCasasFragmentDirections.actionListaCasasFragmentToDetalleCasaFragment(casaSeleccionada.id)
-                // findNavController().navigate(action)
+                Log.d("ListaCasasFragment", "Navegando a listas de casaId: ${casaSeleccionada.id}")
+                val action = ListaCasasDirections.actionListaCasasFragmentToListaDeListasFragment(casaSeleccionada.id) // Pasa el ID
+                findNavController().navigate(action)
             }
         binding.recyclerViewCasas.adapter = casasAdapter
     }

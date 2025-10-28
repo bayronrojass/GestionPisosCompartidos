@@ -3,6 +3,7 @@ package com.example.gestionpisoscompartidos.data.remote
 import com.example.gestionpisoscompartidos.data.repository.APIs.DatabaseAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.LoginAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.CasaAPI
+import com.example.gestionpisoscompartidos.data.repository.APIs.ListaAPI
 import retrofit2.Retrofit
 import retrofit2.Retrofit.Builder
 import retrofit2.converter.gson.GsonConverterFactory
@@ -12,7 +13,7 @@ import retrofit2.converter.gson.GsonConverterFactory
  * y proporciona las instancias de los servicios API.
  */
 object NetworkModule {
-    private const val BASE_URL = "http://localhost:8080/"
+    private const val BASE_URL = "http://10.0.2.2:8080/api/"
 
     val retrofit: Retrofit by lazy {
         Builder()
@@ -35,5 +36,9 @@ object NetworkModule {
 
     val casaApiService: CasaAPI by lazy {
         retrofit.create(CasaAPI::class.java)
+    }
+
+    val listaApiService: ListaAPI by lazy {
+        retrofit.create(ListaAPI::class.java)
     }
 }

@@ -66,5 +66,31 @@
         <action
                 android:id="@+id/action_ListaCasasFragment_to_crearPisoFragment"
                 app:destination="@id/crearPisoFragment" />
+        <action
+                android:id="@+id/action_ListaCasasFragment_to_listaDeListasFragment"
+                app:destination="@id/listaDeListasFragment" />
+    </fragment>
+
+    <fragment
+            android:id="@+id/listaDeListasFragment"
+            android:name="com.example.gestionpisoscompartidos.ui.listas.Listas"
+            android:label="Listas"
+            tools:layout="@layout/fragment_listas">
+        <argument
+                android:name="casaId"
+                app:argType="long" />
+        <action
+                android:id="@+id/action_listaDeListasFragment_to_itemFragment"
+                app:destination="@id/itemFragment" />
+    </fragment>
+
+    <fragment
+            android:id="@+id/itemFragment"
+            android:name="com.example.gestionpisoscompartidos.ui.item.Item"
+            android:label="Lista de Compra"
+            tools:layout="@layout/fragment_item">
+        <argument
+                android:name="listaId"
+                app:argType="long" />
     </fragment>
 </navigation>
