@@ -29,7 +29,13 @@
             android:id="@+id/loginFragment"
             android:name="com.example.gestionpisoscompartidos.ui.login.Login"
             android:label="Login"
-            tools:layout="@layout/fragment_login" />
+            tools:layout="@layout/fragment_login" >
+        <action
+                android:id="@+id/action_loginFragment_to_ListaCasasFragment"
+                app:destination="@id/ListaCasasFragment"
+                app:popUpTo="@id/loginFragment"
+                app:popUpToInclusive="true"/>
+    </fragment>
 
     <fragment
             android:id="@+id/crearPisoFragment"
@@ -48,4 +54,17 @@
             android:name="com.example.gestionpisoscompartidos.ui.piso.gestionUsuarios.GestionUsuariosPiso"
             android:label="Gestión del Piso"
             tools:layout="@layout/fragment_gestion_usuarios_piso" />
+
+    <fragment
+            android:id="@+id/ListaCasasFragment"
+            android:name="com.example.gestionpisoscompartidos.ui.piso.listaPisos.ListaCasas"
+            android:label="MisPisos"
+            tools:layout="@layout/fragment_lista_casas">
+        <argument
+                android:name="casas"
+                app:argType="com.example.gestionpisoscompartidos.model.Casa[]" />
+        <action
+                android:id="@+id/action_ListaCasasFragment_to_crearPisoFragment"
+                app:destination="@id/crearPisoFragment" />
+    </fragment>
 </navigation>

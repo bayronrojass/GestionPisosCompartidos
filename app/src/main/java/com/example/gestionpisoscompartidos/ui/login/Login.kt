@@ -12,6 +12,7 @@ import com.example.gestionpisoscompartidos.data.repository.repositories.Reposito
 import com.example.gestionpisoscompartidos.databinding.FragmentLoginBinding
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.model.LoginResponse
+import androidx.navigation.fragment.findNavController
 
 /**
  * Fragmento de la pantalla de inicio de sesión.
@@ -108,6 +109,9 @@ class Login : Fragment() {
 
         // 1. Guardar el token de autenticación (SharedPreferences/DataStore)
         // SharedPreferencesManager.saveToken(response.authToken)
+        val casasArray = response.flats.toTypedArray()
+        val action = LoginDirections.actionLoginFragmentToListaCasasFragment(casasArray)
+        findNavController().navigate(action)
 
         // 2. Manejar la lista de pisos
         if (response.flats.isNotEmpty()) {
