@@ -20,14 +20,14 @@ class PostItView
     ) : View(context, attrs, defStyleAttr) {
         private var postItColor = Color.YELLOW
         private var topBarColor = Color.parseColor("#FFD700") // Dorado
-        private var borderColor = Color.BLACK
         private var closeButtonColor = Color.RED
 
+        private var canBeDragged = true
         private var isDragging = false
         private var lastTouchX = 0f
         private var lastTouchY = 0f
 
-        private val topBarHeight = 60f
+        val topBarHeight = 60f
         private val closeButtonSize = 60f
         private val closeButtonPadding = 5f
 
@@ -35,19 +35,14 @@ class PostItView
         private var isContentVisible = true
 
         private var postItBitmap: Bitmap? = null
+        private var originalX = 0f
+        private var originalY = 0f
+        private var originalWidth = 0
+        private var originalHeight = 0
         private var isExpanded = false
 
         var onExpand: ((PostItView) -> Unit)? = null
-        var onCollapse: ((PostItView, Bitmap?) -> Unit)? = null
-
-        val srcRect = postItBitmap?.let { Rect(0, 0, it.width, it.height) }
-        val dstRect =
-            Rect(
-                closeButtonPadding.toInt(),
-                topBarHeight.toInt() + closeButtonPadding.toInt(),
-                width - closeButtonPadding.toInt(),
-                height - closeButtonPadding.toInt(),
-            )
+        var onCollapse: ((PostItView) -> Unit)? = null
 
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         private val textPaint =
@@ -68,11 +63,11 @@ class PostItView
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     // Verificar si se toca la X de cerrar
-                    if (isInCloseButton(x, y)) {
+                    if (isInCloseButton(x, y) && canBeDragged) {
                         (parent as? ViewGroup)?.removeView(this)
                     }
                     // Verificar si se toca la barra superior
-                    else if (isInTopBar(x, y)) {
+                    else if (isInTopBar(x, y) && canBeDragged) {
                         lastTouchX = x
                         lastTouchY = y
                         isDragging = true
@@ -86,7 +81,7 @@ class PostItView
                     return true
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    if (isDragging) {
+                    if (isDragging && canBeDragged) {
                         val dx = x - lastTouchX
                         val dy = y - lastTouchY
 
@@ -103,7 +98,7 @@ class PostItView
 
                     if (isInTopBar(x, y)) {
                         val currentTime = System.currentTimeMillis()
-                        if (currentTime - lastTapTime < 1000) {
+                        if (currentTime - lastTapTime < 1000 && canBeDragged) {
                             isContentVisible = !isContentVisible
                             lastTapTime = 0
                             invalidate()
@@ -135,33 +130,34 @@ class PostItView
 
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)
+
             if (isContentVisible) {
                 // Dibujar cuerpo principal
                 paint.color = postItColor
                 canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
 
                 postItBitmap?.let { bitmap ->
+                    // CALCULAR srcRect y dstRect EN TIEMPO REAL
+                    val srcRect = Rect(0, 0, bitmap.width, bitmap.height)
+
+                    // Calcular dstRect considerando la barra superior y padding
+                    val dstRect =
+                        Rect(
+                            closeButtonPadding.toInt(),
+                            (topBarHeight + closeButtonPadding).toInt(),
+                            width - closeButtonPadding.toInt(),
+                            height - closeButtonPadding.toInt(),
+                        )
+
                     canvas.drawBitmap(bitmap, srcRect, dstRect, null)
                 }
 
                 // Dibujar barra superior
                 paint.color = topBarColor
                 canvas.drawRect(0f, 0f, width.toFloat(), topBarHeight, paint)
-
-                // Dibujar borde
-                paint.color = borderColor
-                paint.style = Paint.Style.STROKE
-                paint.strokeWidth = 3f
-                canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
             } else {
                 // Dibujar barra superior
                 paint.color = topBarColor
-                canvas.drawRect(0f, 0f, width.toFloat(), topBarHeight, paint)
-
-                // Dibujar borde
-                paint.color = borderColor
-                paint.style = Paint.Style.STROKE
-                paint.strokeWidth = 3f
                 canvas.drawRect(0f, 0f, width.toFloat(), topBarHeight, paint)
             }
 
@@ -201,21 +197,36 @@ class PostItView
         }
 
         fun expand() {
+            if (isExpanded) return
+
+            canBeDragged = false
+            originalX = x
+            originalY = y
+            originalWidth = width
+            originalHeight = height
+
             isExpanded = true
-            visibility = GONE
+            isDragging = false
+
             onExpand?.invoke(this)
         }
 
-        fun collapse(bitmap: Bitmap) {
+        fun collapse() {
+            if (!isExpanded) return
+
+            canBeDragged = true
             isExpanded = false
-            postItBitmap = bitmap
-            visibility = View.VISIBLE
-            invalidate()
-            onCollapse?.invoke(this, bitmap)
+
+            onCollapse?.invoke(this)
         }
+
+        fun getOriginalPosition(): Pair<Float, Float> = Pair(originalX, originalY)
+
+        fun getOriginalSize(): Pair<Int, Int> = Pair(originalWidth, originalHeight)
 
         fun setPreview(bitmap: Bitmap) {
             postItBitmap = bitmap
             invalidate()
+            requestLayout()
         }
     }

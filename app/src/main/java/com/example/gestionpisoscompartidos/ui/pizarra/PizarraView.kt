@@ -77,6 +77,7 @@ class PizarraView
             canvas.drawBitmap(currentBitmap, 0f, 0f, null)
         }
 
+        @RequiresApi(Build.VERSION_CODES.O)
         override fun onTouchEvent(event: MotionEvent): Boolean {
             val x = event.x
             val y = event.y
@@ -189,4 +190,6 @@ class PizarraView
         fun setModel(newModel: PizarraViewModel) {
             model = newModel
         }
+
+        fun captureBitmap(): Bitmap = currentBitmap
     }
