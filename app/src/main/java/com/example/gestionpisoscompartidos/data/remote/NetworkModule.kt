@@ -3,6 +3,7 @@ package com.example.gestionpisoscompartidos.data.remote
 import com.example.gestionpisoscompartidos.data.repository.APIs.DatabaseAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.LoginAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.CasaAPI
+import com.example.gestionpisoscompartidos.data.repository.APIs.ItemAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.ListaAPI
 import retrofit2.Retrofit
 import retrofit2.Retrofit.Builder
@@ -40,5 +41,9 @@ object NetworkModule {
 
     val listaApiService: ListaAPI by lazy {
         retrofit.create(ListaAPI::class.java)
+    }
+
+    val itemApiService: ItemAPI by lazy {
+        retrofit.create(ItemAPI::class.java)
     }
 }
