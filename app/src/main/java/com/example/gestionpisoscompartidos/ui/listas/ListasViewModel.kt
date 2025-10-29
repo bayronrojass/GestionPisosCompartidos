@@ -20,8 +20,8 @@ class ListasViewModel(
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
-    private val _mostrarMensajeVacio = MutableLiveData<Boolean>()
-    val mostrarMensajeVacio: LiveData<Boolean> = _mostrarMensajeVacio
+    // private val _mostrarMensajeVacio = MutableLiveData<Boolean>()
+    // val mostrarMensajeVacio: LiveData<Boolean> = _mostrarMensajeVacio
 
     init {
         cargarListas()
@@ -34,11 +34,11 @@ class ListasViewModel(
             try {
                 val resultado = repository.getListasByCasaId(casaId)
                 _listas.value = resultado
-                _mostrarMensajeVacio.value = resultado.isEmpty()
+                // _mostrarMensajeVacio.value = resultado.isEmpty()
             } catch (e: Exception) {
                 _error.value = e.message ?: "Error cargando listas"
                 _listas.value = emptyList()
-                _mostrarMensajeVacio.value = true //
+                // _mostrarMensajeVacio.value = true
             } finally {
                 _isLoading.value = false
             }

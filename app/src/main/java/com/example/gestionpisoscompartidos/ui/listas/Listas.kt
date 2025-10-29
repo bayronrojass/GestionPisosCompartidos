@@ -48,7 +48,7 @@ class Listas : Fragment() {
         listasAdapter =
             ListasAdapter(emptyList()) { listaSeleccionada ->
                 // Navegar a ItemFragment pasando el ID de la lista
-                Log.d("ListaDeListasFragment", "Navegando a ItemFragment con listaId: ${listaSeleccionada.id}")
+                Log.d("ListasFragment", "Navegando a ItemFragment con listaId: ${listaSeleccionada.id}")
                 val action = ListasDirections.actionListaDeListasFragmentToItemFragment(listaSeleccionada.id)
                 findNavController().navigate(action)
             }
@@ -56,35 +56,56 @@ class Listas : Fragment() {
     }
 
     private fun setupViewModelObservers() {
+        // Observa la lista de casas
         viewModel.listas.observe(viewLifecycleOwner) { listaListas ->
             listasAdapter.updateData(listaListas)
             Log.d("ListaDeListasFragment", "Datos del adaptador actualizados: ${listaListas.size} listas")
+
+            // Si NO estamos cargando, actualiza la visibilidad
+            if (viewModel.isLoading.value == false) {
+                binding.recyclerViewListas.isVisible = listaListas.isNotEmpty()
+                binding.tvMensajeVacioListas.isVisible = listaListas.isEmpty()
+            }
         }
 
+        // Observa el estado de carga
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             binding.progressBarListas.isVisible = isLoading
-            if (isLoading) { // Oculta otros elementos mientras carga
+
+            if (isLoading) {
+                // Oculta todo lo demás mientras carga
                 binding.recyclerViewListas.isVisible = false
                 binding.tvMensajeVacioListas.isVisible = false
+            } else {
+                // CUANDO TERMINA de cargar, decidimos qué mostrar
+                // Re-evaluamos la lista que (probablemente) ya tenemos
+                val listas = viewModel.listas.value
+                if (listas != null) {
+                    binding.recyclerViewListas.isVisible = listas.isNotEmpty()
+                    binding.tvMensajeVacioListas.isVisible = listas.isEmpty()
+                } else {
+                    // Si las listas son nulas (ej. error antes de cargar)
+                    binding.recyclerViewListas.isVisible = false
+                    binding.tvMensajeVacioListas.isVisible = true
+                }
             }
             Log.d("ListaDeListasFragment", "isLoading: $isLoading")
         }
 
+        // Observa los errores
         viewModel.error.observe(viewLifecycleOwner) { errorMsg ->
             if (errorMsg != null) {
                 Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
                 Log.e("ListaDeListasFragment", "Error: $errorMsg")
+
+                // Si hay un error, fuerza la vista de mensaje vacío
+                binding.progressBarListas.isVisible = false
+                binding.recyclerViewListas.isVisible = false
+                binding.tvMensajeVacioListas.isVisible = true
             }
         }
 
-        viewModel.mostrarMensajeVacio.observe(viewLifecycleOwner) { mostrar ->
-            // Solo muestra/oculta si no está cargando
-            if (viewModel.isLoading.value == false) {
-                binding.tvMensajeVacioListas.isVisible = mostrar
-                binding.recyclerViewListas.isVisible = !mostrar
-                Log.d("ListaDeListasFragment", "Mostrar mensaje vacío: $mostrar")
-            }
-        }
+        // El observador 'mostrarMensajeVacio' ya no existe
     }
 
     private fun setupListeners() {
