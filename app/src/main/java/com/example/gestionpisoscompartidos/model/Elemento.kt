@@ -8,5 +8,5 @@ data class Elemento(
     val id: Long?,
     var nombre: String,
     var descripcion: String?,
-    var completado: Boolean
+    var completado: Boolean,
 ) : Parcelable

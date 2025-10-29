@@ -3,8 +3,9 @@ package com.example.gestionpisoscompartidos.data.repository.repositories
 import com.example.gestionpisoscompartidos.data.repository.APIs.ItemAPI
 import com.example.gestionpisoscompartidos.model.Elemento
 
-class RepositoryItem(private val apiService: ItemAPI) {
-
+class RepositoryItem(
+    private val apiService: ItemAPI,
+) {
     suspend fun getElementosByListaId(listaId: Long): List<Elemento> {
         val response = apiService.getElementosByListaId(listaId)
         if (response.isSuccessful) {

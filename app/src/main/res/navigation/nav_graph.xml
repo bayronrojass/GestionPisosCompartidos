@@ -79,6 +79,9 @@
         <argument
                 android:name="casaId"
                 app:argType="long" />
+        <argument
+                android:name="casaNombre"
+                app:argType="string" />
         <action
                 android:id="@+id/action_listaDeListasFragment_to_itemFragment"
                 app:destination="@id/itemFragment" />
@@ -92,5 +95,11 @@
         <argument
                 android:name="listaId"
                 app:argType="long" />
+        <argument
+                android:name="listaNombre"
+                app:argType="string" />
+        <argument
+                android:name="casaNombre"
+                app:argType="string" />
     </fragment>
 </navigation>

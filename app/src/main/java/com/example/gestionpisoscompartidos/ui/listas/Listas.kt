@@ -49,7 +49,12 @@ class Listas : Fragment() {
             ListasAdapter(emptyList()) { listaSeleccionada ->
                 // Navegar a ItemFragment pasando el ID de la lista
                 Log.d("ListasFragment", "Navegando a ItemFragment con listaId: ${listaSeleccionada.id}")
-                val action = ListasDirections.actionListaDeListasFragmentToItemFragment(listaSeleccionada.id)
+                val action =
+                    ListasDirections.actionListaDeListasFragmentToItemFragment(
+                        listaSeleccionada.id,
+                        listaSeleccionada.nombre,
+                        args.casaNombre,
+                    )
                 findNavController().navigate(action)
             }
         binding.recyclerViewListas.adapter = listasAdapter
