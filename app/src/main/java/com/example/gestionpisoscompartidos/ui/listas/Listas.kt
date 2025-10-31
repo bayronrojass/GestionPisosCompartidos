@@ -12,6 +12,9 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.gestionpisoscompartidos.databinding.FragmentListasBinding
+import android.app.AlertDialog
+import android.widget.EditText
+import android.widget.LinearLayout
 
 class Listas : Fragment() {
     private var _binding: FragmentListasBinding? = null
@@ -115,11 +118,54 @@ class Listas : Fragment() {
 
     private fun setupListeners() {
         binding.fabCrearLista.setOnClickListener {
-            // TODO: Navegar a una futura pantalla CrearListaFragment
-            Toast.makeText(context, "TODO: Ir a crear lista", Toast.LENGTH_SHORT).show()
-            // val action = ListaDeListasFragmentDirections.actionListaDeListasFragmentToCrearListaFragment(args.casaId)
-            // findNavController().navigate(action)
+            mostrarDialogoCrearLista()
         }
+    }
+
+    private fun mostrarDialogoCrearLista() {
+        val context = requireContext()
+
+        // Layout para el diálogo
+        val linearLayout =
+            LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(48, 48, 48, 48)
+            }
+
+        // Campo para el nombre
+        val nombreInput =
+            EditText(context).apply {
+                hint = "Nombre de la lista"
+                maxLines = 1
+            }
+
+        // Campo para la descripción
+        val descripcionInput =
+            EditText(context).apply {
+                hint = "Descripción (opcional)"
+                maxLines = 3
+            }
+
+        linearLayout.addView(nombreInput)
+        linearLayout.addView(descripcionInput)
+
+        AlertDialog
+            .Builder(context)
+            .setTitle("Crear Nueva Lista")
+            .setView(linearLayout)
+            .setPositiveButton("Crear") { dialog, _ ->
+                val nombre = nombreInput.text.toString()
+                val descripcion = descripcionInput.text.toString().ifBlank { null } // null si está vacío
+
+                if (nombre.isNotBlank()) {
+                    viewModel.crearLista(nombre, descripcion)
+                } else {
+                    Toast.makeText(context, "El nombre no puede estar vacío", Toast.LENGTH_SHORT).show()
+                }
+                dialog.dismiss()
+            }.setNegativeButton("Cancelar") { dialog, _ ->
+                dialog.cancel()
+            }.show()
     }
 
     override fun onDestroyView() {

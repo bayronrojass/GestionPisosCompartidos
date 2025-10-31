@@ -4,6 +4,7 @@ import androidx.lifecycle.*
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryLista
 import com.example.gestionpisoscompartidos.model.Lista
+import com.example.gestionpisoscompartidos.model.ListaRequest
 import kotlinx.coroutines.launch
 
 class ListasViewModel(
@@ -39,6 +40,30 @@ class ListasViewModel(
                 _error.value = e.message ?: "Error cargando listas"
                 _listas.value = emptyList()
                 // _mostrarMensajeVacio.value = true
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun crearLista(
+        nombre: String,
+        descripcion: String?,
+    ) {
+        _isLoading.value = true
+        _error.value = null
+        viewModelScope.launch {
+            try {
+                val request = ListaRequest(nombre, descripcion)
+                val nuevaLista = repository.crearListaEnCasa(casaId, request)
+
+                // Añade la nueva lista a la lista existente y notifica a la UI
+                val listasActuales = _listas.value ?: emptyList()
+                _listas.value = listasActuales + nuevaLista
+                // Opcionalmente, recarga todo desde el servidor
+                // cargarListas()
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Error al crear la lista"
             } finally {
                 _isLoading.value = false
             }
