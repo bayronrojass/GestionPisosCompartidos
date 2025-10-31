@@ -63,6 +63,15 @@ class Item : Fragment() {
                     // TODO: Llamar a viewModel.deleteItem(item)
                     Toast.makeText(context, "TODO: Borrar ${item.nombre}", Toast.LENGTH_SHORT).show()
                 },
+                onItemClick = { item ->
+                    // Mostrar diálogo con detalles
+                    AlertDialog
+                        .Builder(requireContext())
+                        .setTitle(item.nombre)
+                        .setMessage(item.descripcion ?: "Sin descripción.")
+                        .setPositiveButton("Cerrar", null)
+                        .show()
+                },
             )
         binding.recyclerViewItems.adapter = itemsAdapter // Usa el ID correcto del RecyclerView
     }
