@@ -62,11 +62,44 @@ class Login : Fragment() {
     }
 
     private fun setupListeners() {
-        // ... (tu código de listeners está bien)
+        binding.btnIniciar.setOnClickListener {
+            val email = binding.etUsuario.text.toString()
+            val password = binding.etContrasena.text.toString()
+            viewModel.login(email, password)
+        }
+
+        // Listener para el botón de registro
+        binding.tvRegistrate.setOnClickListener {
+            // TODO: Navegar a la pantalla de registro
+            Toast.makeText(context, "Ir a Registro", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun setupObservers() {
-        // ... (tu código de observers está bien)
+        // Observar el estado de carga
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            // Muestra/oculta un ProgressBar, si lo tienes en tu layout
+            binding.btnIniciar.isEnabled = !isLoading
+            // Puedes añadir un ProgressBar en el layout y controlarlo aquí:
+            // binding.progressBar.isVisible = isLoading
+        }
+
+        // Observar los errores
+        viewModel.error.observe(viewLifecycleOwner) { errorMessage ->
+            if (errorMessage != null) {
+                Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+                // Limpiar el error si es necesario
+                // viewModel.clearError()
+            }
+        }
+
+        // Observar el resultado del login
+        viewModel.loginResult.observe(viewLifecycleOwner) { response ->
+            if (response != null) {
+                handleLoginSuccess(response)
+                viewModel.clearLoginResult() // Limpiar el LiveData tras su uso
+            }
+        }
     }
 
     /**

@@ -6,7 +6,7 @@ import com.example.gestionpisoscompartidos.data.SessionManager3
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryInvitacion
 import com.example.gestionpisoscompartidos.model.InvitacionRequest
-import  com.example.gestionpisoscompartidos.model.Usuario
+import com.example.gestionpisoscompartidos.model.Usuario
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -53,7 +53,7 @@ class GestionUsuariosPisoViewModel(
                 if (!pisoDetailsResponse.isSuccessful) throw Exception("Error al cargar piso")
                 val usuariosDelPiso = pisoDetailsResponse.body()!!.miembros
                 val adminIds = pisoDetailsResponse.body()!!.administradores.map { it.id }
-                */
+                 */
 
                 // --- INICIO DE DATOS DE EJEMPLO (Usando el ID real) ---
 
@@ -65,8 +65,6 @@ class GestionUsuariosPisoViewModel(
                         Usuario(3L, "Paula (Ejemplo)", "paula@mail.com"),
                     )
                 // --- FIN DE DATOS DE EJEMPLO ---
-
-
 
                 val listaMiembrosUI =
                     usuariosDelPiso.map { usuario ->
