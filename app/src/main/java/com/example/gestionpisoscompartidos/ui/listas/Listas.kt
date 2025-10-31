@@ -49,17 +49,31 @@ class Listas : Fragment() {
 
     private fun setupRecyclerView() {
         listasAdapter =
-            ListasAdapter(emptyList()) { listaSeleccionada ->
-                // Navegar a ItemFragment pasando el ID de la lista
-                Log.d("ListasFragment", "Navegando a ItemFragment con listaId: ${listaSeleccionada.id}")
-                val action =
-                    ListasDirections.actionListaDeListasFragmentToItemFragment(
-                        listaSeleccionada.id,
-                        listaSeleccionada.nombre,
-                        args.casaNombre,
-                    )
-                findNavController().navigate(action)
-            }
+            ListasAdapter(
+                emptyList(),
+                onItemClick = { listaSeleccionada ->
+                    // Navegar a ItemFragment pasando el ID de la lista
+                    Log.d("ListasFragment", "Navegando a ItemFragment con listaId: ${listaSeleccionada.id}")
+                    val action =
+                        ListasDirections.actionListaDeListasFragmentToItemFragment(
+                            listaSeleccionada.id,
+                            listaSeleccionada.nombre,
+                            args.casaNombre,
+                        )
+                    findNavController().navigate(action)
+                },
+                onBorrarClick = { listaParaBorrar ->
+                    // Mostrar diálogo de confirmación
+                    AlertDialog
+                        .Builder(requireContext())
+                        .setTitle("Confirmar Borrado")
+                        .setMessage("¿Estás seguro de que quieres borrar la lista '${listaParaBorrar.nombre}'?")
+                        .setPositiveButton("Borrar") { _, _ ->
+                            viewModel.borrarLista(listaParaBorrar)
+                        }.setNegativeButton("Cancelar", null)
+                        .show()
+                },
+            )
         binding.recyclerViewListas.adapter = listasAdapter
     }
 

@@ -29,4 +29,13 @@ class RepositoryLista(
             throw Exception("Error al crear lista (${response.code()}): $errorBody")
         }
     }
+
+    suspend fun borrarLista(listaId: Long) {
+        val response = apiService.borrarLista(listaId)
+        if (!response.isSuccessful) {
+            val errorBody = response.errorBody()?.string() ?: "Error desconocido"
+            throw Exception("Error al borrar lista (${response.code()}): $errorBody")
+        }
+        // No devuelve nada si es exitoso (204 No Content)
+    }
 }

@@ -4,6 +4,7 @@ import com.example.gestionpisoscompartidos.model.Lista
 import com.example.gestionpisoscompartidos.model.ListaRequest
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -19,4 +20,9 @@ interface ListaAPI {
         @Path("casaId") casaId: Long,
         @Body nuevaLista: ListaRequest,
     ): Response<Lista> // Devuelve la lista creada (con ID)
+
+    @DELETE("listas/{listaId}")
+    suspend fun borrarLista(
+        @Path("listaId") listaId: Long,
+    ): Response<Void>
 }

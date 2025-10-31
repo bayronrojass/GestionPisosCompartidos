@@ -9,6 +9,7 @@ import com.example.gestionpisoscompartidos.model.Lista
 class ListasAdapter(
     private var listas: List<Lista>,
     private val onItemClick: (Lista) -> Unit,
+    private val onBorrarClick: (Lista) -> Unit,
 ) : RecyclerView.Adapter<ListasAdapter.ListaViewHolder>() {
     override fun onCreateViewHolder(
         parent: ViewGroup,
@@ -39,8 +40,11 @@ class ListasAdapter(
             binding.tvNombreLista.text = lista.nombre
             binding.tvDescripcionLista.text = lista.descripcion ?: ""
 
-            binding.root.setOnClickListener {
+            binding.itemRoot.setOnClickListener {
                 onItemClick(lista)
+            }
+            binding.btnBorrarLista.setOnClickListener {
+                onBorrarClick(lista)
             }
         }
     }

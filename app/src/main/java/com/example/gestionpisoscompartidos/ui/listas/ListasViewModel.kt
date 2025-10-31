@@ -69,4 +69,23 @@ class ListasViewModel(
             }
         }
     }
+
+    fun borrarLista(lista: Lista) {
+        _isLoading.value = true
+        _error.value = null
+        viewModelScope.launch {
+            try {
+                repository.borrarLista(lista.id)
+
+                // Elimina la lista de la UI localmente
+                val listasActuales = _listas.value?.toMutableList() ?: mutableListOf()
+                listasActuales.remove(lista)
+                _listas.value = listasActuales
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Error al borrar la lista"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
 }
