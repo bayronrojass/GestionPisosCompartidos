@@ -29,4 +29,25 @@ class RepositoryItem(
             throw Exception("Error al crear elemento (${response.code()}): $errorBody")
         }
     }
+
+    suspend fun actualizarElemento(
+        elementoId: Long,
+        request: ElementoRequest,
+    ): Elemento {
+        val response = apiService.actualizarElemento(elementoId, request)
+        if (response.isSuccessful) {
+            return response.body() ?: throw Exception("Respuesta de actualización vacía")
+        } else {
+            val errorBody = response.errorBody()?.string() ?: "Error desconocido"
+            throw Exception("Error al actualizar elemento (${response.code()}): $errorBody")
+        }
+    }
+
+    suspend fun borrarElemento(elementoId: Long) {
+        val response = apiService.borrarElemento(elementoId)
+        if (!response.isSuccessful) {
+            val errorBody = response.errorBody()?.string() ?: "Error desconocido"
+            throw Exception("Error al borrar elemento (${response.code()}): $errorBody")
+        }
+    }
 }
