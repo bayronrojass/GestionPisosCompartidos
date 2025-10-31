@@ -13,6 +13,8 @@ import com.example.gestionpisoscompartidos.databinding.FragmentLoginBinding
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.model.LoginResponse
 import androidx.navigation.fragment.findNavController
+// 1. IMPORTA TU SESSION MANAGER
+import com.example.gestionpisoscompartidos.data.SessionManager
 
 /**
  * Fragmento de la pantalla de inicio de sesión.
@@ -22,23 +24,23 @@ class Login : Fragment() {
         fun newInstance() = Login()
     }
 
-    // Usar View Binding para acceder a los elementos del layout
     private var _binding: FragmentLoginBinding? = null
     private val binding get() = _binding!!
 
-    // Inicializar el ViewModel (asumiendo que tienes una ViewModelFactory
-    // o un sistema de inyección como Hilt/Koin configurado).
-    // Si no usas DI, tendrás que inicializar el repositorio y el ViewModel manualmente.
-    // Ejemplo manual (simplificado, no recomendado en apps grandes):
+    private lateinit var sessionManager: SessionManager
+
+    // Inicialización del ViewModel (tu código está bien)
     private val viewModel: LoginViewModel by viewModels {
-        // 1. Obtener la API del módulo de red
         val apiService = NetworkModule.loginApiService
-
-        // 2. Crear el Repositorio con la API
         val repository = RepositoryLogin(apiService)
-
-        // 3. Devolver la fábrica con el Repositorio
         LoginViewModelFactory(repository)
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Usamos applicationContext para que sea seguro
+        sessionManager = SessionManager(requireContext().applicationContext)
     }
 
     override fun onCreateView(
@@ -55,50 +57,16 @@ class Login : Fragment() {
         savedInstanceState: Bundle?,
     ) {
         super.onViewCreated(view, savedInstanceState)
-
         setupListeners()
         setupObservers()
     }
 
     private fun setupListeners() {
-        binding.btnIniciar.setOnClickListener {
-            val email = binding.etUsuario.text.toString()
-            val password = binding.etContrasena.text.toString()
-            viewModel.login(email, password)
-        }
-
-        // Listener para el botón de registro
-        binding.tvRegistrate.setOnClickListener {
-            // TODO: Navegar a la pantalla de registro
-            Toast.makeText(context, "Ir a Registro", Toast.LENGTH_SHORT).show()
-        }
+        // ... (tu código de listeners está bien)
     }
 
     private fun setupObservers() {
-        // Observar el estado de carga
-        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            // Muestra/oculta un ProgressBar, si lo tienes en tu layout
-            binding.btnIniciar.isEnabled = !isLoading
-            // Puedes añadir un ProgressBar en el layout y controlarlo aquí:
-            // binding.progressBar.isVisible = isLoading
-        }
-
-        // Observar los errores
-        viewModel.error.observe(viewLifecycleOwner) { errorMessage ->
-            if (errorMessage != null) {
-                Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
-                // Limpiar el error si es necesario
-                // viewModel.clearError()
-            }
-        }
-
-        // Observar el resultado del login
-        viewModel.loginResult.observe(viewLifecycleOwner) { response ->
-            if (response != null) {
-                handleLoginSuccess(response)
-                viewModel.clearLoginResult() // Limpiar el LiveData tras su uso
-            }
-        }
+        // ... (tu código de observers está bien)
     }
 
     /**
@@ -107,29 +75,30 @@ class Login : Fragment() {
     private fun handleLoginSuccess(response: LoginResponse) {
         Toast.makeText(context, "¡Bienvenido, ${response.user.nombre}!", Toast.LENGTH_SHORT).show()
 
-        // 1. Guardar el token de autenticación (SharedPreferences/DataStore)
-        // SharedPreferencesManager.saveToken(response.authToken)
-        val casasArray = response.flats.toTypedArray()
-        val action = LoginDirections.actionLoginFragmentToListaCasasFragment(casasArray)
-        findNavController().navigate(action)
+       sessionManager.saveAuthData(
+            token = response.authToken,
+            userId = response.user.id,
+            email = response.user.correo
+        )
 
-        // 2. Manejar la lista de pisos
+        // 5. Ahora, maneja la navegación
         if (response.flats.isNotEmpty()) {
-            Toast.makeText(context, "Pisos encontrados: ${response.flats.size}", Toast.LENGTH_LONG).show()
-            response.flats.forEach { piso ->
-                Log.d("LoginSuccess", "ID de Piso/Casa recibido: ${piso.id}") // Verifica el ID en Logcat
-            }
-            // TODO: Navegar a una pantalla de selección de piso
-            // O si solo tiene uno, seleccionarlo automáticamente e iniciar el servicio MQTT
-            // startMqttService(response.flats.first().id)
+            // El usuario tiene pisos, vamos a la lista de selección
+            Log.d("LoginSuccess", "Pisos encontrados: ${response.flats.size}")
+
+            val casasArray = response.flats.toTypedArray()
+            val action = LoginDirections.actionLoginFragmentToListaCasasFragment(casasArray)
+            findNavController().navigate(action)
+
         } else {
+            // El usuario no tiene pisos, vamos a la pantalla de "Crear o Unirse"
             Log.d("LoginSuccess", "La lista 'flats' está vacía.")
             Toast.makeText(context, "No tienes pisos asignados.", Toast.LENGTH_LONG).show()
-            // TODO: Navegar a una pantalla para crear/unirse a un piso
-        }
 
-        // TODO: Navegar a la pantalla principal (lista de tareas)
-        // findNavController().navigate(R.id.action_loginFragment_to_tareasFragment)
+            // TODO: Cambia esto por la navegación real a tu pantalla de "Crear/Unirse"
+            // val action = LoginDirections.actionLoginFragmentToUnirsePisoFragment()
+            // findNavController().navigate(action)
+        }
     }
 
     override fun onDestroyView() {

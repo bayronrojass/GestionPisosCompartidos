@@ -5,6 +5,7 @@ import com.example.gestionpisoscompartidos.data.repository.APIs.LoginAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.CasaAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.ItemAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.ListaAPI
+import com.example.gestionpisoscompartidos.data.repository.APIs.InvitacionAPI
 import retrofit2.Retrofit
 import retrofit2.Retrofit.Builder
 import retrofit2.converter.gson.GsonConverterFactory
@@ -37,6 +38,10 @@ object NetworkModule {
 
     val casaApiService: CasaAPI by lazy {
         retrofit.create(CasaAPI::class.java)
+    }
+
+    val invitacionApiService: InvitacionAPI by lazy {
+        retrofit.create(InvitacionAPI::class.java)
     }
 
     val listaApiService: ListaAPI by lazy {
