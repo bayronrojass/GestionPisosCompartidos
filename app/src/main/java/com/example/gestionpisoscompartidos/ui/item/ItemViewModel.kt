@@ -4,6 +4,7 @@ import androidx.lifecycle.*
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryItem
 import com.example.gestionpisoscompartidos.model.Elemento
+import com.example.gestionpisoscompartidos.model.ElementoRequest
 import kotlinx.coroutines.launch
 
 class ItemViewModel(
@@ -39,8 +40,29 @@ class ItemViewModel(
         }
     }
 
+    fun crearElemento(
+        nombre: String,
+        descripcion: String?,
+    ) {
+        _isLoading.value = true
+        _error.value = null
+        viewModelScope.launch {
+            try {
+                val request = ElementoRequest(nombre, descripcion, false)
+                val nuevoElemento = repository.crearElementoEnLista(listaId, request)
+
+                // Añade el nuevo elemento a la lista local
+                val itemsActuales = _items.value ?: emptyList()
+                _items.value = itemsActuales + nuevoElemento
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Error al crear el item"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
     // Aquí añadir funciones para:
-    // fun addItem(nombre: String, descripcion: String?) { ... }
     // fun toggleItemCompletado(item: Elemento) { ... }
     // fun deleteItem(item: Elemento) { ... }
 }

@@ -9,8 +9,11 @@ import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.navigation.fragment.navArgs // Importa navArgs
-import com.example.gestionpisoscompartidos.databinding.FragmentItemBinding // Importa el binding
+import androidx.navigation.fragment.navArgs
+import com.example.gestionpisoscompartidos.databinding.FragmentItemBinding
+import android.app.AlertDialog
+import android.widget.EditText
+import android.widget.LinearLayout
 
 class Item : Fragment() {
     private var _binding: FragmentItemBinding? = null
@@ -102,11 +105,51 @@ class Item : Fragment() {
 
     private fun setupListeners() {
         binding.fabAdd.setOnClickListener {
-            // TODO: Mostrar diálogo o navegar a pantalla para añadir item
-            Toast.makeText(context, "TODO: Añadir item", Toast.LENGTH_SHORT).show()
-            // Por ejemplo, mostrar un AlertDialog con un EditText
-            // o navegar a un AddItemFragment
+            mostrarDialogoCrearItem()
         }
+    }
+
+    private fun mostrarDialogoCrearItem() {
+        val context = requireContext()
+
+        val linearLayout =
+            LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(48, 48, 48, 48)
+            }
+
+        val nombreInput =
+            EditText(context).apply {
+                hint = "Nombre del item"
+                maxLines = 1
+            }
+
+        val descripcionInput =
+            EditText(context).apply {
+                hint = "Descripción (opcional)"
+                maxLines = 3
+            }
+
+        linearLayout.addView(nombreInput)
+        linearLayout.addView(descripcionInput)
+
+        AlertDialog
+            .Builder(context)
+            .setTitle("Añadir Nuevo Item")
+            .setView(linearLayout)
+            .setPositiveButton("Añadir") { dialog, _ ->
+                val nombre = nombreInput.text.toString()
+                val descripcion = descripcionInput.text.toString().ifBlank { null }
+
+                if (nombre.isNotBlank()) {
+                    viewModel.crearElemento(nombre, descripcion)
+                } else {
+                    Toast.makeText(context, "El nombre no puede estar vacío", Toast.LENGTH_SHORT).show()
+                }
+                dialog.dismiss()
+            }.setNegativeButton("Cancelar") { dialog, _ ->
+                dialog.cancel()
+            }.show()
     }
 
     override fun onDestroyView() {
