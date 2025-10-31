@@ -16,7 +16,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionpisoscompartidos.R
-import com.example.gestionpisoscompartidos.data.SessionManager
+import com.example.gestionpisoscompartidos.data.SessionManager3
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryInvitacion
@@ -24,7 +24,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
 
 class GestionUsuariosPiso : Fragment() {
-
     // Prepara la Factory
     private lateinit var viewModelFactory: GestionUsuariosPisoViewModelFactory
 
@@ -42,7 +41,7 @@ class GestionUsuariosPiso : Fragment() {
 
         // Inicializa tus dependencias (idealmente con Hilt/Koin)
         val context = requireContext().applicationContext
-        val sessionManager = SessionManager(context)
+        val sessionManager = SessionManager3(context)
 
         // Asumo que tienes un objeto 'RetrofitClient' que expone las APIs
         // y un 'RepositoryCasa'
@@ -50,11 +49,12 @@ class GestionUsuariosPiso : Fragment() {
         val invitacionRepository = RepositoryInvitacion(NetworkModule.invitacionApiService)
 
         // Crea la factory con las dependencias
-        viewModelFactory = GestionUsuariosPisoViewModelFactory(
-            pisoRepository,
-            invitacionRepository,
-            sessionManager
-        )
+        viewModelFactory =
+            GestionUsuariosPisoViewModelFactory(
+                pisoRepository,
+                invitacionRepository,
+                sessionManager,
+            )
     }
 
     override fun onCreateView(
@@ -95,9 +95,10 @@ class GestionUsuariosPiso : Fragment() {
         // No hat boton de invitacion por email
         buttonInviteEmail = view.findViewById(R.id.button_invite_qr_main)
 
-        miembrosAdapter = MiembrosPisoAdapter { miembro ->
-            mostrarDialogoDeConfirmacion(miembro)
-        }
+        miembrosAdapter =
+            MiembrosPisoAdapter { miembro ->
+                mostrarDialogoDeConfirmacion(miembro)
+            }
         recyclerView.adapter = miembrosAdapter
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
     }

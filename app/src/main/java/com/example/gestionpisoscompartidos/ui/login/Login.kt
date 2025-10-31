@@ -14,7 +14,7 @@ import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.model.LoginResponse
 import androidx.navigation.fragment.findNavController
 // 1. IMPORTA TU SESSION MANAGER
-import com.example.gestionpisoscompartidos.data.SessionManager
+import com.example.gestionpisoscompartidos.data.SessionManager3
 
 /**
  * Fragmento de la pantalla de inicio de sesión.
@@ -27,7 +27,7 @@ class Login : Fragment() {
     private var _binding: FragmentLoginBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var sessionManager: SessionManager
+    private lateinit var sessionManager: SessionManager3
 
     // Inicialización del ViewModel (tu código está bien)
     private val viewModel: LoginViewModel by viewModels {
@@ -40,7 +40,7 @@ class Login : Fragment() {
         super.onCreate(savedInstanceState)
 
         // Usamos applicationContext para que sea seguro
-        sessionManager = SessionManager(requireContext().applicationContext)
+        sessionManager = SessionManager3(requireContext().applicationContext)
     }
 
     override fun onCreateView(
@@ -75,10 +75,10 @@ class Login : Fragment() {
     private fun handleLoginSuccess(response: LoginResponse) {
         Toast.makeText(context, "¡Bienvenido, ${response.user.nombre}!", Toast.LENGTH_SHORT).show()
 
-       sessionManager.saveAuthData(
+        sessionManager.saveAuthData(
             token = response.authToken,
             userId = response.user.id,
-            email = response.user.correo
+            email = response.user.correo,
         )
 
         // 5. Ahora, maneja la navegación
@@ -89,7 +89,6 @@ class Login : Fragment() {
             val casasArray = response.flats.toTypedArray()
             val action = LoginDirections.actionLoginFragmentToListaCasasFragment(casasArray)
             findNavController().navigate(action)
-
         } else {
             // El usuario no tiene pisos, vamos a la pantalla de "Crear o Unirse"
             Log.d("LoginSuccess", "La lista 'flats' está vacía.")

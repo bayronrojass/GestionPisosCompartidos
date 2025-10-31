@@ -2,11 +2,11 @@ package com.example.gestionpisoscompartidos.ui.piso.gestionUsuarios
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gestionpisoscompartidos.data.SessionManager
+import com.example.gestionpisoscompartidos.data.SessionManager3
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryInvitacion
 import com.example.gestionpisoscompartidos.model.InvitacionRequest
-import com.example.gestionpisoscompartidos.model.Usuario
+import  com.example.gestionpisoscompartidos.model.Usuario
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -14,9 +14,8 @@ import kotlinx.coroutines.launch
 class GestionUsuariosPisoViewModel(
     private val pisoRepository: RepositoryCasa,
     private val invitacionRepository: RepositoryInvitacion,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager3,
 ) : ViewModel() {
-
     private val _miembros = MutableStateFlow<List<MiembroPiso>>(emptyList())
     val miembros: StateFlow<List<MiembroPiso>> = _miembros
 
@@ -49,12 +48,15 @@ class GestionUsuariosPisoViewModel(
                 // --- TODO: REEMPLAZA ESTO CON DATOS REALES ---
                 // Necesitarás un endpoint en tu CasaAPI/RepositoryCasa
                 // para obtener los detalles y miembros de un piso.
-                // val pisoDetailsResponse = pisoRepository.getPisoDetails(token, currentPisoId)
-                // if (!pisoDetailsResponse.isSuccessful) throw Exception("Error al cargar piso")
-                // val usuariosDelPiso = pisoDetailsResponse.body()!!.miembros
-                // val adminIds = pisoDetailsResponse.body()!!.administradores.map { it.id }
+                /*
+                val pisoDetailsResponse = pisoRepository.getPisoDetails(token, currentPisoId)
+                if (!pisoDetailsResponse.isSuccessful) throw Exception("Error al cargar piso")
+                val usuariosDelPiso = pisoDetailsResponse.body()!!.miembros
+                val adminIds = pisoDetailsResponse.body()!!.administradores.map { it.id }
+                */
 
                 // --- INICIO DE DATOS DE EJEMPLO (Usando el ID real) ---
+
                 val adminIds = listOf(1L)
                 val usuariosDelPiso: List<Usuario> =
                     listOf(
@@ -63,6 +65,8 @@ class GestionUsuariosPisoViewModel(
                         Usuario(3L, "Paula (Ejemplo)", "paula@mail.com"),
                     )
                 // --- FIN DE DATOS DE EJEMPLO ---
+
+
 
                 val listaMiembrosUI =
                     usuariosDelPiso.map { usuario ->
@@ -122,14 +126,13 @@ class GestionUsuariosPisoViewModel(
                     return@launch
                 }
 
-                // --- TODO: Llama a tu 'pisoRepository.removeMiembro(token, currentPisoId, miembroId)' ---
-                // val response = pisoRepository.removeMiembro(token, currentPisoId, miembroId)
-                // if(response.isSuccessful) {
-                _miembros.value = _miembros.value.filter { it.id != miembroId }
-                _accionResult.value = "Miembro eliminado (Ejemplo)"
-                // } else {
-                //    _accionResult.value = "Error al eliminar"
-                // }
+                val response = pisoRepository.removeMiembro(token, currentPisoId, miembroId)
+                if (response.isSuccessful) {
+                    _miembros.value = _miembros.value.filter { it.id != miembroId }
+                    _accionResult.value = "Miembro eliminado (Ejemplo)"
+                } else {
+                    _accionResult.value = "Error al eliminar"
+                }
             } catch (e: Exception) {
                 _accionResult.value = "Error de red: ${e.message}"
             }

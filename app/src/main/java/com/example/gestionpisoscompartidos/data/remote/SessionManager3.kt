@@ -7,7 +7,7 @@ import android.content.SharedPreferences
  * Gestiona la sesión del usuario, almacenando y recuperando datos clave
  * como el token de autenticación y el ID de usuario.
  */
-class SessionManager(
+class SessionManager3(
     context: Context,
 ) {
     // 1. Define el nombre del archivo de preferencias y las claves
