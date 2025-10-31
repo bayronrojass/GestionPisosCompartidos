@@ -49,11 +49,11 @@ class ItemViewModel(
         viewModelScope.launch {
             try {
                 val request = ElementoRequest(nombre, descripcion, false)
-                val nuevoElemento = repository.crearElementoEnLista(listaId, request)
-
+                repository.crearElementoEnLista(listaId, request)
+                cargarItems()
                 // Añade el nuevo elemento a la lista local
-                val itemsActuales = _items.value ?: emptyList()
-                _items.value = itemsActuales + nuevoElemento
+                // val itemsActuales = _items.value ?: emptyList()
+                // _items.value = itemsActuales + nuevoElemento
             } catch (e: Exception) {
                 _error.value = e.message ?: "Error al crear el item"
             } finally {
@@ -62,7 +62,42 @@ class ItemViewModel(
         }
     }
 
-    // Aquí añadir funciones para:
-    // fun toggleItemCompletado(item: Elemento) { ... }
-    // fun deleteItem(item: Elemento) { ... }
+    fun toggleItemCompletado(elemento: Elemento) {
+        _error.value = null
+        viewModelScope.launch {
+            val estadoNuevo = !elemento.completado
+            val request = ElementoRequest(nombre = elemento.nombre, descripcion = null, completado = estadoNuevo)
+            try {
+                if (elemento.id != null) {
+                    repository.actualizarElemento(elemento.id, request)
+                }
+                cargarItems() // <-- RECARGA LA LISTA ENTERA
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Error al actualizar item"
+            }
+        }
+    }
+
+    private fun actualizarListaLocal(itemActualizado: Elemento) {
+        val itemsActuales = _items.value?.toMutableList() ?: mutableListOf()
+        val index = itemsActuales.indexOfFirst { it.id == itemActualizado.id }
+        if (index != -1) {
+            itemsActuales[index] = itemActualizado
+            _items.value = itemsActuales
+        }
+    }
+
+    fun borrarElemento(elemento: Elemento) {
+        _error.value = null
+        viewModelScope.launch {
+            try {
+                if (elemento.id != null) {
+                    repository.borrarElemento(elemento.id)
+                }
+                cargarItems() // <-- RECARGA LA LISTA ENTERA
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Error al borrar item"
+            }
+        }
+    }
 }

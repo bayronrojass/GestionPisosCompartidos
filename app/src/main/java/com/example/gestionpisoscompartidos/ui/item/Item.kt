@@ -55,13 +55,18 @@ class Item : Fragment() {
                 emptyList(),
                 onCompletadoClick = { item ->
                     Log.d("ItemFragment", "Click completado en: ${item.nombre}")
-                    // TODO: Llamar a viewModel.toggleItemCompletado(item)
-                    Toast.makeText(context, "TODO: Marcar ${item.nombre}", Toast.LENGTH_SHORT).show()
+                    viewModel.toggleItemCompletado(item)
                 },
                 onBorrarClick = { item ->
                     Log.d("ItemFragment", "Click borrar en: ${item.nombre}")
-                    // TODO: Llamar a viewModel.deleteItem(item)
-                    Toast.makeText(context, "TODO: Borrar ${item.nombre}", Toast.LENGTH_SHORT).show()
+                    AlertDialog
+                        .Builder(requireContext())
+                        .setTitle("Borrar Item")
+                        .setMessage("¿Seguro que quieres borrar '${item.nombre}'?")
+                        .setPositiveButton("Borrar") { _, _ ->
+                            viewModel.borrarElemento(item)
+                        }.setNegativeButton("Cancelar", null)
+                        .show()
                 },
                 onItemClick = { item ->
                     // Mostrar diálogo con detalles
