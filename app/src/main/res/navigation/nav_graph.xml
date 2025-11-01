@@ -31,10 +31,10 @@
             android:label="Login"
             tools:layout="@layout/fragment_login" >
         <action
-                android:id="@+id/action_loginFragment_to_ListaCasasFragment"
-                app:destination="@id/ListaCasasFragment"
+                android:id="@+id/action_loginFragment_to_homeFragment"
+                app:destination="@id/Home2"
                 app:popUpTo="@id/loginFragment"
-                app:popUpToInclusive="true"/>
+                app:popUpToInclusive="true" />
     </fragment>
 
     <fragment
@@ -98,6 +98,41 @@
         <argument
                 android:name="listaNombre"
                 app:argType="string" />
+        <argument
+                android:name="casaNombre"
+                app:argType="string" />
+    </fragment>
+
+    <fragment
+            android:id="@+id/Home2"
+            android:name="com.example.gestionpisoscompartidos.ui.home.Home2"
+            android:label="Inicio"
+            tools:layout="@layout/fragment_home2">
+        <argument
+                android:name="casas"
+                app:argType="com.example.gestionpisoscompartidos.model.Casa[]" />
+        <argument
+                android:name="casaNombre"
+                app:argType="string"
+                app:nullable="true"
+                android:defaultValue="@null" />
+
+        <action
+                android:id="@+id/action_homeFragment_to_listaCasasFragment"
+                app:destination="@id/ListaCasasFragment" />
+        <action
+                android:id="@+id/action_homeFragment_to_tareasFragment"
+                app:destination="@id/TareasFragment" />
+    </fragment>
+
+    <fragment
+            android:id="@+id/TareasFragment"
+            android:name="com.example.gestionpisoscompartidos.ui.tareas.Tareas"
+            android:label="Tareas"
+            tools:layout="@layout/fragment_tareas" >
+        <argument
+                android:name="casaId"
+                app:argType="long" />
         <argument
                 android:name="casaNombre"
                 app:argType="string" />

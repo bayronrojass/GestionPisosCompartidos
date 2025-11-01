@@ -120,7 +120,8 @@ class Login : Fragment() {
             Log.d("LoginSuccess", "Pisos encontrados: ${response.flats.size}")
 
             val casasArray = response.flats.toTypedArray()
-            val action = LoginDirections.actionLoginFragmentToListaCasasFragment(casasArray)
+            val casaNombre = if (casasArray.isNotEmpty()) casasArray[0].nombre else "Mi Casa" // Placeholder
+            val action = LoginDirections.actionLoginFragmentToHomeFragment(casasArray, casaNombre)
             findNavController().navigate(action)
         } else {
             // El usuario no tiene pisos, vamos a la pantalla de "Crear o Unirse"
