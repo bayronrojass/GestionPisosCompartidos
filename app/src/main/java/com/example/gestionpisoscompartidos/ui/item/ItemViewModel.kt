@@ -71,7 +71,7 @@ class ItemViewModel(
                 if (elemento.id != null) {
                     repository.actualizarElemento(elemento.id, request)
                 }
-                cargarItems() // <-- RECARGA LA LISTA ENTERA
+                cargarItems()
             } catch (e: Exception) {
                 _error.value = e.message ?: "Error al actualizar item"
             }
@@ -94,9 +94,37 @@ class ItemViewModel(
                 if (elemento.id != null) {
                     repository.borrarElemento(elemento.id)
                 }
-                cargarItems() // <-- RECARGA LA LISTA ENTERA
+                cargarItems()
             } catch (e: Exception) {
                 _error.value = e.message ?: "Error al borrar item"
+            }
+        }
+    }
+
+    fun actualizarNombreDescripcion(
+        elemento: Elemento,
+        nuevoNombre: String,
+        nuevaDescripcion: String?,
+    ) {
+        _error.value = null
+        viewModelScope.launch {
+            // Creamos un request solo con los campos que queremos cambiar
+            val request =
+                ElementoRequest(
+                    nombre = nuevoNombre,
+                    descripcion = nuevaDescripcion,
+                    completado = elemento.completado,
+                )
+
+            try {
+                // Llamamos al repositorio, que llama al endpoint
+                if (elemento.id != null) {
+                    repository.actualizarElemento(elemento.id, request)
+                }
+                // Recargamos la lista desde el servidor para ver los cambios
+                cargarItems()
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Error al actualizar item"
             }
         }
     }

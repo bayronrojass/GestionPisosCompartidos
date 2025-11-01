@@ -15,6 +15,7 @@ class ItemsAdapter(
     private val onCompletadoClick: (Elemento) -> Unit,
     private val onBorrarClick: (Elemento) -> Unit,
     private val onItemClick: (Elemento) -> Unit,
+    private val onEditClick: (Elemento) -> Unit,
 ) : RecyclerView.Adapter<ItemsAdapter.ItemViewHolder>() {
     override fun onCreateViewHolder(
         parent: ViewGroup,
@@ -73,6 +74,10 @@ class ItemsAdapter(
 
             binding.tvNombreElemento.setOnClickListener {
                 onItemClick(elemento)
+            }
+
+            binding.btnEditarElemento.setOnClickListener {
+                onEditClick(elemento)
             }
         }
     }

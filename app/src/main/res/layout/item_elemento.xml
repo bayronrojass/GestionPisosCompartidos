@@ -29,16 +29,29 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="8dp"
-            tools:text="Nombre del Item Largo Para Probar Ellipsize"
-            android:textSize="18sp"
             android:fontFamily="sans-serif-light"
-            android:textColor="@color/white"
             android:maxLines="1"
             android:ellipsize="end"
-            app:layout_constraintStart_toEndOf="@id/btnCompletado"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/btnEditarElemento" app:layout_constraintStart_toEndOf="@id/btnCompletado"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Nombre del Item Largo" />
+
+    <ImageButton
+            android:id="@+id/btnEditarElemento"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginEnd="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Editar item"
+            android:src="@drawable/ic_edit"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/btnBorrarElemento"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:tint="@color/white"
+            tools:ignore="TouchTargetSizeCheck" />
 
     <ImageButton
             android:id="@+id/btnBorrarElemento"

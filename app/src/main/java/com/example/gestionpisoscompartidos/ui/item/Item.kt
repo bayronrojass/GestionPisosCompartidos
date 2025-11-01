@@ -14,6 +14,7 @@ import com.example.gestionpisoscompartidos.databinding.FragmentItemBinding
 import android.app.AlertDialog
 import android.widget.EditText
 import android.widget.LinearLayout
+import com.example.gestionpisoscompartidos.model.Elemento
 
 class Item : Fragment() {
     private var _binding: FragmentItemBinding? = null
@@ -77,8 +78,11 @@ class Item : Fragment() {
                         .setPositiveButton("Cerrar", null)
                         .show()
                 },
+                onEditClick = { item ->
+                    mostrarDialogoEditarItem(item) // Llama al diálogo de edición
+                },
             )
-        binding.recyclerViewItems.adapter = itemsAdapter // Usa el ID correcto del RecyclerView
+        binding.recyclerViewItems.adapter = itemsAdapter
     }
 
     private fun setupViewModelObservers() {
@@ -157,6 +161,55 @@ class Item : Fragment() {
 
                 if (nombre.isNotBlank()) {
                     viewModel.crearElemento(nombre, descripcion)
+                } else {
+                    Toast.makeText(context, "El nombre no puede estar vacío", Toast.LENGTH_SHORT).show()
+                }
+                dialog.dismiss()
+            }.setNegativeButton("Cancelar") { dialog, _ ->
+                dialog.cancel()
+            }.show()
+    }
+
+    private fun mostrarDialogoEditarItem(item: Elemento) {
+        val context = requireContext()
+
+        // Creamos el layout del diálogo
+        val linearLayout =
+            LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(48, 48, 48, 48)
+            }
+
+        // Campo para el nombre, pre-rellenado
+        val nombreInput =
+            EditText(context).apply {
+                hint = "Nombre del item"
+                setText(item.nombre)
+                maxLines = 1
+            }
+
+        // Campo para la descripción, pre-rellenado
+        val descripcionInput =
+            EditText(context).apply {
+                hint = "Descripción (opcional)"
+                setText(item.descripcion)
+                maxLines = 3
+            }
+
+        linearLayout.addView(nombreInput)
+        linearLayout.addView(descripcionInput)
+
+        AlertDialog
+            .Builder(context)
+            .setTitle("Editar Item")
+            .setView(linearLayout)
+            .setPositiveButton("Guardar") { dialog, _ ->
+                val nombre = nombreInput.text.toString()
+                val descripcion = descripcionInput.text.toString().ifBlank { null }
+
+                if (nombre.isNotBlank()) {
+                    // Llamamos a la nueva función del ViewModel
+                    viewModel.actualizarNombreDescripcion(item, nombre, descripcion)
                 } else {
                     Toast.makeText(context, "El nombre no puede estar vacío", Toast.LENGTH_SHORT).show()
                 }
