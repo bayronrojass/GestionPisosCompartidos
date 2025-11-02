@@ -56,14 +56,14 @@ class PostItView
         private val closeButtonPadding = 5f
 
         private var lastTapTime: Long = 0
-        private var isContentVisible = true
+        var isContentVisible = true
 
         private var postItBitmap: Bitmap? = null
         private var originalX = 0f
         private var originalY = 0f
         private var originalWidth = 0
         private var originalHeight = 0
-        var isExpanded = false
+        private var isExpanded = false
 
         private var originalPreviewBitmap: Bitmap? = null
         private var loadJob: Job? = null
@@ -137,6 +137,7 @@ class PostItView
                         val currentTime = System.currentTimeMillis()
                         if (currentTime - lastTapTime < 500) {
                             isContentVisible = !isContentVisible
+                            endDrag(this.x, this.y)
                             invalidate()
                             lastTapTime = 0
                         } else {
@@ -283,7 +284,7 @@ class PostItView
             y: Float,
         ) {
             viewScope.launch {
-                val request = repository.request { updatePostItPosition(postItId, PostItDTO(0, 0, x, y, !isExpanded)) }
+                val request = repository.request { updatePostItPosition(postItId, PostItDTO(0, 0, x, y, !isContentVisible)) }
             }
         }
 

@@ -304,8 +304,7 @@ open class Pizarra : Fragment() {
                 this.layoutParams = layoutParams
                 x = _x
                 y = _y
-                // TODO
-                // isExpanded = !plegado
+                isContentVisible = !plegado
                 model =
                     PizarraViewModel(_lienzoId).apply {
                         color = viewModel.color
