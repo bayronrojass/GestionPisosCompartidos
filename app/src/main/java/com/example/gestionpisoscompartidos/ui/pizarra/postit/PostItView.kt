@@ -268,6 +268,9 @@ class PostItView
         fun collapse() {
             if (!isExpanded) return
 
+            view?.saveJob?.cancel()
+            model?.save()
+
             loadJob?.cancel()
             canBeDragged = true
             isExpanded = false

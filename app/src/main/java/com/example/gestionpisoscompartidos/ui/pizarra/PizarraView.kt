@@ -37,7 +37,7 @@ class PizarraView
         private var backgroundBitmap: Bitmap? = null
         private val path = Path()
         private var lastPoint: Point? = null
-        private var saveJob: Job? = null
+        var saveJob: Job? = null
         private val saveScope = CoroutineScope(Dispatchers.Main)
         private var loadJob: Job? = null
         private val loadScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
