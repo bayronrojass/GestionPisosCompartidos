@@ -19,18 +19,20 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
-import java.time.LocalDateTime
+import java.time.Instant
 import java.time.ZoneId
 
-class PizarraViewModel : ViewModel() {
+class PizarraViewModel(
+    var lienzoId: Long,
+) : ViewModel() {
     private val puntos: MutableList<PointDeltaDTO> = mutableListOf()
     private val repository = RemoteRepository(NetworkModule.retrofit.create(PizarraAPI::class.java))
-    private val _bitmapState = MutableStateFlow<Bitmap?>(null)
+    val _bitmapState = MutableStateFlow<Bitmap?>(null)
     val bitmapState: StateFlow<Bitmap?> = _bitmapState.asStateFlow()
     var color: Byte = 1
 
     @RequiresApi(Build.VERSION_CODES.O)
-    var lastLoaded: LocalDateTime = LocalDateTime.of(1970, 1, 1, 0, 0)
+    var lastLoaded: Instant = Instant.ofEpochMilli(1000000)
 
     fun add(p: PointDeltaDTO?) {
         if (p != null) puntos.add(p)
@@ -40,7 +42,7 @@ class PizarraViewModel : ViewModel() {
         if (puntos.isEmpty()) return
 
         viewModelScope.launch {
-            val result = repository.request { postDelta(puntos) }
+            val result = repository.request { postDelta(lienzoId, puntos) }
             when (result) {
                 is ApiResult.Error -> {
                     puntos.clear()
@@ -63,7 +65,7 @@ class PizarraViewModel : ViewModel() {
             val check =
                 withContext(Dispatchers.IO) {
                     val safeTimestamp = lastLoaded.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                    repository.request { isUpdated(safeTimestamp) }
+                    repository.request { isUpdated(lienzoId, safeTimestamp) }
                 }
 
             when (check) {
@@ -73,10 +75,9 @@ class PizarraViewModel : ViewModel() {
                 is ApiResult.Success<*> -> {
                     if (check.data as Boolean) {
                         Log.d("PizarraViewModel", "Data updated, loading new content")
-
                         val result =
                             withContext(Dispatchers.IO) {
-                                repository.request { getLienzo() }
+                                repository.request { getLienzo(lienzoId) }
                             }
 
                         when (result) {
@@ -88,6 +89,7 @@ class PizarraViewModel : ViewModel() {
                                 responseBody?.let { body ->
 
                                     try {
+                                        lastLoaded = Instant.now()
                                         withContext(Dispatchers.IO) {
                                             val bytes = body.bytes()
 
@@ -102,7 +104,6 @@ class PizarraViewModel : ViewModel() {
                                                 if (bitmap != null) {
                                                     withContext(Dispatchers.Main) {
                                                         _bitmapState.value = bitmap
-                                                        lastLoaded = LocalDateTime.now()
                                                         Log.d(
                                                             "PizarraViewModel",
                                                             "Image loaded successfully",

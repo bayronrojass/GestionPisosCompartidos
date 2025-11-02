@@ -6,10 +6,30 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
+import android.os.Build
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.RequiresApi
+import com.example.gestionpisoscompartidos.data.remote.NetworkModule
+import com.example.gestionpisoscompartidos.data.remote.RemoteRepository
+import com.example.gestionpisoscompartidos.data.repository.APIs.CasaAPI
+import com.example.gestionpisoscompartidos.model.dtos.PostItDTO
+import com.example.gestionpisoscompartidos.ui.pizarra.PizarraView
+import com.example.gestionpisoscompartidos.ui.pizarra.PizarraViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 
 class PostItView
     @JvmOverloads
@@ -17,15 +37,19 @@ class PostItView
         context: Context,
         attrs: AttributeSet? = null,
         defStyleAttr: Int = 0,
+        val postItId: Long,
     ) : View(context, attrs, defStyleAttr) {
         private var postItColor = Color.YELLOW
         private var topBarColor = Color.parseColor("#FFD700") // Dorado
         private var closeButtonColor = Color.RED
 
+        var model: PizarraViewModel? = null
+        var view: PizarraView? = null
         private var canBeDragged = true
         private var isDragging = false
-        private var lastTouchX = 0f
-        private var lastTouchY = 0f
+        private var startX = 0f
+        private var startY = 0f
+        private val touchSlop = 20
 
         val topBarHeight = 60f
         private val closeButtonSize = 60f
@@ -39,11 +63,17 @@ class PostItView
         private var originalY = 0f
         private var originalWidth = 0
         private var originalHeight = 0
-        private var isExpanded = false
+        var isExpanded = false
 
+        private var originalPreviewBitmap: Bitmap? = null
+        private var loadJob: Job? = null
+        private val loadScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
+        private val viewScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
         var onExpand: ((PostItView) -> Unit)? = null
         var onCollapse: ((PostItView) -> Unit)? = null
 
+        private val repository = RemoteRepository(NetworkModule.retrofit.create(CasaAPI::class.java))
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         private val textPaint =
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -62,50 +92,58 @@ class PostItView
 
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    // Verificar si se toca la X de cerrar
+                    startX = x
+                    startY = y
+
                     if (isInCloseButton(x, y) && canBeDragged) {
                         (parent as? ViewGroup)?.removeView(this)
-                    }
-                    // Verificar si se toca la barra superior
-                    else if (isInTopBar(x, y) && canBeDragged) {
-                        lastTouchX = x
-                        lastTouchY = y
-                        isDragging = true
+                        remove()
+                    } else if (isInTopBar(x, y) && canBeDragged) {
                         this.bringToFront()
-                    }
-                    // Verificar si se toca el cuerpo
-                    else if (isInBody(x, y)) {
+                    } else if (isInBody(x, y)) {
                         expand()
                     }
-
                     return true
                 }
+
                 MotionEvent.ACTION_MOVE -> {
-                    if (isDragging && canBeDragged) {
-                        val dx = x - lastTouchX
-                        val dy = y - lastTouchY
+                    if (canBeDragged && isInTopBar(startX, startY)) {
+                        val dx = x - startX
+                        val dy = y - startY
 
-                        translationX += dx
-                        translationY += dy
+                        if (!isDragging && (abs(dx) > touchSlop || abs(dy) > touchSlop)) {
+                            isDragging = true
+                        }
 
-                        lastTouchX = x
-                        lastTouchY = y
+                        if (isDragging) {
+                            val parent = parent as? ViewGroup
+                            val absoluteX = event.rawX - (parent?.x ?: 0f)
+                            val absoluteY = event.rawY - (parent?.y ?: 0f)
+                            this.x = absoluteX - width / 2
+                            this.y = absoluteY - height / 2
+                        }
                     }
                     return true
                 }
+
                 MotionEvent.ACTION_UP -> {
-                    isDragging = false
+                    if (isDragging) {
+                        isDragging = false
+                        endDrag(this.x, this.y)
+                        return true
+                    }
 
                     if (isInTopBar(x, y)) {
                         val currentTime = System.currentTimeMillis()
-                        if (currentTime - lastTapTime < 1000 && canBeDragged) {
+                        if (currentTime - lastTapTime < 500) {
                             isContentVisible = !isContentVisible
-                            lastTapTime = 0
                             invalidate()
-                            return true
+                            lastTapTime = 0
+                        } else {
+                            lastTapTime = currentTime
                         }
-                        lastTapTime = currentTime
                     }
+                    return true
                 }
             }
             return false
@@ -131,16 +169,36 @@ class PostItView
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)
 
+            if (isExpanded) {
+                paint.color = topBarColor
+                canvas.drawRect(0f, 0f, width.toFloat(), topBarHeight, paint)
+
+                paint.color = closeButtonColor
+                val closeButtonLeft = width - closeButtonSize - closeButtonPadding
+                canvas.drawRect(
+                    closeButtonLeft,
+                    closeButtonPadding,
+                    closeButtonLeft + closeButtonSize,
+                    closeButtonPadding + closeButtonSize,
+                    paint,
+                )
+
+                textPaint.color = Color.WHITE
+                canvas.drawText(
+                    "X",
+                    closeButtonLeft + closeButtonSize / 2,
+                    closeButtonPadding + closeButtonSize / 2 + textPaint.textSize / 3,
+                    textPaint,
+                )
+                return
+            }
+
             if (isContentVisible) {
-                // Dibujar cuerpo principal
                 paint.color = postItColor
                 canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
 
                 postItBitmap?.let { bitmap ->
-                    // CALCULAR srcRect y dstRect EN TIEMPO REAL
-                    val srcRect = Rect(0, 0, bitmap.width, bitmap.height)
-
-                    // Calcular dstRect considerando la barra superior y padding
+                    val scaledBitmap = bitmap
                     val dstRect =
                         Rect(
                             closeButtonPadding.toInt(),
@@ -148,20 +206,16 @@ class PostItView
                             width - closeButtonPadding.toInt(),
                             height - closeButtonPadding.toInt(),
                         )
-
-                    canvas.drawBitmap(bitmap, srcRect, dstRect, null)
+                    canvas.drawBitmap(scaledBitmap, null, dstRect, null)
                 }
 
-                // Dibujar barra superior
                 paint.color = topBarColor
                 canvas.drawRect(0f, 0f, width.toFloat(), topBarHeight, paint)
             } else {
-                // Dibujar barra superior
                 paint.color = topBarColor
                 canvas.drawRect(0f, 0f, width.toFloat(), topBarHeight, paint)
             }
 
-            // Dibujar botón de cerrar (X)
             paint.color = closeButtonColor
             paint.style = Paint.Style.FILL
             val closeButtonLeft = width - closeButtonSize - closeButtonPadding
@@ -173,7 +227,6 @@ class PostItView
                 paint,
             )
 
-            // Dibujar la X blanca
             textPaint.color = Color.WHITE
             canvas.drawText(
                 "X",
@@ -214,6 +267,7 @@ class PostItView
         fun collapse() {
             if (!isExpanded) return
 
+            loadJob?.cancel()
             canBeDragged = true
             isExpanded = false
 
@@ -224,9 +278,92 @@ class PostItView
 
         fun getOriginalSize(): Pair<Int, Int> = Pair(originalWidth, originalHeight)
 
+        fun endDrag(
+            x: Float,
+            y: Float,
+        ) {
+            viewScope.launch {
+                val request = repository.request { updatePostItPosition(postItId, PostItDTO(0, 0, x, y, !isExpanded)) }
+            }
+        }
+
         fun setPreview(bitmap: Bitmap) {
+            originalPreviewBitmap = bitmap
             postItBitmap = bitmap
             invalidate()
             requestLayout()
+        }
+
+        private fun remove() {
+            viewScope.launch {
+                val response = repository.request { deletePostIt(postItId) }
+            }
+            onDetachedFromWindow()
+            loadJob?.cancel()
+        }
+
+        @RequiresApi(Build.VERSION_CODES.O)
+        fun load() {
+            loadJob?.cancel()
+
+            loadJob =
+                loadScope.launch {
+                    while (isActive) {
+                        try {
+                            Log.d("Load", "Cargando PostIt${model?.lienzoId}...")
+                            model?.load()
+
+                            val originalBitmap = model?._bitmapState?.value
+                            if (originalBitmap != null) {
+                                val adjustedBitmap = adjustPreviewBitmap(originalBitmap)
+                                setPreview(adjustedBitmap)
+                            }
+                            setPreview(model?._bitmapState?.value!!)
+
+                            delay(5000L)
+                        } catch (e: CancellationException) {
+                            Log.e("Load", "Error en carga: ${e.message}")
+                            break
+                        } catch (e: Exception) {
+                            Log.e("Load", "Error en carga: ${e.message}")
+                            delay(5000L)
+                        }
+                    }
+                }
+        }
+
+        private fun adjustPreviewBitmap(original: Bitmap): Bitmap {
+            val targetWidth = width.takeIf { it > 0 } ?: original.width
+            val targetHeight = height.takeIf { it > 0 } ?: original.height
+
+            if (targetWidth <= 0 || targetHeight <= 0) return original
+
+            val scale =
+                min(
+                    targetWidth.toFloat() / original.width,
+                    targetHeight.toFloat() / original.height,
+                )
+
+            val scaledWidth = (original.width * scale).toInt()
+            val scaledHeight = (original.height * scale).toInt()
+
+            val scaledBitmap = Bitmap.createScaledBitmap(original, scaledWidth, scaledHeight, true)
+
+            if (scaledWidth > targetWidth || scaledHeight > targetHeight) {
+                val xOffset = max(0, (scaledWidth - targetWidth) / 2)
+                val yOffset = max(0, (scaledHeight - targetHeight) / 2)
+                return Bitmap.createBitmap(scaledBitmap, xOffset, yOffset, targetWidth, targetHeight)
+            }
+
+            return scaledBitmap
+        }
+
+        override fun onDetachedFromWindow() {
+            super.onDetachedFromWindow()
+            loadJob?.cancel()
+            postItBitmap?.recycle()
+            postItBitmap = null
+            originalPreviewBitmap?.recycle()
+            originalPreviewBitmap = null
         }
     }

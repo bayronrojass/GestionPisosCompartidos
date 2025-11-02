@@ -42,7 +42,7 @@ class PizarraView
         private var loadJob: Job? = null
         private val loadScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
-        private var paint =
+        var paint =
             Paint().apply {
                 color = Color.BLACK
                 style = Paint.Style.STROKE
@@ -82,6 +82,7 @@ class PizarraView
             val x = event.x
             val y = event.y
 
+            loadJob?.cancel()
             val paint = createPaint(model.color)
 
             when (event.action) {
@@ -146,18 +147,13 @@ class PizarraView
         @RequiresApi(Build.VERSION_CODES.O)
         private fun save() {
             saveJob?.cancel()
-            loadJob?.cancel()
 
             saveJob =
                 saveScope.launch {
                     delay(1000L)
-                    performActualSave()
+                    model.save()
                     load()
                 }
-        }
-
-        private fun performActualSave() {
-            model.save()
         }
 
         @RequiresApi(Build.VERSION_CODES.O)
@@ -168,15 +164,15 @@ class PizarraView
                 loadScope.launch {
                     while (isActive) {
                         try {
-                            Log.d("Load", "Cargando...")
+                            Log.d("Load", "Cargando ${model.lienzoId}...")
                             model.load()
-                            delay(3000L)
+                            delay(5000L)
                         } catch (e: CancellationException) {
                             Log.e("Load", "Error en carga: ${e.message}")
                             break
                         } catch (e: Exception) {
                             Log.e("Load", "Error en carga: ${e.message}")
-                            delay(3000L)
+                            delay(5000L)
                         }
                     }
                 }
@@ -191,5 +187,8 @@ class PizarraView
             model = newModel
         }
 
-        fun captureBitmap(): Bitmap = currentBitmap
+        fun stop() {
+            saveJob?.cancel()
+            loadJob?.cancel()
+        }
     }
