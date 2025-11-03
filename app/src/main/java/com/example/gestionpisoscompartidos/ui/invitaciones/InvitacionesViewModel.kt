@@ -4,9 +4,9 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryInvitacion
 import com.example.gestionpisoscompartidos.model.InvitacionRequest
 import com.example.gestionpisoscompartidos.model.InvitacionResponse
-import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryInvitacion
 import kotlinx.coroutines.launch
 
 class InvitacionesViewModel(

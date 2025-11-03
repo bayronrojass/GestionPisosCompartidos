@@ -3,7 +3,12 @@ package com.example.gestionpisoscompartidos.data.repository.APIs
 import com.example.gestionpisoscompartidos.model.Tarea
 import com.example.gestionpisoscompartidos.model.TareaRequest
 import retrofit2.Response
-import retrofit2.http.*
+import retrofit2.http.Body
+import retrofit2.http.DELETE
+import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Path
 
 interface TareaAPI {
     @GET("casas/{casaId}/tareas")
