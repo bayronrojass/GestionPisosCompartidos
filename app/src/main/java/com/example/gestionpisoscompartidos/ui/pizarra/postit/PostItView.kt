@@ -58,6 +58,9 @@ class PostItView
         private var lastTapTime: Long = 0
         var isContentVisible = true
 
+        var isCollapseInProgress = false
+        var isExpansionInProgress = false
+
         private var postItBitmap: Bitmap? = null
         private var originalX = 0f
         private var originalY = 0f
@@ -251,7 +254,7 @@ class PostItView
         }
 
         fun expand() {
-            if (isExpanded) return
+            if (isExpanded || isExpansionInProgress) return
 
             canBeDragged = false
             originalX = x
@@ -266,7 +269,7 @@ class PostItView
         }
 
         fun collapse() {
-            if (!isExpanded) return
+            if (!isExpanded || isExpansionInProgress || isCollapseInProgress) return
 
             view?.saveJob?.cancel()
             model?.save()

@@ -20,20 +20,20 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import androidx.annotation.RequiresApi
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.graphics.createBitmap
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.gestionpisoscompartidos.R
-import com.example.gestionpisoscompartidos.ui.pizarra.postit.PostItView
-import kotlinx.coroutines.launch
-import androidx.core.graphics.createBitmap
-import kotlin.math.max
-import kotlin.math.min
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.remote.RemoteRepository
 import com.example.gestionpisoscompartidos.data.repository.APIs.CasaAPI
 import com.example.gestionpisoscompartidos.model.dtos.PostItDTO
+import com.example.gestionpisoscompartidos.ui.pizarra.postit.PostItView
 import com.example.gestionpisoscompartidos.utils.ApiResult
+import kotlinx.coroutines.launch
 import java.time.Instant
+import kotlin.math.max
+import kotlin.math.min
 
 open class Pizarra : Fragment() {
     private var casaId: Long = 0
@@ -204,7 +204,6 @@ open class Pizarra : Fragment() {
     ) {
         viewLifecycleOwner.lifecycleScope.launch {
             val request = repository.request { crearPostIt(casaId) }
-            Log.d("Postit", "$request")
             when (request) {
                 is ApiResult.Error -> {
                     Log.e("Postit", "Error creando postit " + request.message)
@@ -247,10 +246,11 @@ open class Pizarra : Fragment() {
         postIt: PostItView,
         lienzoId: Long,
     ) {
-        if (currentExpandedPostIt != null) {
+        if (currentExpandedPostIt != null || postIt.isExpansionInProgress) {
             return
         }
 
+        postIt.isExpansionInProgress = true
         currentExpandedPostIt = postIt
 
         createOverlay()
@@ -270,6 +270,10 @@ open class Pizarra : Fragment() {
 
                 setOnTouchListener { _, event ->
                     if (event.action == MotionEvent.ACTION_DOWN) {
+                        if (currentExpandedPostIt!!.isExpansionInProgress || currentExpandedPostIt!!.isCollapseInProgress) {
+                            return@setOnTouchListener true
+                        }
+
                         val x = event.x
                         val y = event.y
 
@@ -277,8 +281,6 @@ open class Pizarra : Fragment() {
                             if (isClickOutsidePostIt(x, y, postIt)) {
                                 postIt.collapse()
                                 return@setOnTouchListener true
-                            } else if (isClickOutsidePostIt(x, y, postIt)) {
-                                Log.d("Pizarra", "Ignorando click - postIt está animando")
                             }
                         }
                     }
@@ -421,21 +423,16 @@ open class Pizarra : Fragment() {
                 addListener(
                     object : AnimatorListenerAdapter() {
                         override fun onAnimationStart(animation: Animator) {
-                            Log.d("Pizarra", "Animación de expansión iniciada")
                         }
 
                         override fun onAnimationEnd(animation: Animator) {
-                            Log.d("Pizarra", "Animación de expansión finalizada")
-                            try {
-                                updateExpandedPizarraLayout(postIt, targetWidth, targetHeight)
-                                createExpandedPizarra(postIt, lienzoId)
-                            } catch (e: Exception) {
-                                Log.e("Pizarra", "Error en animación de expansión: ${e.message}")
-                            }
+                            updateExpandedPizarraLayout(postIt, targetWidth, targetHeight)
+                            createExpandedPizarra(postIt, lienzoId)
+                            postIt.isExpansionInProgress = false
                         }
 
                         override fun onAnimationCancel(animation: Animator) {
-                            Log.d("Pizarra", "Animación de expansión cancelada")
+                            postIt.isExpansionInProgress = false
                         }
                     },
                 )
@@ -482,25 +479,17 @@ open class Pizarra : Fragment() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun collapsePostIt(postIt: PostItView) {
-        Log.d("Pizarra", "Intentando colapsar post-it ${postIt.postItId}")
-
-        try {
-            captureAndScaleBitmap(postIt)
-
-            expandedPizarraView?.stop()
-
-            animateCollapse(postIt)
-            cleanupExpansion()
-
-            // postIt.postDelayed({
-            //    viewLifecycleOwner.lifecycleScope.launch {
-            //        Log.d("Pizarra", "Reiniciando carga después del colapso")
-            //        postIt.load()
-            //    }
-            // }, 500L)
-        } catch (e: Exception) {
-            Log.e("Pizarra", "Error durante el colapso: ${e.message}")
+        if (postIt.isCollapseInProgress) {
+            return
         }
+
+        postIt.isCollapseInProgress = true
+
+        captureAndScaleBitmap(postIt)
+        expandedPizarraView?.stop()
+
+        animateCollapse(postIt)
+        cleanupExpansion()
     }
 
     private fun captureAndScaleBitmap(postIt: PostItView) {
@@ -538,7 +527,6 @@ open class Pizarra : Fragment() {
         val visibleHeight = min(bitmap.height - visibleTop, rect.height())
 
         if (visibleWidth <= 0 || visibleHeight <= 0) {
-            Log.w("PostIt", "No hay área visible para recortar")
             return bitmap
         }
 
@@ -583,6 +571,7 @@ open class Pizarra : Fragment() {
             postItOverlay = null
         }
 
+        currentExpandedPostIt?.isExpansionInProgress = false
         currentExpandedPostIt = null
     }
 
@@ -601,15 +590,16 @@ open class Pizarra : Fragment() {
                 addListener(
                     object : AnimatorListenerAdapter() {
                         override fun onAnimationStart(animation: Animator) {
-                            Log.d("Pizarra", "Animación de colapso iniciada")
                         }
 
                         override fun onAnimationEnd(animation: Animator) {
-                            Log.d("Pizarra", "Animación de colapso finalizada")
+                            cleanupExpansion()
+                            postIt.invalidate()
+                            postIt.isCollapseInProgress = false
                         }
 
                         override fun onAnimationCancel(animation: Animator) {
-                            Log.d("Pizarra", "Animación de colapso cancelada")
+                            postIt.isCollapseInProgress = false
                         }
                     },
                 )
