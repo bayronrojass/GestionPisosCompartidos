@@ -1,11 +1,11 @@
 package com.example.gestionpisoscompartidos.ui.piso.listaPisos
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionpisoscompartidos.databinding.ItemCasaBinding
 import com.example.gestionpisoscompartidos.model.Casa
-import android.util.Log
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
