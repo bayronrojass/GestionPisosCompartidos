@@ -37,7 +37,8 @@ class HomeFragment : Fragment() {
         }
 
         binding.btnPizarra.setOnClickListener {
-            findNavController().navigate(R.id.action_homeFragment_to_pizarraFragment)
+            val action = HomeFragmentDirections.actionHomeFragmentToPizarraFragment(1L)
+            findNavController().navigate(action)
         }
 
         binding.btnGestionPiso.setOnClickListener {

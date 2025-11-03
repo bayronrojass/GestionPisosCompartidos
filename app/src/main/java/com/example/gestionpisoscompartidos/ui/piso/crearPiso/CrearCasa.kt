@@ -24,8 +24,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.example.gestionpisoscompartidos.R
-import kotlinx.coroutines.launch
 import com.example.gestionpisoscompartidos.ui.piso.crearCasa.CrearCasaViewModel
+import kotlinx.coroutines.launch
 
 class CrearCasa : Fragment() {
     private val viewModel: CrearCasaViewModel by viewModels()

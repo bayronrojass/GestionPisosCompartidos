@@ -1,17 +1,31 @@
 package com.example.gestionpisoscompartidos.data.repository.APIs
 
 import com.example.gestionpisoscompartidos.model.dtos.PointDeltaDTO
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Path
+import retrofit2.http.Query
+import retrofit2.http.Streaming
 
 interface PizarraAPI {
-    @GET("lienzos/1")
-    suspend fun getLienzo(): Response<ByteArray>
+    @Streaming
+    @GET("lienzos/{id}/png")
+    suspend fun getLienzo(
+        @Path("id") id: Long,
+    ): Response<ResponseBody>
 
-    @POST("lienzos/1/deltas")
+    @GET("lienzos/{id}/isUpdated")
+    suspend fun isUpdated(
+        @Path("id") id: Long,
+        @Query("time") time: Long,
+    ): Response<Boolean>
+
+    @POST("lienzos/{id}/deltas")
     suspend fun postDelta(
+        @Path("id") id: Long,
         @Body request: List<PointDeltaDTO>,
     ): Response<Boolean>
 }

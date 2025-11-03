@@ -1,6 +1,12 @@
 package com.example.gestionpisoscompartidos.ui.item
 
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import com.example.gestionpisoscompartidos.R
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -208,7 +214,6 @@ class Item : Fragment() {
                 val descripcion = descripcionInput.text.toString().ifBlank { null }
 
                 if (nombre.isNotBlank()) {
-                    // Llamamos a la nueva función del ViewModel
                     viewModel.actualizarNombreDescripcion(item, nombre, descripcion)
                 } else {
                     Toast.makeText(context, "El nombre no puede estar vacío", Toast.LENGTH_SHORT).show()

@@ -3,15 +3,24 @@ package com.example.gestionpisoscompartidos.ui.pizarra
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Path
-import android.graphics.Paint
 import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Path
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
-import com.example.gestionpisoscompartidos.model.Point
 import androidx.core.graphics.createBitmap
+import com.example.gestionpisoscompartidos.model.Point
 import com.example.gestionpisoscompartidos.model.dtos.PointDeltaDTO
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
 
 class PizarraView
     @JvmOverloads
@@ -20,12 +29,18 @@ class PizarraView
         attrs: AttributeSet? = null,
         defStyleAttr: Int = 0,
     ) : View(context, attrs, defStyleAttr) {
-        private lateinit var bitmap: Bitmap
+        private lateinit var currentBitmap: Bitmap
         private lateinit var canvasBitmap: Canvas
         private lateinit var model: PizarraViewModel
+        private var backgroundBitmap: Bitmap? = null
         private val path = Path()
         private var lastPoint: Point? = null
-        private val paint =
+        var saveJob: Job? = null
+        private val saveScope = CoroutineScope(Dispatchers.Main)
+        private var loadJob: Job? = null
+        private val loadScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
+        var paint =
             Paint().apply {
                 color = Color.BLACK
                 style = Paint.Style.STROKE
@@ -35,9 +50,6 @@ class PizarraView
                 strokeJoin = Paint.Join.ROUND
             }
 
-        /** Callback que se ejecuta al tocar */
-        var onTouchCallback: ((x: Float, y: Float) -> Unit)? = null
-
         override fun onSizeChanged(
             w: Int,
             h: Int,
@@ -45,38 +57,81 @@ class PizarraView
             oldh: Int,
         ) {
             super.onSizeChanged(w, h, oldw, oldh)
-            bitmap = createBitmap(w, h)
-            canvasBitmap = Canvas(bitmap)
+            currentBitmap = createBitmap(w, h)
+            canvasBitmap = Canvas(currentBitmap)
+            load()
+        }
+
+        fun setBackgroundBitmap(bitmap: Bitmap) {
+            backgroundBitmap = bitmap
+            currentBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
+            canvasBitmap = Canvas(currentBitmap)
+            invalidate()
         }
 
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)
-            canvas.drawBitmap(bitmap, 0f, 0f, null)
+            canvas.drawBitmap(currentBitmap, 0f, 0f, null)
         }
 
         override fun onTouchEvent(event: MotionEvent): Boolean {
             val x = event.x
             val y = event.y
-            onTouchCallback?.let { it(x, y) }
+
+            loadJob?.cancel()
+            val paint = createPaint(model.color)
 
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     path.moveTo(x, y)
                     lastPoint = Point(x, y)
-                    model.add(PointDeltaDTO(x, y, 10f, 1))
+                    model.add(PointDeltaDTO(x, y, 10f, model.color))
                     performClick()
+                    return true
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    path.quadTo(lastPoint!!.x, lastPoint!!.y, (x + lastPoint!!.x) / 2, (y + lastPoint!!.y) / 2)
+                    path.quadTo(
+                        lastPoint!!.x,
+                        lastPoint!!.y,
+                        (x + lastPoint!!.x) / 2,
+                        (y + lastPoint!!.y) / 2,
+                    )
                     canvasBitmap.drawPath(path, paint)
                     lastPoint = Point(x, y)
-                    model.add(PointDeltaDTO(x, y, 10f, 1))
+                    model.add(PointDeltaDTO(x, y, 10f, model.color))
                     invalidate()
+                    return true
                 }
                 MotionEvent.ACTION_UP -> {
+                    canvasBitmap.drawPath(path, paint)
+                    model.add(PointDeltaDTO(x, y, 0f, model.color))
                     lastPoint = null
+                    path.reset()
                     save()
+                    return true
                 }
+            }
+            return false
+        }
+
+        private fun createPaint(colorByte: Byte): Paint {
+            val c =
+                when (colorByte) {
+                    1.toByte() -> Color.BLACK
+                    2.toByte() -> Color.RED
+                    3.toByte() -> Color.GREEN
+                    4.toByte() -> Color.BLUE
+                    8.toByte() -> Color.WHITE
+                    else -> Color.BLACK
+                }
+
+            return Paint().apply {
+                color = c
+                style = Paint.Style.STROKE
+                isAntiAlias = true
+                strokeWidth = 10f
+                strokeCap = Paint.Cap.ROUND
+                strokeJoin = Paint.Join.ROUND
             }
             return true
         }
@@ -87,19 +142,48 @@ class PizarraView
         }
 
         private fun save() {
-            model.save()
+            saveJob?.cancel()
+
+            saveJob =
+                saveScope.launch {
+                    delay(1000L)
+                    model.save()
+                    load()
+                }
         }
 
-        suspend fun load() {
-            canvasBitmap.setBitmap(model.load())
+        fun load() {
+            loadJob?.cancel()
+
+            loadJob =
+                loadScope.launch {
+                    while (isActive) {
+                        try {
+                            Log.d("Load", "Cargando ${model.lienzoId}...")
+                            model.load()
+                            delay(5000L)
+                        } catch (e: CancellationException) {
+                            Log.e("Load", "Error en carga: ${e.message}")
+                            break
+                        } catch (e: Exception) {
+                            Log.e("Load", "Error en carga: ${e.message}")
+                            delay(5000L)
+                        }
+                    }
+                }
         }
 
         fun clear() {
-            bitmap.eraseColor(Color.TRANSPARENT)
+            currentBitmap.eraseColor(Color.TRANSPARENT)
             invalidate()
         }
 
         fun setModel(newModel: PizarraViewModel) {
             model = newModel
+        }
+
+        fun stop() {
+            saveJob?.cancel()
+            loadJob?.cancel()
         }
     }
