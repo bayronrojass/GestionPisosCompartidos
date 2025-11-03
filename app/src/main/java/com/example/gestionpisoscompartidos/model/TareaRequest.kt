@@ -7,5 +7,5 @@ data class TareaRequest(
     val fechaFin: String?,
     val frecuencia: String?,
     val periodica: Boolean?,
-    val asignadoAId: Long?
+    val asignadoAId: Long?,
 )
