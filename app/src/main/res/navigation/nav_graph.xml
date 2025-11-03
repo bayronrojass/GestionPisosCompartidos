@@ -31,8 +31,8 @@
             android:label="Login"
             tools:layout="@layout/fragment_login" >
         <action
-                android:id="@+id/action_loginFragment_to_homeFragment"
-                app:destination="@id/Home2"
+                android:id="@+id/action_loginFragment_to_listaCasasFragment"
+                app:destination="@id/ListaCasasFragment"
                 app:popUpTo="@id/loginFragment"
                 app:popUpToInclusive="true" />
     </fragment>
@@ -67,8 +67,8 @@
                 android:id="@+id/action_ListaCasasFragment_to_crearPisoFragment"
                 app:destination="@id/crearPisoFragment" />
         <action
-                android:id="@+id/action_ListaCasasFragment_to_listaDeListasFragment"
-                app:destination="@id/listaDeListasFragment" />
+                android:id="@+id/action_listaCasasFragment_to_casaDashboardFragment"
+                app:destination="@id/Home2" />
     </fragment>
 
     <fragment
@@ -109,19 +109,17 @@
             android:label="Inicio"
             tools:layout="@layout/fragment_home2">
         <argument
-                android:name="casas"
-                app:argType="com.example.gestionpisoscompartidos.model.Casa[]" />
+                android:name="casaId"
+                app:argType="long" />
         <argument
                 android:name="casaNombre"
-                app:argType="string"
-                app:nullable="true"
-                android:defaultValue="@null" />
+                app:argType="string" />
 
         <action
-                android:id="@+id/action_homeFragment_to_listaCasasFragment"
-                app:destination="@id/ListaCasasFragment" />
+                android:id="@+id/action_casaDashboardFragment_to_listasFragment"
+                app:destination="@id/listaDeListasFragment" />
         <action
-                android:id="@+id/action_homeFragment_to_tareasFragment"
+                android:id="@+id/action_casaDashboardFragment_to_tareasFragment"
                 app:destination="@id/TareasFragment" />
     </fragment>
 

@@ -46,9 +46,9 @@ class ListaCasas : Fragment() {
             CasasAdapter(emptyList()) { casaSeleccionada ->
                 // Acción al hacer clic en una casa
                 Toast.makeText(context, "Has seleccionado: ${casaSeleccionada.nombre}", Toast.LENGTH_SHORT).show()
-                Log.d("ListaCasasFragment", "Navegando a listas de casaId: ${casaSeleccionada.id}")
+                Log.d("ListaCasasFragment", "Navegando a DashBoard de casaId: ${casaSeleccionada.id}")
                 val action =
-                    ListaCasasDirections.actionListaCasasFragmentToListaDeListasFragment(
+                    ListaCasasDirections.actionListaCasasFragmentToCasaDashboardFragment(
                         casaSeleccionada.id,
                         casaSeleccionada.nombre,
                     )

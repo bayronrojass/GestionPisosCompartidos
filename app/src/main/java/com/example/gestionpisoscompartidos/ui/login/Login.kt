@@ -13,7 +13,6 @@ import com.example.gestionpisoscompartidos.databinding.FragmentLoginBinding
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.model.LoginResponse
 import androidx.navigation.fragment.findNavController
-// 1. IMPORTA TU SESSION MANAGER
 import com.example.gestionpisoscompartidos.data.SessionManager3
 
 /**
@@ -120,8 +119,7 @@ class Login : Fragment() {
             Log.d("LoginSuccess", "Pisos encontrados: ${response.flats.size}")
 
             val casasArray = response.flats.toTypedArray()
-            val casaNombre = if (casasArray.isNotEmpty()) casasArray[0].nombre else "Mi Casa" // Placeholder
-            val action = LoginDirections.actionLoginFragmentToHomeFragment(casasArray, casaNombre)
+            val action = LoginDirections.actionLoginFragmentToListaCasasFragment(casasArray)
             findNavController().navigate(action)
         } else {
             // El usuario no tiene pisos, vamos a la pantalla de "Crear o Unirse"

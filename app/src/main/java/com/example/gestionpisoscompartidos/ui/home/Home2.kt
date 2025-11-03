@@ -30,24 +30,17 @@ class Home2 : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.btnVerListas.setOnClickListener {
-            // Pasa el array de casas que recibió del login
-            val action = Home2Directions.actionHomeFragmentToListaCasasFragment(args.casas)
+            val action = Home2Directions.actionCasaDashboardFragmentToListasFragment(args.casaId, args.casaNombre)
             findNavController().navigate(action)
         }
 
         binding.btnVerTareas.setOnClickListener {
-            // Asumimos que operamos sobre la *primera* casa.
-            // Idealmente, deberías navegar a 'listaCasasFragment' y que ESE fragment
-            // devuelva el ID de la casa seleccionada para navegar a Tareas.
-            // Por simplicidad, usamos la primera casa del array.
-            if (args.casas.isNotEmpty()) {
-                val casaId = args.casas[0].id
-                val casaNombre = args.casas[0].nombre
-                val action = Home2Directions.actionHomeFragmentToTareasFragment(casaId, casaNombre)
-                findNavController().navigate(action)
-            } else {
-                // TODO: Navegar a "Crear Casa" si no hay casas
-            }
+            val action =
+                Home2Directions.actionCasaDashboardFragmentToTareasFragment(
+                    args.casaId,
+                    args.casaNombre,
+                )
+            findNavController().navigate(action)
         }
     }
 
