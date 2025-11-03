@@ -12,7 +12,7 @@ class TestPizarra : AppCompatActivity() {
 
         supportFragmentManager
             .beginTransaction()
-            .replace(R.id.fragmentContainer, Pizarra.newInstance())
+            .replace(R.id.fragmentContainer, Pizarra.newInstance(1L))
             .commit()
     }
 }

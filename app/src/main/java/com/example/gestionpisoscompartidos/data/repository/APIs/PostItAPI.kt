@@ -1,0 +1,36 @@
+package com.example.gestionpisoscompartidos.data.repository.APIs
+
+import com.example.gestionpisoscompartidos.model.dtos.PostItDTO
+import retrofit2.Response
+import retrofit2.http.Body
+import retrofit2.http.DELETE
+import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.Path
+
+interface PostItAPI {
+    @POST("casas/{id}/postIt")
+    suspend fun crearPostIt(
+        @Path("id") id: Long,
+    ): Response<PostItDTO>
+
+    @GET("casas/{id}/postIt")
+    suspend fun getPostIts(
+        @Path("id") id: Long,
+    ): Response<List<Long>>
+
+    @GET("postits/{id}")
+    suspend fun getPostItDetails(
+        @Path("id") id: Long,
+    ): Response<PostItDTO>
+
+    @DELETE("postits/{id}")
+    suspend fun deletePostIt(
+        @Path("id") id: Long,
+    ): Response<Boolean>
+
+    @POST("postits/pos")
+    suspend fun updatePostItPosition(
+        @Body postItDTO: PostItDTO,
+    ): Response<Boolean>
+}

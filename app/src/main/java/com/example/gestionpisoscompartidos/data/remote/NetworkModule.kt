@@ -1,7 +1,11 @@
 package com.example.gestionpisoscompartidos.data.remote
 
+import com.example.gestionpisoscompartidos.data.repository.APIs.CasaAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.DatabaseAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.LoginAPI
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.Strictness
 import com.example.gestionpisoscompartidos.data.repository.APIs.CasaAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.ItemAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.ListaAPI
@@ -16,12 +20,18 @@ import retrofit2.converter.gson.GsonConverterFactory
  * y proporciona las instancias de los servicios API.
  */
 object NetworkModule {
-    private const val BASE_URL = "http://10.0.2.2:8080/"
+    private const val BASE_URL = "http://localhost:8080/"
+
+    private val gson: Gson =
+        GsonBuilder()
+            .setStrictness(Strictness.LENIENT)
+            .create()
+
     private val brokerUrl = "tcp://10.0.2.2:1883"
     val retrofit: Retrofit by lazy {
         Builder()
             .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
 

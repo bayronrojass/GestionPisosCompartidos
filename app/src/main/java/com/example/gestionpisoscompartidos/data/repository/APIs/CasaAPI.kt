@@ -5,7 +5,7 @@ import com.example.gestionpisoscompartidos.model.CasaResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
-import retrofit2.http.* // <-- Importa DELETE
+import retrofit2.http.*
 
 interface CasaAPI {
     @Multipart
@@ -15,6 +15,11 @@ interface CasaAPI {
         @Part file: MultipartBody.Part?,
     ): Response<CasaResponse>
 
+    @GET("casas/{id}/lienzo")
+    suspend fun getLienzo(
+        @Path("id") id: Long,
+    ): Response<Long>
+  
     @GET("casas/{id}/details")
     suspend fun getPisoDetails(
         @Header("Authorization") token: String,
