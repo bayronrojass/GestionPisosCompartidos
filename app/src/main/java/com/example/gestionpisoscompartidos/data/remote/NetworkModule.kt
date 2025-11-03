@@ -15,8 +15,8 @@ import retrofit2.converter.gson.GsonConverterFactory
  * y proporciona las instancias de los servicios API.
  */
 object NetworkModule {
-    private const val BASE_URL = "http://10.0.2.2:8080/api/"
-
+    private const val BASE_URL = "http://10.0.2.2:8080/"
+    private val brokerUrl = "tcp://10.0.2.2:1883"
     val retrofit: Retrofit by lazy {
         Builder()
             .baseUrl(BASE_URL)

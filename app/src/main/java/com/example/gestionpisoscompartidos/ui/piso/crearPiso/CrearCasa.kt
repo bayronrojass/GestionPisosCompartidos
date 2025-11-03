@@ -93,9 +93,9 @@ class CrearCasa : Fragment() {
                         pickedPhoto,
                     )
                 if (success) {
-                    Toast.makeText(requireContext(), "Flat created", Toast.LENGTH_LONG).show()
+                    Toast.makeText(requireContext(), "Piso creado", Toast.LENGTH_LONG).show()
                 } else {
-                    Toast.makeText(requireContext(), "Error creating flat", Toast.LENGTH_LONG).show()
+                    Toast.makeText(requireContext(), "Error creando piso", Toast.LENGTH_LONG).show()
                 }
             }
         }

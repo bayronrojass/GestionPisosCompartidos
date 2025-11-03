@@ -27,28 +27,23 @@ class GestionUsuariosPiso : Fragment() {
     // Prepara la Factory
     private lateinit var viewModelFactory: GestionUsuariosPisoViewModelFactory
 
-    // ¡USA LA FACTORY! Esto evita el crash.
     private val viewModel: GestionUsuariosPisoViewModel by viewModels { viewModelFactory }
 
     // Declaración de Vistas
     private lateinit var miembrosAdapter: MiembrosPisoAdapter
     private lateinit var recyclerView: RecyclerView
     private lateinit var buttonInviteQr: Button
-    private lateinit var buttonInviteEmail: Button // Botón añadido
+    private lateinit var buttonInviteEmail: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Inicializa tus dependencias (idealmente con Hilt/Koin)
         val context = requireContext().applicationContext
         val sessionManager = SessionManager3(context)
 
-        // Asumo que tienes un objeto 'RetrofitClient' que expone las APIs
-        // y un 'RepositoryCasa'
         val pisoRepository = RepositoryCasa(NetworkModule.casaApiService)
         val invitacionRepository = RepositoryInvitacion(NetworkModule.invitacionApiService)
 
-        // Crea la factory con las dependencias
         viewModelFactory =
             GestionUsuariosPisoViewModelFactory(
                 pisoRepository,
@@ -92,8 +87,7 @@ class GestionUsuariosPiso : Fragment() {
     private fun setupViews(view: View) {
         recyclerView = view.findViewById(R.id.recycler_view_members)
         buttonInviteQr = view.findViewById(R.id.button_invite_qr_main)
-        // No hat boton de invitacion por email
-        buttonInviteEmail = view.findViewById(R.id.button_invite_qr_main)
+        buttonInviteEmail = view.findViewById(R.id.button_invite_email)
 
         miembrosAdapter =
             MiembrosPisoAdapter { miembro ->
