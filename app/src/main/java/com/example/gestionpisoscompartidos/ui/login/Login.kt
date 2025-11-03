@@ -12,6 +12,8 @@ import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryLogin
 import com.example.gestionpisoscompartidos.databinding.FragmentLoginBinding
 import com.example.gestionpisoscompartidos.model.LoginResponse
+import androidx.navigation.fragment.findNavController
+import com.example.gestionpisoscompartidos.data.SessionManager3
 
 /**
  * Fragmento de la pantalla de inicio de sesión.
@@ -21,23 +23,23 @@ class Login : Fragment() {
         fun newInstance() = Login()
     }
 
-    // Usar View Binding para acceder a los elementos del layout
     private var _binding: FragmentLoginBinding? = null
     private val binding get() = _binding!!
 
-    // Inicializar el ViewModel (asumiendo que tienes una ViewModelFactory
-    // o un sistema de inyección como Hilt/Koin configurado).
-    // Si no usas DI, tendrás que inicializar el repositorio y el ViewModel manualmente.
-    // Ejemplo manual (simplificado, no recomendado en apps grandes):
+    private lateinit var sessionManager: SessionManager3
+
+    // Inicialización del ViewModel (tu código está bien)
     private val viewModel: LoginViewModel by viewModels {
-        // 1. Obtener la API del módulo de red
         val apiService = NetworkModule.loginApiService
-
-        // 2. Crear el Repositorio con la API
         val repository = RepositoryLogin(apiService)
-
-        // 3. Devolver la fábrica con el Repositorio
         LoginViewModelFactory(repository)
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Usamos applicationContext para que sea seguro
+        sessionManager = SessionManager3(requireContext().applicationContext)
     }
 
     override fun onCreateView(
@@ -54,7 +56,6 @@ class Login : Fragment() {
         savedInstanceState: Bundle?,
     ) {
         super.onViewCreated(view, savedInstanceState)
-
         setupListeners()
         setupObservers()
     }
@@ -106,26 +107,29 @@ class Login : Fragment() {
     private fun handleLoginSuccess(response: LoginResponse) {
         Toast.makeText(context, "¡Bienvenido, ${response.user.nombre}!", Toast.LENGTH_SHORT).show()
 
-        // 1. Guardar el token de autenticación (SharedPreferences/DataStore)
-        // SharedPreferencesManager.saveToken(response.authToken)
+        sessionManager.saveAuthData(
+            token = response.authToken,
+            userId = response.user.id,
+            email = response.user.correo,
+        )
 
-        // 2. Manejar la lista de pisos
+        // 5. Ahora, maneja la navegación
         if (response.flats.isNotEmpty()) {
-            Toast.makeText(context, "Pisos encontrados: ${response.flats.size}", Toast.LENGTH_LONG).show()
-            response.flats.forEach { piso ->
-                Log.d("LoginSuccess", "ID de Piso/Casa recibido: ${piso.id}") // Verifica el ID en Logcat
-            }
-            // TODO: Navegar a una pantalla de selección de piso
-            // O si solo tiene uno, seleccionarlo automáticamente e iniciar el servicio MQTT
-            // startMqttService(response.flats.first().id)
+            // El usuario tiene pisos, vamos a la lista de selección
+            Log.d("LoginSuccess", "Pisos encontrados: ${response.flats.size}")
+
+            val casasArray = response.flats.toTypedArray()
+            val action = LoginDirections.actionLoginFragmentToListaCasasFragment(casasArray)
+            findNavController().navigate(action)
         } else {
+            // El usuario no tiene pisos, vamos a la pantalla de "Crear o Unirse"
             Log.d("LoginSuccess", "La lista 'flats' está vacía.")
             Toast.makeText(context, "No tienes pisos asignados.", Toast.LENGTH_LONG).show()
-            // TODO: Navegar a una pantalla para crear/unirse a un piso
-        }
 
-        // TODO: Navegar a la pantalla principal (lista de tareas)
-        // findNavController().navigate(R.id.action_loginFragment_to_tareasFragment)
+            // TODO: Cambia esto por la navegación real a tu pantalla de "Crear/Unirse"
+            // val action = LoginDirections.actionLoginFragmentToUnirsePisoFragment()
+            // findNavController().navigate(action)
+        }
     }
 
     override fun onDestroyView() {

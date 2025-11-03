@@ -7,23 +7,225 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.example.gestionpisoscompartidos.R
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Toast
+import androidx.core.view.isVisible
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.navArgs
+import com.example.gestionpisoscompartidos.databinding.FragmentItemBinding
+import android.app.AlertDialog
+import android.widget.EditText
+import android.widget.LinearLayout
+import com.example.gestionpisoscompartidos.model.Elemento
 
 class Item : Fragment() {
-    companion object {
-        fun newInstance() = Item()
+    private var _binding: FragmentItemBinding? = null
+    private val binding get() = _binding!!
+
+    private val args: ItemArgs by navArgs()
+    private val viewModel: ItemViewModel by viewModels {
+        ItemViewModelFactory(args.listaId)
     }
-
-    private val viewModel: ItemViewModel by viewModels()
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        // TODO: Use the ViewModel
-    }
+    private lateinit var itemsAdapter: ItemsAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View = inflater.inflate(R.layout.fragment_item, container, false)
+    ): View {
+        _binding = FragmentItemBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
+        super.onViewCreated(view, savedInstanceState)
+        Log.d("ItemFragment", "Recibido listaId: ${args.listaId}")
+
+        binding.headerTitle.text = args.casaNombre
+        binding.sectionTitle.text = args.listaNombre
+
+        setupRecyclerView()
+        setupViewModelObservers()
+        setupListeners()
+    }
+
+    private fun setupRecyclerView() {
+        itemsAdapter =
+            ItemsAdapter(
+                emptyList(),
+                onCompletadoClick = { item ->
+                    Log.d("ItemFragment", "Click completado en: ${item.nombre}")
+                    viewModel.toggleItemCompletado(item)
+                },
+                onBorrarClick = { item ->
+                    Log.d("ItemFragment", "Click borrar en: ${item.nombre}")
+                    AlertDialog
+                        .Builder(requireContext())
+                        .setTitle("Borrar Item")
+                        .setMessage("¿Seguro que quieres borrar '${item.nombre}'?")
+                        .setPositiveButton("Borrar") { _, _ ->
+                            viewModel.borrarElemento(item)
+                        }.setNegativeButton("Cancelar", null)
+                        .show()
+                },
+                onItemClick = { item ->
+                    // Mostrar diálogo con detalles
+                    AlertDialog
+                        .Builder(requireContext())
+                        .setTitle(item.nombre)
+                        .setMessage(item.descripcion ?: "Sin descripción.")
+                        .setPositiveButton("Cerrar", null)
+                        .show()
+                },
+                onEditClick = { item ->
+                    mostrarDialogoEditarItem(item) // Llama al diálogo de edición
+                },
+            )
+        binding.recyclerViewItems.adapter = itemsAdapter
+    }
+
+    private fun setupViewModelObservers() {
+        viewModel.items.observe(viewLifecycleOwner) { listaItems ->
+            itemsAdapter.updateData(listaItems)
+            if (viewModel.isLoading.value == false) {
+                binding.recyclerViewItems.isVisible = listaItems.isNotEmpty()
+                binding.tvMensajeVacioItems.isVisible = listaItems.isEmpty()
+            }
+        }
+
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            binding.progressBarItems.isVisible = isLoading
+            if (isLoading) {
+                binding.recyclerViewItems.isVisible = false
+                binding.tvMensajeVacioItems.isVisible = false
+            } else {
+                val items = viewModel.items.value
+                if (items != null) {
+                    binding.recyclerViewItems.isVisible = items.isNotEmpty()
+                    binding.tvMensajeVacioItems.isVisible = items.isEmpty()
+                } else {
+                    binding.recyclerViewItems.isVisible = false
+                    binding.tvMensajeVacioItems.isVisible = true
+                }
+            }
+        }
+
+        viewModel.error.observe(viewLifecycleOwner) { errorMsg ->
+            if (errorMsg != null) {
+                Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
+                binding.progressBarItems.isVisible = false
+                binding.recyclerViewItems.isVisible = false
+                binding.tvMensajeVacioItems.isVisible = true
+            }
+        }
+    }
+
+    private fun setupListeners() {
+        binding.fabAdd.setOnClickListener {
+            mostrarDialogoCrearItem()
+        }
+    }
+
+    private fun mostrarDialogoCrearItem() {
+        val context = requireContext()
+
+        val linearLayout =
+            LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(48, 48, 48, 48)
+            }
+
+        val nombreInput =
+            EditText(context).apply {
+                hint = "Nombre del item"
+                maxLines = 1
+            }
+
+        val descripcionInput =
+            EditText(context).apply {
+                hint = "Descripción (opcional)"
+                maxLines = 3
+            }
+
+        linearLayout.addView(nombreInput)
+        linearLayout.addView(descripcionInput)
+
+        AlertDialog
+            .Builder(context)
+            .setTitle("Añadir Nuevo Item")
+            .setView(linearLayout)
+            .setPositiveButton("Añadir") { dialog, _ ->
+                val nombre = nombreInput.text.toString()
+                val descripcion = descripcionInput.text.toString().ifBlank { null }
+
+                if (nombre.isNotBlank()) {
+                    viewModel.crearElemento(nombre, descripcion)
+                } else {
+                    Toast.makeText(context, "El nombre no puede estar vacío", Toast.LENGTH_SHORT).show()
+                }
+                dialog.dismiss()
+            }.setNegativeButton("Cancelar") { dialog, _ ->
+                dialog.cancel()
+            }.show()
+    }
+
+    private fun mostrarDialogoEditarItem(item: Elemento) {
+        val context = requireContext()
+
+        // Creamos el layout del diálogo
+        val linearLayout =
+            LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(48, 48, 48, 48)
+            }
+
+        // Campo para el nombre, pre-rellenado
+        val nombreInput =
+            EditText(context).apply {
+                hint = "Nombre del item"
+                setText(item.nombre)
+                maxLines = 1
+            }
+
+        // Campo para la descripción, pre-rellenado
+        val descripcionInput =
+            EditText(context).apply {
+                hint = "Descripción (opcional)"
+                setText(item.descripcion)
+                maxLines = 3
+            }
+
+        linearLayout.addView(nombreInput)
+        linearLayout.addView(descripcionInput)
+
+        AlertDialog
+            .Builder(context)
+            .setTitle("Editar Item")
+            .setView(linearLayout)
+            .setPositiveButton("Guardar") { dialog, _ ->
+                val nombre = nombreInput.text.toString()
+                val descripcion = descripcionInput.text.toString().ifBlank { null }
+
+                if (nombre.isNotBlank()) {
+                    viewModel.actualizarNombreDescripcion(item, nombre, descripcion)
+                } else {
+                    Toast.makeText(context, "El nombre no puede estar vacío", Toast.LENGTH_SHORT).show()
+                }
+                dialog.dismiss()
+            }.setNegativeButton("Cancelar") { dialog, _ ->
+                dialog.cancel()
+            }.show()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
 }

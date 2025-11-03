@@ -21,7 +21,7 @@ import kotlin.random.Random
 
 class MqttConnectionManagerService : Service() {
     private lateinit var mqttClient: MqttAndroidClient
-    private val brokerUrl = "tcp://192.168.1.131:1883"
+    private val brokerUrl = "tcp://10.0.2.2:1883"
     private val clientId = MqttClient.generateClientId()
     private var manager: NotificationManager? = null
 

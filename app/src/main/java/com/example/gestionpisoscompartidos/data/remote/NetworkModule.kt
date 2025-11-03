@@ -6,6 +6,11 @@ import com.example.gestionpisoscompartidos.data.repository.APIs.LoginAPI
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.Strictness
+import com.example.gestionpisoscompartidos.data.repository.APIs.CasaAPI
+import com.example.gestionpisoscompartidos.data.repository.APIs.ItemAPI
+import com.example.gestionpisoscompartidos.data.repository.APIs.ListaAPI
+import com.example.gestionpisoscompartidos.data.repository.APIs.InvitacionAPI
+import com.example.gestionpisoscompartidos.data.repository.APIs.TareaAPI
 import retrofit2.Retrofit
 import retrofit2.Retrofit.Builder
 import retrofit2.converter.gson.GsonConverterFactory
@@ -22,6 +27,7 @@ object NetworkModule {
             .setStrictness(Strictness.LENIENT)
             .create()
 
+    private val brokerUrl = "tcp://10.0.2.2:1883"
     val retrofit: Retrofit by lazy {
         Builder()
             .baseUrl(BASE_URL)
@@ -43,5 +49,21 @@ object NetworkModule {
 
     val casaApiService: CasaAPI by lazy {
         retrofit.create(CasaAPI::class.java)
+    }
+
+    val invitacionApiService: InvitacionAPI by lazy {
+        retrofit.create(InvitacionAPI::class.java)
+    }
+
+    val listaApiService: ListaAPI by lazy {
+        retrofit.create(ListaAPI::class.java)
+    }
+
+    val itemApiService: ItemAPI by lazy {
+        retrofit.create(ItemAPI::class.java)
+    }
+
+    val tareaApiService: TareaAPI by lazy {
+        retrofit.create(TareaAPI::class.java)
     }
 }
