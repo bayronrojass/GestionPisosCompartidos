@@ -1,5 +1,6 @@
 package com.example.gestionpisoscompartidos.ui.tareas
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.*
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
@@ -33,6 +34,7 @@ class TareasViewModel(
             try {
                 _tareas.value = repository.getTareasByCasaId(casaId)
             } catch (e: Exception) {
+                Log.e("TareasViewModel", "Error en cargarTareas", e)
                 _error.value = e.message ?: "Error cargando tareas"
                 _tareas.value = emptyList()
             } finally {
@@ -52,7 +54,8 @@ class TareasViewModel(
                 repository.crearTarea(casaId, request)
                 cargarTareas()
             } catch (e: Exception) {
-                _error.value = e.message
+                Log.e("TareasViewModel", "Error en crearTarea", e)
+                _error.value = "Error al crear tarea: ${e.message}"
                 _isLoading.value = false
             }
         }
@@ -65,6 +68,7 @@ class TareasViewModel(
                 repository.actualizarTarea(tarea.id, request)
                 cargarTareas()
             } catch (e: Exception) {
+                Log.e("TareasViewModel", "Error en toggleCompletado", e)
                 _error.value = e.message
             }
         }
@@ -76,6 +80,7 @@ class TareasViewModel(
                 repository.borrarTarea(tarea.id)
                 cargarTareas()
             } catch (e: Exception) {
+                Log.e("TareasViewModel", "Error en borrarTarea", e)
                 _error.value = e.message
             }
         }
