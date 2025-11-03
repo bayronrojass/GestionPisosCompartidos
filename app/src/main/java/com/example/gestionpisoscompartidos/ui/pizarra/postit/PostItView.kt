@@ -20,6 +20,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -197,16 +198,9 @@ class PostItView
                 paint.color = postItColor
                 canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
 
+                val dstRect = getDrawRect()
                 postItBitmap?.let { bitmap ->
-                    val scaledBitmap = bitmap
-                    val dstRect =
-                        Rect(
-                            closeButtonPadding.toInt(),
-                            (topBarHeight + closeButtonPadding).toInt(),
-                            width - closeButtonPadding.toInt(),
-                            height - closeButtonPadding.toInt(),
-                        )
-                    canvas.drawBitmap(scaledBitmap, null, dstRect, null)
+                    canvas.drawBitmap(bitmap, null, dstRect, null)
                 }
 
                 paint.color = topBarColor
@@ -297,6 +291,14 @@ class PostItView
             requestLayout()
         }
 
+        fun getDrawRect(): Rect =
+            Rect(
+                closeButtonPadding.toInt(),
+                (topBarHeight + closeButtonPadding).toInt(),
+                width - closeButtonPadding.toInt(),
+                height - closeButtonPadding.toInt(),
+            )
+
         private fun remove() {
             viewScope.launch {
                 val response = repositoryPostIt.deletePostIt(postItId)
@@ -313,11 +315,16 @@ class PostItView
                     while (isActive) {
                         try {
                             Log.d("Load", "Cargando PostIt${model?.lienzoId}...")
-                            model?.load()
+
+                            val loadResult =
+                                async {
+                                    model?.load()
+                                }.await()
 
                             val originalBitmap = model?._bitmapState?.value
                             if (originalBitmap != null) {
-                                bitmapManager.captureAndScalePreview(originalBitmap, postIt)
+                                postIt.setPreview(bitmapManager.captureAndScalePreview(originalBitmap, getDrawRect()))
+                                postIt.invalidate()
                             }
 
                             delay(5000L)

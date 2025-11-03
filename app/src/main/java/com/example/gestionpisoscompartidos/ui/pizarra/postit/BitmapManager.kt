@@ -9,20 +9,48 @@ import androidx.core.graphics.createBitmap
 import com.example.gestionpisoscompartidos.ui.pizarra.PizarraView
 import kotlin.math.max
 import kotlin.math.min
-import androidx.core.graphics.scale
 
 class BitmapManager {
     fun captureAndScalePreview(
         bitmap: Bitmap,
-        postIt: PostItView,
-    ) {
+        drawRect: Rect,
+    ): Bitmap {
         try {
-            val scaledBitmap = scaleBitmapForPreview(bitmap, postIt)
+            val targetWidth = drawRect.width()
+            val targetHeight = drawRect.height()
 
-            postIt.setPreview(scaledBitmap)
+            Log.d("BitmapManager", "Escalando para rect: ${targetWidth}x$targetHeight")
+
+            return scaleBitmapForPreview(bitmap, targetWidth, targetHeight)
         } catch (e: Exception) {
-            Log.e("PostIt", "Error capturando bitmap: ${e.message}")
+            Log.e("BitmapManager", "Error en captureAndScalePreview: ${e.message}")
+            return bitmap
         }
+    }
+
+    private fun scaleBitmapForPreview(
+        original: Bitmap,
+        targetWidth: Int,
+        targetHeight: Int,
+    ): Bitmap {
+        if (original.width <= 0 || original.height <= 0) {
+            return original
+        }
+
+        if (targetWidth <= 0 || targetHeight <= 0) {
+            return original
+        }
+
+        val ratio =
+            min(
+                targetWidth.toFloat() / original.width,
+                targetHeight.toFloat() / original.height,
+            )
+
+        val scaledWidth = (original.width * ratio).toInt()
+        val scaledHeight = (original.height * ratio).toInt()
+
+        return Bitmap.createScaledBitmap(original, scaledWidth, scaledHeight, true)
     }
 
     fun captureAndScaleBitmap(
@@ -35,7 +63,7 @@ class BitmapManager {
                     val fullBitmap = captureView(pizarra)
                     if (fullBitmap != null) {
                         val croppedBitmap = cropVisibleArea(pizarra, fullBitmap)
-                        val scaledBitmap = scaleBitmapForPreview(croppedBitmap, postIt)
+                        val scaledBitmap = scaleBitmapForPreview(croppedBitmap, postIt.width, postIt.height)
 
                         postIt.setPreview(scaledBitmap)
                     } else {
@@ -65,24 +93,6 @@ class BitmapManager {
         }
 
         return Bitmap.createBitmap(bitmap, visibleLeft, visibleTop, visibleWidth, visibleHeight)
-    }
-
-    private fun scaleBitmapForPreview(
-        original: Bitmap,
-        postIt: PostItView,
-    ): Bitmap {
-        val (targetWidth, targetHeight) = postIt.getOriginalSize()
-
-        val ratio =
-            min(
-                targetWidth.toFloat() / original.width,
-                targetHeight.toFloat() / original.height,
-            )
-
-        val scaledWidth = (original.width * ratio).toInt()
-        val scaledHeight = (original.height * ratio).toInt()
-
-        return original.scale(scaledWidth, scaledHeight)
     }
 
     private fun captureView(view: View): Bitmap? {

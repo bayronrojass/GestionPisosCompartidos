@@ -40,6 +40,7 @@ class PostItManager(
         val postIt =
             PostItView(context, postItId = dto.id).apply {
                 setupLayout(PostItConfig().width, PostItConfig().height, x, y)
+                model = createPizarraViewModel(dto.lienzoId)
                 this.onExpand = { onPostItExpand(this, dto.lienzoId) }
                 this.onCollapse = { onPostItCollapse(this) }
             }
@@ -76,6 +77,7 @@ class PostItManager(
         }
 
     private fun addPostItToContainer(postIt: PostItView) {
+        postIt.load()
         postItContainer.addView(postIt)
     }
 
@@ -111,6 +113,7 @@ class PostItManager(
 
         animationManager.animateCollapse(postIt)
         cleanupExpansion()
+        postIt.load()
     }
 
     private fun createOverlay() {
