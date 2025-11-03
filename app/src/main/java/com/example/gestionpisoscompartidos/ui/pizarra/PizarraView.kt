@@ -133,7 +133,6 @@ class PizarraView
                 strokeCap = Paint.Cap.ROUND
                 strokeJoin = Paint.Join.ROUND
             }
-            return true
         }
 
         override fun performClick(): Boolean {

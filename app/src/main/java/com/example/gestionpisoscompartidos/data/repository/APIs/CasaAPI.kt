@@ -19,7 +19,7 @@ interface CasaAPI {
     suspend fun getLienzo(
         @Path("id") id: Long,
     ): Response<Long>
-  
+
     @GET("casas/{id}/details")
     suspend fun getPisoDetails(
         @Header("Authorization") token: String,

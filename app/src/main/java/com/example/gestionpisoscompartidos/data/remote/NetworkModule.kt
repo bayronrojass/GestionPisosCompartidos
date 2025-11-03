@@ -6,7 +6,6 @@ import com.example.gestionpisoscompartidos.data.repository.APIs.LoginAPI
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.Strictness
-import com.example.gestionpisoscompartidos.data.repository.APIs.CasaAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.ItemAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.ListaAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.InvitacionAPI
