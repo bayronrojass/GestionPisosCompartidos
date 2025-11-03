@@ -6,16 +6,13 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
-import android.os.Build
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import androidx.annotation.RequiresApi
-import com.example.gestionpisoscompartidos.data.remote.NetworkModule
-import com.example.gestionpisoscompartidos.data.remote.RemoteRepository
-import com.example.gestionpisoscompartidos.data.repository.APIs.CasaAPI
+import android.widget.FrameLayout
+import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryPostIt
 import com.example.gestionpisoscompartidos.model.dtos.PostItDTO
 import com.example.gestionpisoscompartidos.ui.pizarra.PizarraView
 import com.example.gestionpisoscompartidos.ui.pizarra.PizarraViewModel
@@ -28,8 +25,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
 
 class PostItView
     @JvmOverloads
@@ -42,6 +37,7 @@ class PostItView
         private var postItColor = Color.YELLOW
         private var topBarColor = Color.parseColor("#FFD700") // Dorado
         private var closeButtonColor = Color.RED
+        private val bitmapManager = BitmapManager()
 
         var model: PizarraViewModel? = null
         var view: PizarraView? = null
@@ -76,7 +72,7 @@ class PostItView
         var onExpand: ((PostItView) -> Unit)? = null
         var onCollapse: ((PostItView) -> Unit)? = null
 
-        private val repository = RemoteRepository(NetworkModule.retrofit.create(CasaAPI::class.java))
+        private val repositoryPostIt = RepositoryPostIt()
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         private val textPaint =
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -290,7 +286,7 @@ class PostItView
             y: Float,
         ) {
             viewScope.launch {
-                val request = repository.request { updatePostItPosition(postItId, PostItDTO(0, 0, x, y, !isContentVisible)) }
+                val request = repositoryPostIt.updatePostItPosition(PostItDTO(postItId, model!!.lienzoId, x, y, !isContentVisible))
             }
         }
 
@@ -303,16 +299,15 @@ class PostItView
 
         private fun remove() {
             viewScope.launch {
-                val response = repository.request { deletePostIt(postItId) }
+                val response = repositoryPostIt.deletePostIt(postItId)
             }
             onDetachedFromWindow()
             loadJob?.cancel()
         }
 
-        @RequiresApi(Build.VERSION_CODES.O)
         fun load() {
             loadJob?.cancel()
-
+            val postIt = this
             loadJob =
                 loadScope.launch {
                     while (isActive) {
@@ -322,10 +317,8 @@ class PostItView
 
                             val originalBitmap = model?._bitmapState?.value
                             if (originalBitmap != null) {
-                                val adjustedBitmap = adjustPreviewBitmap(originalBitmap)
-                                setPreview(adjustedBitmap)
+                                bitmapManager.captureAndScalePreview(originalBitmap, postIt)
                             }
-                            setPreview(model?._bitmapState?.value!!)
 
                             delay(5000L)
                         } catch (e: CancellationException) {
@@ -339,30 +332,16 @@ class PostItView
                 }
         }
 
-        private fun adjustPreviewBitmap(original: Bitmap): Bitmap {
-            val targetWidth = width.takeIf { it > 0 } ?: original.width
-            val targetHeight = height.takeIf { it > 0 } ?: original.height
-
-            if (targetWidth <= 0 || targetHeight <= 0) return original
-
-            val scale =
-                min(
-                    targetWidth.toFloat() / original.width,
-                    targetHeight.toFloat() / original.height,
-                )
-
-            val scaledWidth = (original.width * scale).toInt()
-            val scaledHeight = (original.height * scale).toInt()
-
-            val scaledBitmap = Bitmap.createScaledBitmap(original, scaledWidth, scaledHeight, true)
-
-            if (scaledWidth > targetWidth || scaledHeight > targetHeight) {
-                val xOffset = max(0, (scaledWidth - targetWidth) / 2)
-                val yOffset = max(0, (scaledHeight - targetHeight) / 2)
-                return Bitmap.createBitmap(scaledBitmap, xOffset, yOffset, targetWidth, targetHeight)
-            }
-
-            return scaledBitmap
+        fun setupLayout(
+            width: Int,
+            height: Int,
+            x: Float,
+            y: Float,
+        ) {
+            val layoutParams = FrameLayout.LayoutParams(width, height)
+            this.layoutParams = layoutParams
+            this.x = x
+            this.y = y
         }
 
         override fun onDetachedFromWindow() {

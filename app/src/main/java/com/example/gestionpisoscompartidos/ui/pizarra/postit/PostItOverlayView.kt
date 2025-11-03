@@ -12,7 +12,7 @@ class PostItOverlayView
         attrs: AttributeSet? = null,
         defStyleAttr: Int = 0,
     ) : View(context, attrs, defStyleAttr) {
-        var onOutsideClick: (() -> Unit)? = null
+        private var onOutsideClick: (() -> Unit)? = null
 
         override fun onTouchEvent(event: MotionEvent): Boolean {
             if (event.action == MotionEvent.ACTION_DOWN) {

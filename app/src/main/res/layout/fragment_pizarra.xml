@@ -65,7 +65,7 @@
                     android:backgroundTint="@android:color/white"
                     android:text=""
                     style="@style/FlatButton"
-                    tools:text="blanco" />
+                    tools:text="BLANCO" />
 
             <Button
                     android:id="@+id/btnRed"
@@ -117,7 +117,6 @@
                     android:layout_weight="1"
                     android:layout_margin="2dp"
                     android:background="@drawable/button_custom"
-                    android:text="Limpiar"
                     android:textColor="@android:color/black"
                     style="@style/FlatButton" />
 
@@ -130,7 +129,6 @@
                     android:clickable="true"
                     android:focusable="true"
                     android:background="@drawable/button_custom"
-                    android:text="Guardar"
                     android:textColor="@android:color/black"
                     style="@style/FlatButton" />
 
@@ -141,7 +139,7 @@
                     android:layout_weight="1"
                     android:layout_margin="2dp"
                     android:background="@drawable/button_custom"
-                    android:text="Deshacer"
+                    android:text="Post It"
                     android:textColor="@android:color/black"
                     style="@style/FlatButton" />
         </LinearLayout>

@@ -6,12 +6,10 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
-import android.os.Build
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
-import androidx.annotation.RequiresApi
 import androidx.core.graphics.createBitmap
 import com.example.gestionpisoscompartidos.model.Point
 import com.example.gestionpisoscompartidos.model.dtos.PointDeltaDTO
@@ -52,7 +50,6 @@ class PizarraView
                 strokeJoin = Paint.Join.ROUND
             }
 
-        @RequiresApi(Build.VERSION_CODES.O)
         override fun onSizeChanged(
             w: Int,
             h: Int,
@@ -77,7 +74,6 @@ class PizarraView
             canvas.drawBitmap(currentBitmap, 0f, 0f, null)
         }
 
-        @RequiresApi(Build.VERSION_CODES.O)
         override fun onTouchEvent(event: MotionEvent): Boolean {
             val x = event.x
             val y = event.y
@@ -144,7 +140,6 @@ class PizarraView
             return true
         }
 
-        @RequiresApi(Build.VERSION_CODES.O)
         private fun save() {
             saveJob?.cancel()
 
@@ -156,7 +151,6 @@ class PizarraView
                 }
         }
 
-        @RequiresApi(Build.VERSION_CODES.O)
         fun load() {
             loadJob?.cancel()
 

@@ -1,9 +1,7 @@
 package com.example.gestionpisoscompartidos.ui.pizarra
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
@@ -30,7 +28,6 @@ class PizarraViewModel(
     val bitmapState: StateFlow<Bitmap?> = _bitmapState.asStateFlow()
     var color: Byte = 1
 
-    @RequiresApi(Build.VERSION_CODES.O)
     var lastLoaded: Instant = Instant.ofEpochMilli(1000000)
 
     fun add(p: PointDeltaDTO?) {
@@ -58,7 +55,6 @@ class PizarraViewModel(
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun load() {
         try {
             val check =
