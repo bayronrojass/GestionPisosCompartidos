@@ -63,7 +63,7 @@ class TareasViewModel(
 
     fun toggleCompletado(tarea: Tarea) {
         viewModelScope.launch {
-            val request = TareaRequest(null, null, !tarea.completado, null, null, null, null)
+            val request = TareaRequest(tarea.nombre, tarea.descripcion, !tarea.completado, null, null, null, null)
             try {
                 repository.actualizarTarea(tarea.id, request)
                 cargarTareas()

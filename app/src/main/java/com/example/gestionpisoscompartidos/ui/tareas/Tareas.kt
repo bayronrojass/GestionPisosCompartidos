@@ -53,8 +53,12 @@ class Tareas : Fragment() {
             TareasAdapter(
                 emptyList(),
                 onItemClick = { tarea ->
-                    // TODO: Mostrar diálogo de edición (Paso 3.8)
-                    mostrarDialogoEditarTarea(tarea)
+                    AlertDialog
+                        .Builder(requireContext())
+                        .setTitle(tarea.nombre)
+                        .setMessage(tarea.descripcion ?: "Sin descripción.")
+                        .setPositiveButton("Cerrar", null)
+                        .show()
                 },
                 onCompleteClick = { tarea ->
                     viewModel.toggleCompletado(tarea)
@@ -67,6 +71,9 @@ class Tareas : Fragment() {
                         .setPositiveButton("Borrar") { _, _ -> viewModel.borrarTarea(tarea) }
                         .setNegativeButton("Cancelar", null)
                         .show()
+                },
+                onEditClick = { tarea ->
+                    mostrarDialogoEditarTarea(tarea)
                 },
             )
         binding.recyclerViewTasks.apply {
@@ -132,7 +139,6 @@ class Tareas : Fragment() {
             .show()
     }
 
-    // --- AÑADE ESTE MÉTODO PARA EDICIÓN ---
     private fun mostrarDialogoEditarTarea(tarea: Tarea) {
         // TODO: Este diálogo debe ser más complejo para incluir
         // nombre, descripción, y un Spinner/Dropdown para asignar miembro.
