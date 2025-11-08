@@ -6,7 +6,7 @@ import com.example.gestionpisoscompartidos.data.SessionManager3
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryInvitacion
 import com.example.gestionpisoscompartidos.model.InvitacionRequest
-import com.example.gestionpisoscompartidos.model.Usuario
+// ¡Importa el DTO de respuesta que tu backend envía!
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -37,7 +37,6 @@ class GestionUsuariosPisoViewModel(
     private fun loadMiembros() {
         viewModelScope.launch {
             try {
-                // Obtén el ID real del usuario desde el SessionManager
                 val currentUserId = sessionManager.fetchCurrentUserId()
                 val token = sessionManager.fetchAuthToken()
                 if (token == null) {
@@ -45,33 +44,25 @@ class GestionUsuariosPisoViewModel(
                     return@launch
                 }
 
-                // --- TODO: REEMPLAZA ESTO CON DATOS REALES ---
-                // Necesitarás un endpoint en tu CasaAPI/RepositoryCasa
-                // para obtener los detalles y miembros de un piso.
-                /*
-                val pisoDetailsResponse = pisoRepository.getPisoDetails(token, currentPisoId)
-                if (!pisoDetailsResponse.isSuccessful) throw Exception("Error al cargar piso")
-                val usuariosDelPiso = pisoDetailsResponse.body()!!.miembros
-                val adminIds = pisoDetailsResponse.body()!!.administradores.map { it.id }
-                 */
+                // --- ¡ESTO ES LO NUEVO! ---
+                // 1. Llama al nuevo endpoint simple
+                val response = pisoRepository.getPisoMiembros(token, currentPisoId)
 
-                // --- INICIO DE DATOS DE EJEMPLO (Usando el ID real) ---
+                if (!response.isSuccessful) {
+                    throw Exception("Error al cargar miembros: ${response.errorBody()?.string()}")
+                }
 
-                val adminIds = listOf(1L)
-                val usuariosDelPiso: List<Usuario> =
-                    listOf(
-                        Usuario(1L, "Manolo (Ejemplo)", "manolo@mail.com"),
-                        Usuario(currentUserId, "Tú Mismo (Ejemplo)", "me@mail.com"),
-                        Usuario(3L, "Paula (Ejemplo)", "paula@mail.com"),
-                    )
-                // --- FIN DE DATOS DE EJEMPLO ---
+                // 2. Extrae la lista de usuarios
+                val usuariosDelPiso = response.body()!!
+                // --- FIN DE LO NUEVO ---
 
+                // 3. Tu lógica de mapeo. Como no tenemos admins, 'esAdmin' es siempre falso.
                 val listaMiembrosUI =
                     usuariosDelPiso.map { usuario ->
                         MiembroPiso(
                             id = usuario.id,
                             nombre = usuario.nombre,
-                            esAdmin = usuario.id in adminIds,
+                            esAdmin = false, // <-- Simple, como pediste
                             esTu = usuario.id == currentUserId,
                             colorIndicator = getColorForUser(usuario.id),
                         )
@@ -84,7 +75,7 @@ class GestionUsuariosPisoViewModel(
     }
 
     /**
-     * Lógica para ENVIAR invitaciones por email.
+     * Lógica para ENVIAR invitaciones por email (Esta ya estaba bien).
      */
     fun enviarInvitacion(email: String) {
         if (currentPisoId == 0L) {
@@ -114,7 +105,8 @@ class GestionUsuariosPisoViewModel(
         }
     }
 
-    /** Lógica para eliminar un miembro (a conectar con API) */
+    /** * ¡MODIFICADO! Esta función ahora llama al backend.
+     */
     fun removeMiembro(miembroId: Long) {
         viewModelScope.launch {
             try {
@@ -124,13 +116,16 @@ class GestionUsuariosPisoViewModel(
                     return@launch
                 }
 
+                // --- ¡MODO ONLINE ACTIVADO! ---
                 val response = pisoRepository.removeMiembro(token, currentPisoId, miembroId)
                 if (response.isSuccessful) {
+                    // Si el backend tiene éxito, actualiza la UI localmente
                     _miembros.value = _miembros.value.filter { it.id != miembroId }
-                    _accionResult.value = "Miembro eliminado (Ejemplo)"
+                    _accionResult.value = "Miembro eliminado"
                 } else {
-                    _accionResult.value = "Error al eliminar"
+                    _accionResult.value = "Error al eliminar: ${response.errorBody()?.string()}"
                 }
+                // --- FIN DEL MODO ONLINE ---
             } catch (e: Exception) {
                 _accionResult.value = "Error de red: ${e.message}"
             }
@@ -150,6 +145,7 @@ class GestionUsuariosPisoViewModel(
                 android.R.color.holo_purple,
                 android.R.color.holo_blue_light,
             )
-        return colors[(id % colors.size).toInt()]
+        // Usa abs() para evitar el crash con IDs negativos (como -1)
+        return colors[(kotlin.math.abs(id) % colors.size).toInt()]
     }
 }

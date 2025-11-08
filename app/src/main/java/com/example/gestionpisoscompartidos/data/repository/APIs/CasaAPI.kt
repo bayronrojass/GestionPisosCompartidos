@@ -2,6 +2,7 @@ package com.example.gestionpisoscompartidos.data.repository.APIs
 
 import com.example.gestionpisoscompartidos.model.CasaDetailsResponse // <-- 1. Importar el DTO nuevo
 import com.example.gestionpisoscompartidos.model.CasaResponse
+import com.example.gestionpisoscompartidos.model.Usuario
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
@@ -32,4 +33,10 @@ interface CasaAPI {
         @Path("casaId") casaId: Long,
         @Path("usuarioId") usuarioId: Long,
     ): Response<Unit>
+
+    @GET("casas/{id}/miembros")
+    suspend fun getPisoMiembros(
+        @Header("Authorization") token: String,
+        @Path("id") pisoId: Long,
+    ): Response<List<Usuario>>
 }

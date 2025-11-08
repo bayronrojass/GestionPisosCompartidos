@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:padding="24dp"
-        android:background="@color/white"
-        tools:context=".ui.home.Home2">
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:gravity="center"
+              android:padding="24dp"
+              android:background="@color/white"
+              tools:context=".ui.home.Home2">
 
     <TextView
             android:layout_width="wrap_content"
@@ -39,6 +39,22 @@
             android:layout_height="60dp"
             android:text="Ver Tareas del Hogar"
             android:backgroundTint="@color/teal_700"
+            android:textColor="@color/white"
+            android:layout_marginBottom="16dp"/> <Button
+        android:id="@+id/btnGestionPiso"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="Gestión del Piso"
+        android:backgroundTint="@color/purple_700"
+        android:textColor="@color/white"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+            android:id="@+id/btnGestionInvitaciones"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="Ver Invitaciones"
+            android:backgroundTint="@color/design_default_color_secondary"
             android:textColor="@color/white"/>
 
 </LinearLayout>
