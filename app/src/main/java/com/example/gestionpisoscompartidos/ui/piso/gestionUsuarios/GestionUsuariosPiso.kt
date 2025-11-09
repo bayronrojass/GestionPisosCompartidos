@@ -70,10 +70,12 @@ class GestionUsuariosPiso : Fragment() {
         // 2. Carga los datos
         // Asume que el ID del piso se pasa en los argumentos del Fragment
         val pisoId = arguments?.getLong("PISO_ID") ?: 0L
+
+        android.util.Log.d("GestionPiso", "ID del piso cargado: $pisoId")
+
         if (pisoId == 0L) {
-            Toast.makeText(requireContext(), "Error: ID de piso no encontrado", Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), "Error FATAL: ID de piso no encontrado", Toast.LENGTH_LONG).show()
         } else {
-            // ¡Llama al ViewModel para que cargue los miembros!
             viewModel.loadData(pisoId)
         }
 

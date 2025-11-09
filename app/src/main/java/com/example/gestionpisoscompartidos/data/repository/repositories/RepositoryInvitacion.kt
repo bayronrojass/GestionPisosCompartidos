@@ -1,5 +1,6 @@
 package com.example.gestionpisoscompartidos.data.repository.repositories
 
+import com.example.gestionpisoscompartidos.model.AccionInvitacionRequest
 import com.example.gestionpisoscompartidos.data.repository.APIs.InvitacionAPI
 import com.example.gestionpisoscompartidos.model.InvitacionRequest
 import com.example.gestionpisoscompartidos.model.InvitacionResponse
@@ -13,15 +14,20 @@ class RepositoryInvitacion(
         request: InvitacionRequest,
     ): Response<InvitacionResponse> = apiService.crearInvitacion(token, request)
 
-    suspend fun getMisInvitaciones(token: String): Response<List<InvitacionResponse>> = apiService.getMisInvitaciones(token)
+    suspend fun getMisInvitaciones(
+        token: String,
+        usuarioId: Long,
+    ): Response<List<InvitacionResponse>> = apiService.getMisInvitaciones(token, usuarioId)
 
     suspend fun aceptarInvitacion(
         token: String,
         invitacionId: Long,
-    ): Response<InvitacionResponse> = apiService.aceptarInvitacion(token, invitacionId)
+        request: AccionInvitacionRequest,
+    ): Response<InvitacionResponse> = apiService.aceptarInvitacion(token, invitacionId, request)
 
     suspend fun rechazarInvitacion(
         token: String,
         invitacionId: Long,
-    ): Response<InvitacionResponse> = apiService.rechazarInvitacion(token, invitacionId)
+        request: AccionInvitacionRequest,
+    ): Response<InvitacionResponse> = apiService.rechazarInvitacion(token, invitacionId, request)
 }

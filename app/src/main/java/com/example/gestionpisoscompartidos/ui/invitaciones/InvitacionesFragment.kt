@@ -1,90 +1,126 @@
 package com.example.gestionpisoscompartidos.ui.invitaciones
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.example.gestionpisoscompartidos.model.InvitacionRequest
-import com.example.gestionpisoscompartidos.model.InvitacionResponse
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Toast
+import androidx.core.view.isVisible
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.gestionpisoscompartidos.data.SessionManager3
+import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryInvitacion
+import com.example.gestionpisoscompartidos.databinding.FragmentInvitacionesBinding // Importa tu ViewBinding
 import kotlinx.coroutines.launch
 
-class InvitacionesViewModel(
-    private val repository: RepositoryInvitacion,
-    private val authToken: String,
-) : ViewModel() {
-    private val _invitaciones = MutableLiveData<List<InvitacionResponse>>()
-    val invitaciones: LiveData<List<InvitacionResponse>> = _invitaciones
+class InvitacionesFragment : Fragment() {
+    private var _binding: FragmentInvitacionesBinding? = null
+    private val binding get() = _binding!!
 
-    private val _accionExitosa = MutableLiveData<Boolean>()
-    val accionExitosa: LiveData<Boolean> = _accionExitosa
+    // Prepara la Factory para inyectar las dependencias
+    private lateinit var viewModelFactory: InvitacionesViewModelFactory
+    private val viewModel: InvitacionesViewModel by viewModels { viewModelFactory }
 
-    private val _error = MutableLiveData<String>()
-    val error: LiveData<String> = _error
+    private lateinit var invitacionesAdapter: InvitacionesAdapter
 
-    fun fetchMisInvitaciones() {
-        viewModelScope.launch {
-            try {
-                val response = repository.getMisInvitaciones(authToken)
-                if (response.isSuccessful) {
-                    _invitaciones.value = response.body()
-                } else {
-                    _error.value = "Error al cargar invitaciones"
-                }
-            } catch (e: Exception) {
-                _error.value = e.message
-            }
-        }
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Inicializa las dependencias
+        val context = requireContext().applicationContext
+        val sessionManager = SessionManager3(context)
+        val repository = RepositoryInvitacion(NetworkModule.invitacionApiService)
+
+        // Crea la Factory
+        viewModelFactory = InvitacionesViewModelFactory(repository, sessionManager)
     }
 
-    fun enviarInvitacion(
-        casaId: Long,
-        emailDestinatario: String,
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View {
+        _binding = FragmentInvitacionesBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
     ) {
-        viewModelScope.launch {
-            try {
-                val request = InvitacionRequest(casaId, emailDestinatario)
-                val response = repository.crearInvitacion(authToken, request)
-                if (response.isSuccessful) {
-                    _accionExitosa.value = true // Notifica a la UI
-                } else {
-                    _error.value = "Error al enviar invitación"
+        super.onViewCreated(view, savedInstanceState)
+
+        setupRecyclerView()
+        setupObservers()
+
+        // Carga inicial de datos
+        viewModel.fetchMisInvitaciones()
+    }
+
+    private fun setupRecyclerView() {
+        invitacionesAdapter =
+            InvitacionesAdapter(
+                onAcceptClick = { invitacion ->
+                    // Delega la lógica al ViewModel
+                    viewModel.aceptarInvitacion(invitacion.id)
+                },
+                onRejectClick = { invitacion ->
+                    // Delega la lógica al ViewModel
+                    viewModel.rechazarInvitacion(invitacion.id)
+                },
+            )
+        binding.recyclerViewInvitaciones.apply {
+            adapter = invitacionesAdapter
+            layoutManager = LinearLayoutManager(requireContext())
+        }
+    }
+
+    private fun setupObservers() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // Observa la lista de invitaciones
+                launch {
+                    viewModel.invitaciones.collect { listaInvitaciones ->
+                        invitacionesAdapter.submitList(listaInvitaciones)
+                        // Muestra un mensaje si la lista está vacía
+                        binding.tvMensajeVacio.isVisible = listaInvitaciones.isEmpty()
+                        binding.recyclerViewInvitaciones.isVisible = listaInvitaciones.isNotEmpty()
+                    }
                 }
-            } catch (e: Exception) {
-                _error.value = e.message
+
+                // Observa el estado de carga
+                launch {
+                    viewModel.isLoading.collect { isLoading ->
+                        binding.progressBar.isVisible = isLoading
+                        // Oculta la lista y el mensaje de vacío mientras carga
+                        if (isLoading) {
+                            binding.recyclerViewInvitaciones.isVisible = false
+                            binding.tvMensajeVacio.isVisible = false
+                        }
+                    }
+                }
+
+                // Observa los errores
+                launch {
+                    viewModel.error.collect { errorMsg ->
+                        if (errorMsg != null) {
+                            Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_LONG).show()
+                            binding.tvMensajeVacio.isVisible = true // Muestra mensaje de vacío si hay error
+                            viewModel.clearError() // Limpia el error para que no se repita
+                        }
+                    }
+                }
             }
         }
     }
 
-    fun aceptarInvitacion(invitacionId: Long) {
-        viewModelScope.launch {
-            try {
-                val response = repository.aceptarInvitacion(authToken, invitacionId)
-                if (response.isSuccessful) {
-                    // Refresca la lista de invitaciones
-                    fetchMisInvitaciones()
-                } else {
-                    _error.value = "Error al aceptar"
-                }
-            } catch (e: Exception) {
-                _error.value = e.message
-            }
-        }
-    }
-
-    fun rechazarInvitacion(invitacionId: Long) {
-        viewModelScope.launch {
-            try {
-                val response = repository.rechazarInvitacion(authToken, invitacionId)
-                if (response.isSuccessful) {
-                    // Refresca la lista de invitaciones
-                    fetchMisInvitaciones()
-                } else {
-                    _error.value = "Error al rechazar"
-                }
-            } catch (e: Exception) {
-                _error.value = e.message
-            }
-        }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

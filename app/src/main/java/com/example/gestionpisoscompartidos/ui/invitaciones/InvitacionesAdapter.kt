@@ -1,101 +1,67 @@
 package com.example.gestionpisoscompartidos.ui.invitaciones
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.example.gestionpisoscompartidos.data.SessionManager3
-import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryInvitacion
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.example.gestionpisoscompartidos.databinding.ItemInvitacionBinding // 1. Importa el ViewBinding de tu item
 import com.example.gestionpisoscompartidos.model.InvitacionResponse
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 
-class InvitacionesViewModel(
-    private val repository: RepositoryInvitacion,
-    private val sessionManager: SessionManager3,
-) : ViewModel() {
-    private val _invitaciones = MutableStateFlow<List<InvitacionResponse>>(emptyList())
-    val invitaciones: StateFlow<List<InvitacionResponse>> = _invitaciones
+class InvitacionesAdapter(
+    private val onAcceptClick: (InvitacionResponse) -> Unit,
+    private val onRejectClick: (InvitacionResponse) -> Unit,
+) : ListAdapter<InvitacionResponse, InvitacionesAdapter.InvitacionViewHolder>(InvitacionDiffCallback()) {
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int,
+    ): InvitacionViewHolder {
+        val binding =
+            ItemInvitacionBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false,
+            )
+        return InvitacionViewHolder(binding)
+    }
 
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading
+    override fun onBindViewHolder(
+        holder: InvitacionViewHolder,
+        position: Int,
+    ) {
+        val invitacion = getItem(position)
+        holder.bind(invitacion)
+    }
 
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error
+    inner class InvitacionViewHolder(
+        private val binding: ItemInvitacionBinding,
+    ) : RecyclerView.ViewHolder(binding.root) {
+        fun bind(invitacion: InvitacionResponse) {
+            binding.tvCasaNombre.text = "Invitación a: ${invitacion.casaNombre}"
+            binding.tvRemitenteNombre.text = "De: ${invitacion.remitenteNombre}"
 
-    fun fetchMisInvitaciones() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-            try {
-                val token = sessionManager.fetchAuthToken()
-                if (token == null) throw Exception("Usuario no autenticado")
-
-                // Llama al repositorio (que llama a GET /invitaciones/me)
-                val response = repository.getMisInvitaciones(token)
-
-                if (response.isSuccessful) {
-                    _invitaciones.value = response.body() ?: emptyList()
-                } else {
-                    throw Exception("Error al cargar invitaciones: ${response.code()}")
-                }
-            } catch (e: Exception) {
-                _error.value = e.message
-            } finally {
-                _isLoading.value = false
+            binding.btnAceptar.setOnClickListener {
+                onAcceptClick(invitacion)
+            }
+            binding.btnRechazar.setOnClickListener {
+                onRejectClick(invitacion)
             }
         }
     }
 
-    fun aceptarInvitacion(invitacionId: Long) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-            try {
-                val token = sessionManager.fetchAuthToken()
-                if (token == null) throw Exception("Usuario no autenticado")
+    /**
+     * DiffUtil para que el ListAdapter sepa qué items han cambiado,
+     * mejorando el rendimiento y permitiendo animaciones.
+     */
+    class InvitacionDiffCallback : DiffUtil.ItemCallback<InvitacionResponse>() {
+        override fun areItemsTheSame(
+            oldItem: InvitacionResponse,
+            newItem: InvitacionResponse,
+        ): Boolean = oldItem.id == newItem.id
 
-                // Llama al repositorio (que llama a POST /{id}/aceptar)
-                val response = repository.aceptarInvitacion(token, invitacionId)
-
-                if (response.isSuccessful) {
-                    // Si tiene éxito, refresca la lista de invitaciones pendientes
-                    fetchMisInvitaciones()
-                } else {
-                    throw Exception("Error al aceptar: ${response.code()}")
-                }
-            } catch (e: Exception) {
-                _error.value = e.message
-                _isLoading.value = false
-            }
-        }
-    }
-
-    fun rechazarInvitacion(invitacionId: Long) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-            try {
-                val token = sessionManager.fetchAuthToken()
-                if (token == null) throw Exception("Usuario no autenticado")
-
-                // Llama al repositorio (que llama a POST /{id}/rechazar)
-                val response = repository.rechazarInvitacion(token, invitacionId)
-
-                if (response.isSuccessful) {
-                    // Si tiene éxito, refresca la lista
-                    fetchMisInvitaciones()
-                } else {
-                    throw Exception("Error al rechazar: ${response.code()}")
-                }
-            } catch (e: Exception) {
-                _error.value = e.message
-                _isLoading.value = false
-            }
-        }
-    }
-
-    /** Limpia el mensaje de error para que el Toast no se repita. */
-    fun clearError() {
-        _error.value = null
+        override fun areContentsTheSame(
+            oldItem: InvitacionResponse,
+            newItem: InvitacionResponse,
+        ): Boolean = oldItem == newItem
     }
 }

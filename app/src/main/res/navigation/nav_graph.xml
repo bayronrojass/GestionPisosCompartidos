@@ -134,11 +134,11 @@
         <action
                 android:id="@+id/action_Home2_toGestionUsuariosPisoFragment"
                 app:destination="@id/gestionUsuariosPisoFragment" />
-    <!--
+
     <action
             android:id="@+id/action_Home2_toInvitacionesFragment"
             app:destination="@id/invitacionesFragment" />
-                -->
+
     </fragment>
 
     <fragment
@@ -154,11 +154,11 @@
                 app:argType="string" />
     </fragment>
 
-    <!--
+
         <fragment
                 android:id="@+id/invitacionesFragment"
                 android:name="com.example.gestionpisoscompartidos.ui.invitaciones.InvitacionesFragment"
                 android:label="Mis Invitaciones"
                 tools:layout="@layout/fragment_invitaciones" />
-    -->
+
 </navigation>

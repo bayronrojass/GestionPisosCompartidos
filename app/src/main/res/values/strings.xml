@@ -5,4 +5,14 @@
     <string name="forgot_password">Recuperar Contraseña</string>
     <string name="login">Inicio de sesión</string>
     <string name="register_prompt">No tienes cuenta? ¡Regístrate hoy!</string>
+
+    <string name="no_tienes_invitaciones_pendientes">No tienes invitaciones pendientes.</string>
+    <string name="mis_invitaciones">Mis Invitaciones</string>
+
+    <string name="bienvenido">Bienvenido</string>
+    <string name="selecciona_una_opcion">Selecciona una opción</string>
+    <string name="ver_listas_del_hogar">Ver Listas del Hogar</string>
+    <string name="ver_tareas_del_hogar">Ver Tareas del Hogar</string>
+    <string name="gestion_del_piso">Gestión del Piso</string>
+    <string name="ver_invitaciones">Ver Invitaciones</string>
 </resources>

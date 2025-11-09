@@ -44,8 +44,6 @@ class GestionUsuariosPisoViewModel(
                     return@launch
                 }
 
-                // --- ¡ESTO ES LO NUEVO! ---
-                // 1. Llama al nuevo endpoint simple
                 val response = pisoRepository.getPisoMiembros(token, currentPisoId)
 
                 if (!response.isSuccessful) {
@@ -91,7 +89,17 @@ class GestionUsuariosPisoViewModel(
                     return@launch
                 }
 
-                val request = InvitacionRequest(currentPisoId, email)
+                // val request = InvitacionRequest(currentPisoId, email)
+                val remitenteId = sessionManager.fetchCurrentUserId()
+                if (remitenteId == -1L) {
+                    _accionResult.value = "Error: ID de usuario no encontrado en la sesión"
+                    return@launch
+                }
+
+                val request = InvitacionRequest(currentPisoId, email, remitenteId)
+
+                android.util.Log.d("GestionPisoVM", "Enviando invitación: $request")
+
                 val response = invitacionRepository.crearInvitacion(token, request)
 
                 if (response.isSuccessful) {
