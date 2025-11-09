@@ -1,8 +1,8 @@
 package com.example.gestionpisoscompartidos.ui.piso.listaPisos
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
 import com.example.gestionpisoscompartidos.model.Casa
 
 class ListaCasasViewModel : ViewModel() {

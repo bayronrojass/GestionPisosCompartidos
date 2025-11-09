@@ -2,7 +2,11 @@ package com.example.gestionpisoscompartidos.data.remote
 
 import com.example.gestionpisoscompartidos.data.repository.APIs.CasaAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.DatabaseAPI
+import com.example.gestionpisoscompartidos.data.repository.APIs.InvitacionAPI
+import com.example.gestionpisoscompartidos.data.repository.APIs.ItemAPI
+import com.example.gestionpisoscompartidos.data.repository.APIs.ListaAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.LoginAPI
+import com.example.gestionpisoscompartidos.data.repository.APIs.TareaAPI
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.Strictness

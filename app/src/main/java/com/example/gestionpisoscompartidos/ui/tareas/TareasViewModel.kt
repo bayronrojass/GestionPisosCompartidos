@@ -1,8 +1,10 @@
 package com.example.gestionpisoscompartidos.ui.tareas
 
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.*
+import androidx.lifecycle.viewModelScope
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryTarea
 import com.example.gestionpisoscompartidos.model.Tarea
