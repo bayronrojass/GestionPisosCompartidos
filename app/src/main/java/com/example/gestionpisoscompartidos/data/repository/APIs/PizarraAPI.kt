@@ -12,7 +12,7 @@ import retrofit2.http.Streaming
 
 interface PizarraAPI {
     @Streaming
-    @GET("lienzos/{id}/png")
+    @GET("lienzos/{id}/imagen")
     suspend fun getLienzo(
         @Path("id") id: Long,
     ): Response<ResponseBody>

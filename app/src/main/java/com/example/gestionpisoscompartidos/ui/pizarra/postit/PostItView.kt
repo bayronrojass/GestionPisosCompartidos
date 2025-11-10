@@ -25,7 +25,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
-import kotlin.math.abs
+import androidx.core.graphics.toColorInt
+import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryImagen
+import com.example.gestionpisoscompartidos.model.dtos.ImagenDTO
+import kotlin.math.max
 
 class PostItView
     @JvmOverloads
@@ -34,9 +37,10 @@ class PostItView
         attrs: AttributeSet? = null,
         defStyleAttr: Int = 0,
         val postItId: Long,
+        private val config: PostItConfig,
     ) : View(context, attrs, defStyleAttr) {
         private var postItColor = Color.YELLOW
-        private var topBarColor = Color.parseColor("#FFD700") // Dorado
+        private var topBarColor = "#FFD700".toColorInt() // Dorado
         private var closeButtonColor = Color.RED
         private val bitmapManager = BitmapManager()
 
@@ -44,15 +48,13 @@ class PostItView
         var view: PizarraView? = null
         private var canBeDragged = true
         private var isDragging = false
-        private var startX = 0f
-        private var startY = 0f
-        private val touchSlop = 20
+        private var dX = 0f
+        private var dY = 0f
 
         val topBarHeight = 60f
         private val closeButtonSize = 60f
         private val closeButtonPadding = 5f
 
-        private var lastTapTime: Long = 0
         var isContentVisible = true
 
         var isCollapseInProgress = false
@@ -64,6 +66,7 @@ class PostItView
         private var originalWidth = 0
         private var originalHeight = 0
         private var isExpanded = false
+        private var lastTapTime = 0L
 
         private var originalPreviewBitmap: Bitmap? = null
         private var loadJob: Job? = null
@@ -74,6 +77,7 @@ class PostItView
         var onCollapse: ((PostItView) -> Unit)? = null
 
         private val repositoryPostIt = RepositoryPostIt()
+        private val repositoryImagen = RepositoryImagen()
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         private val textPaint =
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -87,52 +91,41 @@ class PostItView
         }
 
         private fun handleTouch(event: MotionEvent): Boolean {
-            val x = event.x
-            val y = event.y
-
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    startX = x
-                    startY = y
-
-                    if (isInCloseButton(x, y) && canBeDragged) {
+                    if (isInCloseButton(event.x, event.y) && canBeDragged) {
                         (parent as? ViewGroup)?.removeView(this)
                         remove()
-                    } else if (isInTopBar(x, y) && canBeDragged) {
-                        this.bringToFront()
-                    } else if (isInBody(x, y)) {
+                        return true
+                    }
+
+                    if (isInTopBar(event.x, event.y) && canBeDragged) {
+                        bringToFront()
+                        dX = this.x - event.rawX
+                        dY = this.y - event.rawY
+                    } else if (isInBody(event.x, event.y)) {
                         expand()
                     }
+
                     return true
                 }
 
                 MotionEvent.ACTION_MOVE -> {
-                    if (canBeDragged && isInTopBar(startX, startY)) {
-                        val dx = x - startX
-                        val dy = y - startY
+                    if (canBeDragged && isInTopBar(event.x, event.y)) {
+                        isDragging = true
+                        this.x = event.rawX + dX
+                        this.y = event.rawY + dY
 
-                        if (!isDragging && (abs(dx) > touchSlop || abs(dy) > touchSlop)) {
-                            isDragging = true
+                        val parent = parent as? ViewGroup
+                        parent?.let {
+                            this.x = this.x.coerceIn(0f, it.width - this.width.toFloat())
+                            this.y = this.y.coerceIn(0f, it.height - this.height.toFloat())
                         }
-
-                        if (isDragging) {
-                            val parent = parent as? ViewGroup
-                            val absoluteX = event.rawX - (parent?.x ?: 0f)
-                            val absoluteY = event.rawY - (parent?.y ?: 0f)
-                            this.x = absoluteX - width / 2
-                            this.y = absoluteY - height / 2
-                        }
+                        return true
                     }
-                    return true
                 }
 
                 MotionEvent.ACTION_UP -> {
-                    if (isDragging) {
-                        isDragging = false
-                        endDrag(this.x, this.y)
-                        return true
-                    }
-
                     if (isInTopBar(x, y)) {
                         val currentTime = System.currentTimeMillis()
                         if (currentTime - lastTapTime < 500) {
@@ -144,7 +137,12 @@ class PostItView
                             lastTapTime = currentTime
                         }
                     }
-                    return true
+
+                    if (isDragging) {
+                        isDragging = false
+                        endDrag(this.x, this.y)
+                        return true
+                    }
                 }
             }
             return false
@@ -169,8 +167,8 @@ class PostItView
 
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)
-
-            if (isExpanded) {
+            Log.d("Postit", "$width, $height")
+            if (isExpanded || isExpansionInProgress) {
                 paint.color = topBarColor
                 canvas.drawRect(0f, 0f, width.toFloat(), topBarHeight, paint)
 
@@ -202,13 +200,9 @@ class PostItView
                 postItBitmap?.let { bitmap ->
                     canvas.drawBitmap(bitmap, null, dstRect, null)
                 }
-
-                paint.color = topBarColor
-                canvas.drawRect(0f, 0f, width.toFloat(), topBarHeight, paint)
-            } else {
-                paint.color = topBarColor
-                canvas.drawRect(0f, 0f, width.toFloat(), topBarHeight, paint)
             }
+            paint.color = topBarColor
+            canvas.drawRect(0f, 0f, width.toFloat(), topBarHeight, paint)
 
             paint.color = closeButtonColor
             paint.style = Paint.Style.FILL
@@ -234,12 +228,18 @@ class PostItView
             widthMeasureSpec: Int,
             heightMeasureSpec: Int,
         ) {
-            val desiredWidth = (100 * resources.displayMetrics.density).toInt()
-            val desiredHeight = (100 * resources.displayMetrics.density).toInt()
+            val width = MeasureSpec.getSize(widthMeasureSpec)
+            val height = MeasureSpec.getSize(heightMeasureSpec)
 
-            setMeasuredDimension(
-                resolveSize(desiredWidth, widthMeasureSpec),
-                resolveSize(desiredHeight, heightMeasureSpec),
+            val minWidth = (50 * resources.displayMetrics.density).toInt()
+            val minHeight = (50 * resources.displayMetrics.density).toInt()
+
+            val finalWidth = max(width, minWidth)
+            val finalHeight = max(height, minHeight)
+
+            super.onMeasure(
+                MeasureSpec.makeMeasureSpec(finalWidth, MeasureSpec.EXACTLY),
+                MeasureSpec.makeMeasureSpec(finalHeight, MeasureSpec.EXACTLY),
             )
         }
 
@@ -280,7 +280,12 @@ class PostItView
             y: Float,
         ) {
             viewScope.launch {
-                val request = repositoryPostIt.updatePostItPosition(PostItDTO(postItId, model!!.lienzoId, x, y, !isContentVisible))
+                val request =
+                    if (!config.isImage) {
+                        repositoryPostIt.updatePostItPosition(PostItDTO(postItId, model!!.lienzoId, x, y, 0, 0, !isContentVisible))
+                    } else {
+                        repositoryImagen.updateImagenPosition(ImagenDTO(postItId, model!!.lienzoId, x, y, 0, 0, !isContentVisible))
+                    }
             }
         }
 
@@ -301,7 +306,12 @@ class PostItView
 
         private fun remove() {
             viewScope.launch {
-                val response = repositoryPostIt.deletePostIt(postItId)
+                val response =
+                    if (!config.isImage) {
+                        repositoryPostIt.deletePostIt(postItId)
+                    } else {
+                        repositoryImagen.deleteImagen(postItId)
+                    }
             }
             onDetachedFromWindow()
             loadJob?.cancel()
@@ -327,6 +337,9 @@ class PostItView
                                 postIt.invalidate()
                             }
 
+                            if (config.isImage) {
+                                break
+                            }
                             delay(5000L)
                         } catch (e: CancellationException) {
                             Log.e("Load", "Error en carga: ${e.message}")
@@ -345,10 +358,19 @@ class PostItView
             x: Float,
             y: Float,
         ) {
-            val layoutParams = FrameLayout.LayoutParams(width, height)
+            val layoutParams =
+                this.layoutParams as? FrameLayout.LayoutParams
+                    ?: FrameLayout.LayoutParams(width, height)
+
+            layoutParams.width = width
+            layoutParams.height = height
+
             this.layoutParams = layoutParams
             this.x = x
             this.y = y
+
+            requestLayout()
+            invalidate()
         }
 
         override fun onDetachedFromWindow() {

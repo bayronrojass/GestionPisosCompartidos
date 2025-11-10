@@ -10,7 +10,6 @@ import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
-import androidx.core.graphics.createBitmap
 import com.example.gestionpisoscompartidos.model.Point
 import com.example.gestionpisoscompartidos.model.dtos.PointDeltaDTO
 import kotlinx.coroutines.CoroutineScope
@@ -21,6 +20,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
+import androidx.core.graphics.scale
 
 class PizarraView
     @JvmOverloads
@@ -29,9 +29,10 @@ class PizarraView
         attrs: AttributeSet? = null,
         defStyleAttr: Int = 0,
     ) : View(context, attrs, defStyleAttr) {
-        private lateinit var currentBitmap: Bitmap
+        private var currentBitmap: Bitmap? = null
         private lateinit var canvasBitmap: Canvas
         private lateinit var model: PizarraViewModel
+        var activatedDraw: Boolean = false
         private var backgroundBitmap: Bitmap? = null
         private val path = Path()
         private var lastPoint: Point? = null
@@ -57,24 +58,39 @@ class PizarraView
             oldh: Int,
         ) {
             super.onSizeChanged(w, h, oldw, oldh)
-            currentBitmap = createBitmap(w, h)
-            canvasBitmap = Canvas(currentBitmap)
             load()
         }
 
         fun setBackgroundBitmap(bitmap: Bitmap) {
-            backgroundBitmap = bitmap
-            currentBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
-            canvasBitmap = Canvas(currentBitmap)
+            if (activatedDraw) {
+                backgroundBitmap = bitmap
+                currentBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
+                canvasBitmap = Canvas(currentBitmap!!)
+            } else {
+                backgroundBitmap = bitmap
+                currentBitmap = scaleBitmapToViewSize(bitmap)
+                canvasBitmap = Canvas(currentBitmap!!)
+            }
             invalidate()
+        }
+
+        private fun scaleBitmapToViewSize(bitmap: Bitmap): Bitmap {
+            if (width <= 0 || height <= 0) {
+                return bitmap.copy(Bitmap.Config.ARGB_8888, true)
+            }
+
+            return bitmap.scale(width, height)
         }
 
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)
-            canvas.drawBitmap(currentBitmap, 0f, 0f, null)
+            currentBitmap?.let { canvas.drawBitmap(it, 0f, 0f, null) }
         }
 
         override fun onTouchEvent(event: MotionEvent): Boolean {
+            if (!activatedDraw) {
+                return false
+            }
             val x = event.x
             val y = event.y
 
@@ -170,11 +186,6 @@ class PizarraView
                         }
                     }
                 }
-        }
-
-        fun clear() {
-            currentBitmap.eraseColor(Color.TRANSPARENT)
-            invalidate()
         }
 
         fun setModel(newModel: PizarraViewModel) {

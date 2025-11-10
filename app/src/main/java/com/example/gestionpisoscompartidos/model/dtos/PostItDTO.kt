@@ -1,9 +1,11 @@
 package com.example.gestionpisoscompartidos.model.dtos
 
-data class PostItDTO(
+open class PostItDTO(
     val id: Long,
     val lienzoId: Long,
     val posicionX: Float,
     val posicionY: Float,
+    val width: Int,
+    val height: Int,
     val plegado: Boolean,
 )

@@ -1,6 +1,7 @@
 package com.example.gestionpisoscompartidos.ui.pizarra.postit
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.util.Log
 import android.view.MotionEvent
@@ -9,6 +10,7 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryImagen
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryPostIt
 import com.example.gestionpisoscompartidos.model.dtos.PostItDTO
 import com.example.gestionpisoscompartidos.ui.pizarra.PizarraView
@@ -22,24 +24,21 @@ class PostItManager(
     private val postItContainer: ViewGroup,
     private val mainContainer: ViewGroup,
     private val viewModel: PizarraViewModel,
+    private val config: PostItConfig,
 ) {
     private var currentExpandedPostIt: PostItView? = null
     private var postItOverlay: View? = null
     private var expandedPizarraView: PizarraView? = null
     private var expandedPizarraViewModel: PizarraViewModel? = null
     private val repositoryPostIt = RepositoryPostIt()
+    private val repositoryImagen = RepositoryImagen()
     private val bitmapManager = BitmapManager()
-    private val animationManager = PostItAnimationManager(context, this)
+    private val animationManager = PostItAnimationManager(context, this, config)
 
-    fun createNewPostIt(
-        dto: PostItDTO,
-        x: Float,
-        y: Float,
-    ) {
-        Log.d("Pizarra", "${dto.lienzoId}")
+    fun createNewPostIt(dto: PostItDTO) {
         val postIt =
-            PostItView(context, postItId = dto.id).apply {
-                setupLayout(PostItConfig().width, PostItConfig().height, x, y)
+            PostItView(context, postItId = dto.id, config = config).apply {
+                setupLayout(config.width, config.height, config.x, config.y)
                 model = createPizarraViewModel(dto.lienzoId)
                 this.onExpand = { onPostItExpand(this, dto.lienzoId) }
                 this.onCollapse = { onPostItCollapse(this) }
@@ -49,17 +48,40 @@ class PostItManager(
         loadPostItContent(postIt)
     }
 
+    fun createNewPostIt(
+        dto: PostItDTO,
+        bitmap: Bitmap,
+    ) {
+        val postIt =
+            PostItView(context, postItId = dto.id, config = config).apply {
+                setupLayout(dto.width, dto.height, config.x, config.y)
+                model = createPizarraViewModel(dto.lienzoId)
+                this.onExpand = { onPostItExpand(this, dto.lienzoId) }
+                this.onCollapse = { onPostItCollapse(this) }
+                setPreview(bitmap)
+            }
+
+        addPostItToContainer(postIt)
+        loadPostItContent(postIt)
+    }
+
     suspend fun createExistingPostIt(postItId: Long) {
-        val postItResponse = repositoryPostIt.getPostItDetails(postItId)
+        val postItResponse =
+            if (!config.isImage) {
+                repositoryPostIt.getPostItDetails(postItId)
+            } else {
+                repositoryImagen.getImagenesDetails(postItId)
+            }
         if (postItResponse != null) {
             createPostItFromDTO(postItResponse)
         }
     }
 
     private fun createPostItFromDTO(details: PostItDTO) {
+        Log.d("Postit", "${details.lienzoId} ${details.width} ${details.height}")
         val postIt =
-            PostItView(context, postItId = details.id).apply {
-                setupLayout(PostItConfig().width, PostItConfig().height, details.posicionX, details.posicionY)
+            PostItView(context, postItId = details.id, config = config).apply {
+                setupLayout(details.width, details.height, details.posicionX, details.posicionY)
                 isContentVisible = !details.plegado
                 model = createPizarraViewModel(details.lienzoId)
                 this.onExpand = { onPostItExpand(this, details.lienzoId) }
@@ -163,6 +185,8 @@ class PostItManager(
     fun createExpandedPizarra(
         postIt: PostItView,
         lienzoId: Long,
+        targetWidth: Int? = null,
+        targetHeight: Int? = null,
     ) {
         expandedPizarraViewModel = postIt.model ?: PizarraViewModel(lienzoId).apply {
             color = viewModel.color
@@ -178,16 +202,17 @@ class PostItManager(
 
         val postItX = postIt.x
         val postItY = postIt.y
-        val postItWidth = postIt.width
-        val postItHeight = postIt.height
+        val finalWidth = targetWidth ?: postIt.width
+        val finalHeight = targetHeight ?: postIt.height
 
         expandedPizarraView =
             PizarraView(context).apply {
                 setModel(expandedPizarraViewModel!!)
+                activatedDraw = !config.isImage
                 layoutParams =
                     FrameLayout.LayoutParams(
-                        postItWidth,
-                        (postItHeight - postIt.topBarHeight).toInt(),
+                        finalWidth,
+                        (finalHeight - postIt.topBarHeight).toInt(),
                     )
                 setBackgroundColor(Color.YELLOW)
                 x = postItX

@@ -121,7 +121,7 @@
                     style="@style/FlatButton" />
 
             <Button
-                    android:id="@+id/btnSave"
+                    android:id="@+id/btnImagen"
                     android:layout_width="0dp"
                     android:layout_height="48dp"
                     android:layout_weight="1"
@@ -130,10 +130,11 @@
                     android:focusable="true"
                     android:background="@drawable/button_custom"
                     android:textColor="@android:color/black"
-                    style="@style/FlatButton" />
+                    style="@style/FlatButton"
+                    android:text="Imagen" />
 
             <Button
-                    android:id="@+id/btnUndo"
+                    android:id="@+id/btnPostit"
                     android:layout_width="0dp"
                     android:layout_height="48dp"
                     android:layout_weight="1"

@@ -9,6 +9,7 @@ import android.graphics.Color
 class PostItAnimationManager(
     private val context: Context,
     private val postItManager: PostItManager,
+    private val config: PostItConfig,
 ) {
     private var currentAnimator: Animator? = null
 
@@ -22,15 +23,34 @@ class PostItAnimationManager(
         val (originalWidth, originalHeight) = postIt.getOriginalSize()
 
         val displayMetrics = context.resources.displayMetrics
-        val targetWidth = (displayMetrics.widthPixels * 0.6).toInt()
-        val targetHeight = (displayMetrics.heightPixels * 0.25).toInt()
-        val targetX = (displayMetrics.widthPixels - targetWidth) / 2f
-        val targetY = (displayMetrics.heightPixels - targetHeight) / 2f
+        val screenWidth = displayMetrics.widthPixels
+        val screenHeight = displayMetrics.heightPixels
+
+        val baseWidth = (screenWidth * 0.8f).toInt()
+        val baseHeight = (screenHeight * 0.7f).toInt()
+
+        val aspectRatio = originalWidth.toFloat() / originalHeight.toFloat()
+
+        var targetWidth = baseWidth
+        var targetHeight = (baseWidth / aspectRatio).toInt()
+
+        if (targetHeight > baseHeight) {
+            targetHeight = baseHeight
+            targetWidth = (baseHeight * aspectRatio).toInt()
+        }
+
+        val minWidth = (screenWidth * 0.3f).toInt()
+        val minHeight = (screenHeight * 0.3f).toInt()
+        targetWidth = targetWidth.coerceAtLeast(minWidth)
+        targetHeight = targetHeight.coerceAtLeast(minHeight)
+
+        val targetX = (screenWidth - targetWidth) / 2f
+        val targetY = (screenHeight - targetHeight) / 2f
 
         currentAnimator =
             ValueAnimator.ofFloat(0f, 1f).apply {
-                duration = 300
-                setupExpansionListeners(postIt, lienzoId)
+                duration = config.animationDuration
+                setupExpansionListeners(postIt, lienzoId, targetWidth, targetHeight)
                 setupExpansionUpdateListener(
                     postIt,
                     originalX,
@@ -59,7 +79,7 @@ class PostItAnimationManager(
 
         currentAnimator =
             ValueAnimator.ofFloat(0f, 1f).apply {
-                duration = 300
+                duration = config.animationDuration
                 setupCollapseListeners(postIt)
                 setupCollapseUpdateListener(
                     postIt,
@@ -79,15 +99,17 @@ class PostItAnimationManager(
     private fun ValueAnimator.setupExpansionListeners(
         postIt: PostItView,
         lienzoId: Long,
+        targetWidth: Int,
+        targetHeight: Int,
     ) {
         addListener(
             object : AnimatorListenerAdapter() {
                 override fun onAnimationStart(animation: Animator) {
+                    postIt.isExpansionInProgress = true
                 }
 
                 override fun onAnimationEnd(animation: Animator) {
-                    postItManager.updateExpandedPizarraLayout(postIt)
-                    postItManager.createExpandedPizarra(postIt, lienzoId)
+                    postItManager.createExpandedPizarra(postIt, lienzoId, targetWidth, targetHeight)
                     postIt.isExpansionInProgress = false
                     currentAnimator = null
                 }
@@ -145,11 +167,7 @@ class PostItAnimationManager(
             val currentWidth = (originalWidth + (targetWidth - originalWidth) * fraction).toInt()
             val currentHeight = (originalHeight + (targetHeight - originalHeight) * fraction).toInt()
 
-            postIt.x = currentX
-            postIt.y = currentY
-            postIt.layoutParams.width = currentWidth
-            postIt.layoutParams.height = currentHeight
-            postIt.requestLayout()
+            postIt.setupLayout(currentWidth, currentHeight, currentX, currentY)
 
             postItManager.updateExpandedPizarraLayout(postIt, currentWidth, currentHeight)
         }
@@ -174,11 +192,7 @@ class PostItAnimationManager(
             val newWidth = (currentWidth + (originalWidth - currentWidth) * fraction).toInt()
             val newHeight = (currentHeight + (originalHeight - currentHeight) * fraction).toInt()
 
-            postIt.x = newX
-            postIt.y = newY
-            postIt.layoutParams.width = newWidth
-            postIt.layoutParams.height = newHeight
-            postIt.requestLayout()
+            postIt.setupLayout(newWidth, newHeight, newX, newY)
         }
     }
 
