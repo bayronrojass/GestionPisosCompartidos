@@ -50,17 +50,14 @@ class GestionUsuariosPisoViewModel(
                     throw Exception("Error al cargar miembros: ${response.errorBody()?.string()}")
                 }
 
-                // 2. Extrae la lista de usuarios
                 val usuariosDelPiso = response.body()!!
-                // --- FIN DE LO NUEVO ---
 
-                // 3. Tu lógica de mapeo. Como no tenemos admins, 'esAdmin' es siempre falso.
                 val listaMiembrosUI =
                     usuariosDelPiso.map { usuario ->
                         MiembroPiso(
                             id = usuario.id,
                             nombre = usuario.nombre,
-                            esAdmin = false, // <-- Simple, como pediste
+                            esAdmin = false,
                             esTu = usuario.id == currentUserId,
                             colorIndicator = getColorForUser(usuario.id),
                         )
@@ -72,9 +69,6 @@ class GestionUsuariosPisoViewModel(
         }
     }
 
-    /**
-     * Lógica para ENVIAR invitaciones por email (Esta ya estaba bien).
-     */
     fun enviarInvitacion(email: String) {
         if (currentPisoId == 0L) {
             _accionResult.value = "Error: ID de piso no válido"
@@ -113,8 +107,6 @@ class GestionUsuariosPisoViewModel(
         }
     }
 
-    /** * ¡MODIFICADO! Esta función ahora llama al backend.
-     */
     fun removeMiembro(miembroId: Long) {
         viewModelScope.launch {
             try {
@@ -140,7 +132,6 @@ class GestionUsuariosPisoViewModel(
         }
     }
 
-    /** Limpia el mensaje de resultado para que el Toast no se repita. */
     fun clearAccionResult() {
         _accionResult.value = null
     }

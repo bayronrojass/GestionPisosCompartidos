@@ -8,6 +8,7 @@ import com.example.gestionpisoscompartidos.model.CasaDetailsResponse
 import com.example.gestionpisoscompartidos.model.CasaRequest
 import com.example.gestionpisoscompartidos.model.CasaResponse
 import com.example.gestionpisoscompartidos.model.Usuario
+import com.example.gestionpisoscompartidos.model.JoinCasaRequest
 import com.google.gson.Gson
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -72,4 +73,10 @@ class RepositoryCasa(
         casaId: Long,
         usuarioId: Long,
     ): Response<Unit> = apiService.removeMiembro(token, casaId, usuarioId)
+
+    suspend fun joinCasa(
+        token: String,
+        casaId: Long,
+        request: JoinCasaRequest,
+    ): Response<String> = apiService.joinCasa(token, casaId, request)
 }
