@@ -29,9 +29,6 @@ class Home2 : Fragment() {
     ) {
         super.onViewCreated(view, savedInstanceState)
 
-        // --- CÓDIGO ACTUALIZADO ---
-        // (He renombrado tus actions para que coincidan con 'Home2Directions')
-
         binding.btnVerListas.setOnClickListener {
             val action = Home2Directions.actionHome2ToListasFragment(args.casaId, args.casaNombre)
             findNavController().navigate(action)
@@ -50,13 +47,11 @@ class Home2 : Fragment() {
             val action = Home2Directions.actionHome2ToGestionUsuariosPisoFragment(args.casaId)
             findNavController().navigate(action)
         }
-        /*
+
         binding.btnGestionInvitaciones.setOnClickListener {
-            // Este fragmento (por ahora) no necesita argumentos
             val action = Home2Directions.actionHome2ToInvitacionesFragment()
             findNavController().navigate(action)
         }
-         */
     }
 
     override fun onDestroyView() {
