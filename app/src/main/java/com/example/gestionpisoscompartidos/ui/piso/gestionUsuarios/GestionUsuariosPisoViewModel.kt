@@ -2,7 +2,7 @@ package com.example.gestionpisoscompartidos.ui.piso.gestionUsuarios
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gestionpisoscompartidos.data.SessionManager3
+import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryInvitacion
 import com.example.gestionpisoscompartidos.model.InvitacionRequest
@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 class GestionUsuariosPisoViewModel(
     private val pisoRepository: RepositoryCasa,
     private val invitacionRepository: RepositoryInvitacion,
-    private val sessionManager: SessionManager3,
+    private val sessionManager: SessionManager,
 ) : ViewModel() {
     private val _miembros = MutableStateFlow<List<MiembroPiso>>(emptyList())
     val miembros: StateFlow<List<MiembroPiso>> = _miembros

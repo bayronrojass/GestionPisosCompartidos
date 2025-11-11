@@ -10,10 +10,6 @@ import com.example.gestionpisoscompartidos.data.repository.APIs.TareaAPI
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.Strictness
-import com.example.gestionpisoscompartidos.data.repository.APIs.ItemAPI
-import com.example.gestionpisoscompartidos.data.repository.APIs.ListaAPI
-import com.example.gestionpisoscompartidos.data.repository.APIs.InvitacionAPI
-import com.example.gestionpisoscompartidos.data.repository.APIs.TareaAPI
 import retrofit2.Retrofit
 import retrofit2.Retrofit.Builder
 import retrofit2.converter.gson.GsonConverterFactory

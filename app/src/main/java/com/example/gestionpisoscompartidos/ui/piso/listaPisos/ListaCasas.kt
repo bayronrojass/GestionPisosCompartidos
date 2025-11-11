@@ -14,7 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.gestionpisoscompartidos.data.SessionManager3
+import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
 import com.example.gestionpisoscompartidos.databinding.FragmentListaCasasBinding
@@ -32,7 +32,7 @@ class ListaCasas : Fragment() {
     private lateinit var casasAdapter: CasasAdapter
 
     // --- DEPENDENCIAS AÑADIDAS ---
-    private lateinit var sessionManager: SessionManager3
+    private lateinit var sessionManager: SessionManager
     private lateinit var repositoryCasa: RepositoryCasa
 
     // Prepara el launcher para el resultado del escáner
@@ -49,7 +49,7 @@ class ListaCasas : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Inicializa las dependencias
-        sessionManager = SessionManager3(requireContext().applicationContext)
+        sessionManager = SessionManager(requireContext().applicationContext)
         repositoryCasa = RepositoryCasa(NetworkModule.casaApiService)
     }
 

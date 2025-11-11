@@ -4,7 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionpisoscompartidos.model.AccionInvitacionRequest
-import com.example.gestionpisoscompartidos.data.SessionManager3
+import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryInvitacion
 import com.example.gestionpisoscompartidos.model.InvitacionResponse
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 
 class InvitacionesViewModel(
     private val repository: RepositoryInvitacion,
-    private val sessionManager: SessionManager3,
+    private val sessionManager: SessionManager,
 ) : ViewModel() {
     // 2. Define un TAG para encontrar tus logs fácilmente
     companion object {

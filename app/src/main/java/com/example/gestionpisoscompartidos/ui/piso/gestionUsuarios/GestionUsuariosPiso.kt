@@ -16,7 +16,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionpisoscompartidos.R
-import com.example.gestionpisoscompartidos.data.SessionManager3
+import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryInvitacion
@@ -44,7 +44,7 @@ class GestionUsuariosPiso : Fragment() {
         super.onCreate(savedInstanceState)
 
         val context = requireContext().applicationContext
-        val sessionManager = SessionManager3(context)
+        val sessionManager = SessionManager(context)
 
         val pisoRepository = RepositoryCasa(NetworkModule.casaApiService)
         val invitacionRepository = RepositoryInvitacion(NetworkModule.invitacionApiService)

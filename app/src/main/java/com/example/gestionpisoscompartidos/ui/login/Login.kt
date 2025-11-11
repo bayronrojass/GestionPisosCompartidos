@@ -13,7 +13,7 @@ import com.example.gestionpisoscompartidos.data.repository.repositories.Reposito
 import com.example.gestionpisoscompartidos.databinding.FragmentLoginBinding
 import com.example.gestionpisoscompartidos.model.LoginResponse
 import androidx.navigation.fragment.findNavController
-import com.example.gestionpisoscompartidos.data.SessionManager3
+import com.example.gestionpisoscompartidos.data.SessionManager
 // 1. ¡IMPORTA TU MODELO 'Casa' (Parcelable)!
 import com.example.gestionpisoscompartidos.model.Casa
 
@@ -25,7 +25,7 @@ class Login : Fragment() {
     private var _binding: FragmentLoginBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var sessionManager: SessionManager3
+    private lateinit var sessionManager: SessionManager
 
     private val viewModel: LoginViewModel by viewModels {
         val apiService = NetworkModule.loginApiService
@@ -35,7 +35,7 @@ class Login : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        sessionManager = SessionManager3(requireContext().applicationContext)
+        sessionManager = SessionManager(requireContext().applicationContext)
     }
 
     override fun onCreateView(
@@ -125,9 +125,10 @@ class Login : Fragment() {
             Log.d("LoginSuccess", "La lista 'flats' está vacía.")
             Toast.makeText(context, "No tienes pisos asignados.", Toast.LENGTH_LONG).show()
 
-            // TODO: Navegar a la pantalla de "Crear Piso"
-            // val action = LoginDirections.actionLoginFragmentToCrearPisoFragment()
-            // findNavController().navigate(action)
+            val emptyCasasArray = arrayOf<Casa>()
+
+            val action = LoginDirections.actionLoginFragmentToListaCasasFragment(emptyCasasArray)
+            findNavController().navigate(action)
         }
     }
 

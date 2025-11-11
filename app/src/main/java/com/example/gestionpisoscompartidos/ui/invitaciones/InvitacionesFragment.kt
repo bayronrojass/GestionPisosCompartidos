@@ -12,7 +12,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.gestionpisoscompartidos.data.SessionManager3
+import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryInvitacion
 import com.example.gestionpisoscompartidos.databinding.FragmentInvitacionesBinding // Importa tu ViewBinding
@@ -33,7 +33,7 @@ class InvitacionesFragment : Fragment() {
 
         // Inicializa las dependencias
         val context = requireContext().applicationContext
-        val sessionManager = SessionManager3(context)
+        val sessionManager = SessionManager(context)
         val repository = RepositoryInvitacion(NetworkModule.invitacionApiService)
 
         // Crea la Factory
