@@ -110,7 +110,7 @@ class GestionUsuariosPiso : Fragment() {
         }
 
         buttonInviteQr.setOnClickListener {
-            val pisoId = arguments?.getLong("PISO_ID") ?: 0L
+            val pisoId = 1L // arguments?.getLong("PISO_ID") ?: 1L
             if (pisoId == 0L) {
                 Toast.makeText(requireContext(), "Error: No se ha cargado el ID del piso", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
