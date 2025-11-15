@@ -49,7 +49,6 @@ class RepositoryCasa(
         contentResolver: ContentResolver,
     ): MultipartBody.Part =
         contentResolver.openInputStream(fileUri)?.use { inputStream ->
-            // ... (tu código de createFilePart está bien) ...
             val fileBytes = inputStream.readBytes()
             val mimeType = contentResolver.getType(fileUri) ?: "application/octet-stream"
             val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: "bin"

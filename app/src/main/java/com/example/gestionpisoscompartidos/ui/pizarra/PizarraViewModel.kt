@@ -77,7 +77,7 @@ class PizarraViewModel(
 
                         when (result) {
                             is ApiResult.Error -> {
-                                Log.e("PizarraViewModel", "Error loading: ${result.message}")
+                                Log.e("PizarraViewModel", "Error loading: ${result.message} ${result.code} $lienzoId")
                             }
                             is ApiResult.Success<*> -> {
                                 val responseBody = result.data as? ResponseBody

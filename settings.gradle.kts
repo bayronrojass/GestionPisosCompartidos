@@ -23,4 +23,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "GestionPisosCompartidos"
 include(":app")
- 
