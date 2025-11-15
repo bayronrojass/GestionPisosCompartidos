@@ -1,5 +1,6 @@
 package com.example.gestionpisoscompartidos.data.repository.APIs
 
+import com.example.gestionpisoscompartidos.model.AccionInvitacionRequest
 import com.example.gestionpisoscompartidos.model.InvitacionRequest
 import com.example.gestionpisoscompartidos.model.InvitacionResponse
 import retrofit2.Response
@@ -16,20 +17,23 @@ interface InvitacionAPI {
         @Body request: InvitacionRequest,
     ): Response<InvitacionResponse>
 
-    @GET("invitaciones/me")
+    @GET("invitaciones/{usuarioId}")
     suspend fun getMisInvitaciones(
         @Header("Authorization") token: String,
+        @Path("usuarioId") usuarioId: Long,
     ): Response<List<InvitacionResponse>>
 
     @POST("invitaciones/{id}/aceptar")
     suspend fun aceptarInvitacion(
         @Header("Authorization") token: String,
         @Path("id") invitacionId: Long,
+        @Body request: AccionInvitacionRequest,
     ): Response<InvitacionResponse>
 
     @POST("invitaciones/{id}/rechazar")
     suspend fun rechazarInvitacion(
         @Header("Authorization") token: String,
         @Path("id") invitacionId: Long,
+        @Body request: AccionInvitacionRequest,
     ): Response<InvitacionResponse>
 }

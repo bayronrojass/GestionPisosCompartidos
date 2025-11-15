@@ -55,6 +55,20 @@
             app:layout_constraintBottom_toBottomOf="parent"/>
 
     <ImageButton
+            android:id="@+id/taskEditButton"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginEnd="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Editar Tarea"
+            android:src="@drawable/ic_edit"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/taskDeleteButton"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@color/black_alpha_60"
+            tools:ignore="TouchTargetSizeCheck" />
+
+    <ImageButton
             android:id="@+id/taskDeleteButton"
             android:layout_width="32dp"
             android:layout_height="32dp"

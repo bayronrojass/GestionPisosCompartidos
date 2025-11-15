@@ -6,12 +6,22 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.gestionpisoscompartidos.data.SessionManager
+import com.example.gestionpisoscompartidos.data.remote.NetworkModule
+import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
 import com.example.gestionpisoscompartidos.databinding.FragmentListaCasasBinding
+import com.example.gestionpisoscompartidos.model.JoinCasaRequest
+import com.google.zxing.integration.android.IntentIntegrator
+import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 class ListaCasas : Fragment() {
     private var _binding: FragmentListaCasasBinding? = null
@@ -20,6 +30,28 @@ class ListaCasas : Fragment() {
     private val viewModel: ListaCasasViewModel by viewModels()
     private val args: ListaCasasArgs by navArgs()
     private lateinit var casasAdapter: CasasAdapter
+
+    // --- DEPENDENCIAS AÑADIDAS ---
+    private lateinit var sessionManager: SessionManager
+    private lateinit var repositoryCasa: RepositoryCasa
+
+    // Prepara el launcher para el resultado del escáner
+    private val qrScannerLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val intentResult = IntentIntegrator.parseActivityResult(result.resultCode, result.data)
+            if (intentResult.contents != null) {
+                handleQrResult(intentResult.contents)
+            } else {
+                Toast.makeText(context, "Escaneo cancelado", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // Inicializa las dependencias
+        sessionManager = SessionManager(requireContext().applicationContext)
+        repositoryCasa = RepositoryCasa(NetworkModule.casaApiService)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -55,20 +87,17 @@ class ListaCasas : Fragment() {
                 findNavController().navigate(action)
             }
         binding.recyclerViewCasas.adapter = casasAdapter
+        binding.recyclerViewCasas.layoutManager = LinearLayoutManager(requireContext())
     }
 
     private fun setupViewModel() {
-        // Pasa la lista recibida como argumento al ViewModel
-        // Convertimos el Array<Casa> de Safe Args a List<Casa>
         viewModel.setCasas(args.casas.toList())
 
-        // Observa la lista de casas
         viewModel.casas.observe(viewLifecycleOwner) { listaCasas ->
             casasAdapter.updateData(listaCasas)
             Log.d("ListaCasasFragment", "Lista de casas actualizada en el adaptador: ${listaCasas.size} elementos")
         }
 
-        // Observa si se debe mostrar el mensaje de lista vacía
         viewModel.mostrarMensajeVacio.observe(viewLifecycleOwner) { mostrar ->
             binding.tvMensajeVacio.isVisible = mostrar
             binding.recyclerViewCasas.isVisible = !mostrar
@@ -78,14 +107,79 @@ class ListaCasas : Fragment() {
 
     private fun setupListeners() {
         binding.fabCrearCasa.setOnClickListener {
-            // Navegar a la pantalla de crear casa
             val action = ListaCasasDirections.actionListaCasasFragmentToCrearPisoFragment()
             findNavController().navigate(action)
+        }
+
+        // --- LISTENERS NUEVOS AÑADIDOS ---
+
+        binding.btnVerInvitaciones.setOnClickListener {
+            val action = ListaCasasDirections.actionListaCasasFragmentToInvitacionesFragment()
+            findNavController().navigate(action)
+        }
+
+        binding.btnEscanearQr.setOnClickListener {
+            iniciarEscanerQr()
+        }
+    }
+
+    // --- FUNCIONES NUEVAS AÑADIDAS ---
+
+    // Inicia la actividad del escáner (ZXing)
+    private fun iniciarEscanerQr() {
+        // (Recuerda: Ya añadiste el permiso de CÁMARA al Manifest)
+        val integrator = IntentIntegrator.forSupportFragment(this)
+        integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
+        integrator.setPrompt("Escanea el QR del piso")
+        integrator.setBeepEnabled(true)
+        qrScannerLauncher.launch(integrator.createScanIntent())
+    }
+
+    // Maneja el resultado del QR
+    private fun handleQrResult(qrData: String) {
+        try {
+            // Parsea el JSON que generó el Anfitrión
+            val json = JSONObject(qrData)
+            val action = json.optString("action")
+
+            if (action == "join_casa") {
+                val casaId = json.getLong("casaId")
+
+                val miId = sessionManager.fetchCurrentUserId()
+                if (miId == -1L) {
+                    Toast.makeText(context, "Error: Inicia sesión antes de unirte", Toast.LENGTH_LONG).show()
+                    return
+                }
+
+                // Llama al backend (endpoint inseguro /join)
+                lifecycleScope.launch {
+                    try {
+                        val token = sessionManager.fetchAuthToken() ?: ""
+                        val request = JoinCasaRequest(usuarioId = miId)
+
+                        val response = repositoryCasa.joinCasa(token, casaId, request)
+
+                        if (response.isSuccessful) {
+                            Toast.makeText(context, "¡Te has unido al piso!", Toast.LENGTH_LONG).show()
+                            // TODO: Recargar la lista de pisos
+                        } else {
+                            Toast.makeText(context, "Error al unirse: ${response.errorBody()?.string()}", Toast.LENGTH_LONG).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Error de red: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            } else {
+                Toast.makeText(context, "QR no válido", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(context, "Error al leer el QR", Toast.LENGTH_SHORT).show()
         }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        _binding = null // Limpiar binding para evitar fugas de memoria
+        _binding = null
     }
 }

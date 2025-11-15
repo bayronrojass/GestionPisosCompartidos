@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:padding="24dp"
-        android:background="@color/white"
-        tools:context=".ui.home.Home2">
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:gravity="center"
+              android:padding="24dp"
+              android:background="@color/white"
+              tools:context=".ui.home.Home2">
 
     <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Bienvenido"
+            android:text="@string/bienvenido"
             android:textSize="34sp"
             android:textStyle="bold"
             android:textColor="@color/purple_700"/>
@@ -20,7 +20,7 @@
     <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Selecciona una opción"
+            android:text="@string/selecciona_una_opcion"
             android:textSize="18sp"
             android:layout_marginBottom="48dp"/>
 
@@ -28,7 +28,7 @@
             android:id="@+id/btnVerListas"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:text="Ver Listas del Hogar"
+            android:text="@string/ver_listas_del_hogar"
             android:layout_marginBottom="16dp"
             android:backgroundTint="@color/purple_500"
             android:textColor="@color/white"/>
@@ -37,8 +37,26 @@
             android:id="@+id/btnVerTareas"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:text="Ver Tareas del Hogar"
+            android:text="@string/ver_tareas_del_hogar"
             android:backgroundTint="@color/teal_700"
+            android:textColor="@color/white"
+            android:layout_marginBottom="16dp"/>
+
+    <Button
+            android:id="@+id/btnGestionPiso"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="@string/gestion_del_piso"
+            android:backgroundTint="@color/purple_700"
+            android:textColor="@color/white"
+            android:layout_marginBottom="16dp"/>
+
+    <Button
+            android:id="@+id/btnGestionInvitaciones"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="@string/ver_invitaciones"
+            android:backgroundTint="@color/purple_500"
             android:textColor="@color/white"/>
 
 </LinearLayout>

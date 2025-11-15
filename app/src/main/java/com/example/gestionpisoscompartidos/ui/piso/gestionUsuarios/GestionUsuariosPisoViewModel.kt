@@ -2,11 +2,11 @@ package com.example.gestionpisoscompartidos.ui.piso.gestionUsuarios
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gestionpisoscompartidos.data.SessionManager3
+import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryInvitacion
 import com.example.gestionpisoscompartidos.model.InvitacionRequest
-import com.example.gestionpisoscompartidos.model.Usuario
+// ¡Importa el DTO de respuesta que tu backend envía!
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 class GestionUsuariosPisoViewModel(
     private val pisoRepository: RepositoryCasa,
     private val invitacionRepository: RepositoryInvitacion,
-    private val sessionManager: SessionManager3,
+    private val sessionManager: SessionManager,
 ) : ViewModel() {
     private val _miembros = MutableStateFlow<List<MiembroPiso>>(emptyList())
     val miembros: StateFlow<List<MiembroPiso>> = _miembros
@@ -37,7 +37,6 @@ class GestionUsuariosPisoViewModel(
     private fun loadMiembros() {
         viewModelScope.launch {
             try {
-                // Obtén el ID real del usuario desde el SessionManager
                 val currentUserId = sessionManager.fetchCurrentUserId()
                 val token = sessionManager.fetchAuthToken()
                 if (token == null) {
@@ -45,33 +44,20 @@ class GestionUsuariosPisoViewModel(
                     return@launch
                 }
 
-                // --- TODO: REEMPLAZA ESTO CON DATOS REALES ---
-                // Necesitarás un endpoint en tu CasaAPI/RepositoryCasa
-                // para obtener los detalles y miembros de un piso.
-                /*
-                val pisoDetailsResponse = pisoRepository.getPisoDetails(token, currentPisoId)
-                if (!pisoDetailsResponse.isSuccessful) throw Exception("Error al cargar piso")
-                val usuariosDelPiso = pisoDetailsResponse.body()!!.miembros
-                val adminIds = pisoDetailsResponse.body()!!.administradores.map { it.id }
-                 */
+                val response = pisoRepository.getPisoMiembros(token, currentPisoId)
 
-                // --- INICIO DE DATOS DE EJEMPLO (Usando el ID real) ---
+                if (!response.isSuccessful) {
+                    throw Exception("Error al cargar miembros: ${response.errorBody()?.string()}")
+                }
 
-                val adminIds = listOf(1L)
-                val usuariosDelPiso: List<Usuario> =
-                    listOf(
-                        Usuario(1L, "Manolo (Ejemplo)", "manolo@mail.com"),
-                        Usuario(currentUserId, "Tú Mismo (Ejemplo)", "me@mail.com"),
-                        Usuario(3L, "Paula (Ejemplo)", "paula@mail.com"),
-                    )
-                // --- FIN DE DATOS DE EJEMPLO ---
+                val usuariosDelPiso = response.body()!!
 
                 val listaMiembrosUI =
                     usuariosDelPiso.map { usuario ->
                         MiembroPiso(
                             id = usuario.id,
                             nombre = usuario.nombre,
-                            esAdmin = usuario.id in adminIds,
+                            esAdmin = false,
                             esTu = usuario.id == currentUserId,
                             colorIndicator = getColorForUser(usuario.id),
                         )
@@ -83,9 +69,6 @@ class GestionUsuariosPisoViewModel(
         }
     }
 
-    /**
-     * Lógica para ENVIAR invitaciones por email.
-     */
     fun enviarInvitacion(email: String) {
         if (currentPisoId == 0L) {
             _accionResult.value = "Error: ID de piso no válido"
@@ -100,7 +83,17 @@ class GestionUsuariosPisoViewModel(
                     return@launch
                 }
 
-                val request = InvitacionRequest(currentPisoId, email)
+                // val request = InvitacionRequest(currentPisoId, email)
+                val remitenteId = sessionManager.fetchCurrentUserId()
+                if (remitenteId == -1L) {
+                    _accionResult.value = "Error: ID de usuario no encontrado en la sesión"
+                    return@launch
+                }
+
+                val request = InvitacionRequest(currentPisoId, email, remitenteId)
+
+                android.util.Log.d("GestionPisoVM", "Enviando invitación: $request")
+
                 val response = invitacionRepository.crearInvitacion(token, request)
 
                 if (response.isSuccessful) {
@@ -114,7 +107,6 @@ class GestionUsuariosPisoViewModel(
         }
     }
 
-    /** Lógica para eliminar un miembro (a conectar con API) */
     fun removeMiembro(miembroId: Long) {
         viewModelScope.launch {
             try {
@@ -124,20 +116,22 @@ class GestionUsuariosPisoViewModel(
                     return@launch
                 }
 
+                // --- ¡MODO ONLINE ACTIVADO! ---
                 val response = pisoRepository.removeMiembro(token, currentPisoId, miembroId)
                 if (response.isSuccessful) {
+                    // Si el backend tiene éxito, actualiza la UI localmente
                     _miembros.value = _miembros.value.filter { it.id != miembroId }
-                    _accionResult.value = "Miembro eliminado (Ejemplo)"
+                    _accionResult.value = "Miembro eliminado"
                 } else {
-                    _accionResult.value = "Error al eliminar"
+                    _accionResult.value = "Error al eliminar: ${response.errorBody()?.string()}"
                 }
+                // --- FIN DEL MODO ONLINE ---
             } catch (e: Exception) {
                 _accionResult.value = "Error de red: ${e.message}"
             }
         }
     }
 
-    /** Limpia el mensaje de resultado para que el Toast no se repita. */
     fun clearAccionResult() {
         _accionResult.value = null
     }
@@ -150,6 +144,7 @@ class GestionUsuariosPisoViewModel(
                 android.R.color.holo_purple,
                 android.R.color.holo_blue_light,
             )
-        return colors[(id % colors.size).toInt()]
+        // Usa abs() para evitar el crash con IDs negativos (como -1)
+        return colors[(kotlin.math.abs(id) % colors.size).toInt()]
     }
 }

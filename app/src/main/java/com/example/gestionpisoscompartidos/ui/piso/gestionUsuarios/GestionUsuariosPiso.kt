@@ -16,12 +16,17 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionpisoscompartidos.R
-import com.example.gestionpisoscompartidos.data.SessionManager3
+import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryInvitacion
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
+import android.graphics.Bitmap
+import android.graphics.Color
+import android.widget.ImageView
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
 
 class GestionUsuariosPiso : Fragment() {
     // Prepara la Factory
@@ -39,7 +44,7 @@ class GestionUsuariosPiso : Fragment() {
         super.onCreate(savedInstanceState)
 
         val context = requireContext().applicationContext
-        val sessionManager = SessionManager3(context)
+        val sessionManager = SessionManager(context)
 
         val pisoRepository = RepositoryCasa(NetworkModule.casaApiService)
         val invitacionRepository = RepositoryInvitacion(NetworkModule.invitacionApiService)
@@ -70,10 +75,12 @@ class GestionUsuariosPiso : Fragment() {
         // 2. Carga los datos
         // Asume que el ID del piso se pasa en los argumentos del Fragment
         val pisoId = arguments?.getLong("PISO_ID") ?: 0L
+
+        android.util.Log.d("GestionPiso", "ID del piso cargado: $pisoId")
+
         if (pisoId == 0L) {
-            Toast.makeText(requireContext(), "Error: ID de piso no encontrado", Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), "Error FATAL: ID de piso no encontrado", Toast.LENGTH_LONG).show()
         } else {
-            // ¡Llama al ViewModel para que cargue los miembros!
             viewModel.loadData(pisoId)
         }
 
@@ -103,8 +110,20 @@ class GestionUsuariosPiso : Fragment() {
         }
 
         buttonInviteQr.setOnClickListener {
-            val currentPisoId = "piso123" // TODO: Usar el pisoId real
-            Toast.makeText(requireContext(), "Navegar a generar QR para piso: $currentPisoId", Toast.LENGTH_SHORT).show()
+            val pisoId = 1L // arguments?.getLong("PISO_ID") ?: 1L
+            if (pisoId == 0L) {
+                Toast.makeText(requireContext(), "Error: No se ha cargado el ID del piso", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val qrData = "{\"action\":\"join_casa\", \"casaId\":$pisoId}"
+
+            try {
+                val qrBitmap = generarQrBitmap(qrData)
+                mostrarQrEnDialogo(qrBitmap)
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Error al generar QR", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -152,6 +171,33 @@ class GestionUsuariosPiso : Fragment() {
                     Toast.makeText(requireContext(), "El email no puede estar vacío", Toast.LENGTH_SHORT).show()
                 }
             }.show()
+    }
+
+    private fun generarQrBitmap(data: String): Bitmap {
+        val writer = QRCodeWriter()
+        val bitMatrix = writer.encode(data, BarcodeFormat.QR_CODE, 512, 512) // 512x512 píxeles
+        val width = bitMatrix.width
+        val height = bitMatrix.height
+        val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+        for (x in 0 until width) {
+            for (y in 0 until height) {
+                bmp.setPixel(x, y, if (bitMatrix[x, y]) Color.BLACK else Color.WHITE)
+            }
+        }
+        return bmp
+    }
+
+    private fun mostrarQrEnDialogo(bitmap: Bitmap) {
+        val imageView = ImageView(requireContext())
+        imageView.setImageBitmap(bitmap)
+        imageView.setPadding(40, 40, 40, 40)
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Invitar con QR")
+            .setMessage("Pídele a tu amigo que escanee este código.")
+            .setView(imageView)
+            .setPositiveButton("Cerrar", null)
+            .show()
     }
 
     private fun mostrarDialogoDeConfirmacion(miembro: MiembroPiso) {

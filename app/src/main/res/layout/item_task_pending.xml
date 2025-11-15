@@ -36,22 +36,38 @@
             android:textColor="@color/white"
             app:layout_constraintVertical_chainStyle="packed"
             app:layout_constraintStart_toEndOf="@id/taskStatusIcon"
+            app.layout_constraintEnd_toStartOf="@+id/taskEditButton"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/taskAssignee"
+            tools:ignore="MissingPrefix" />
+
+    <TextView
+            android:id="@+id/taskAssignee"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            tools:text="Asignado a: Bayron"
+            android:textSize="14sp"
+            android:fontFamily="sans-serif-light"
+            android:textColor="@color/white"
+            app:layout_constraintStart_toEndOf="@id/taskStatusIcon"
+            app:layout_constraintEnd_toEndOf="@id/taskTitle"
+            app:layout_constraintTop_toBottomOf="@id/taskTitle"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
+    <ImageButton
+            android:id="@+id/taskEditButton"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginEnd="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Editar Tarea"
+            android:src="@drawable/ic_edit"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/taskDeleteButton"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toTopOf="@id/taskAssignee" />
-    <TextView
-        android:id="@+id/taskAssignee"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        tools:text="Asignado a: Bayron"
-        android:textSize="14sp"
-        android:fontFamily="sans-serif-light"
-        android:textColor="@color/white"
-        app:layout_constraintStart_toEndOf="@id/taskStatusIcon"
-        app:layout_constraintEnd_toEndOf="@id/taskTitle"
-        app:layout_constraintTop_toBottomOf="@id/taskTitle"
-        app:layout_constraintBottom_toBottomOf="parent"/>
+            app:tint="@color/white"
+            tools:ignore="TouchTargetSizeCheck" />
 
     <ImageButton
             android:id="@+id/taskDeleteButton"

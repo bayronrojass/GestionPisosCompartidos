@@ -89,6 +89,8 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.androidx.legacy.support.v4)
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    implementation("com.google.zxing:core:3.5.0")
     implementation("com.github.hannesa2:paho.mqtt.android:4.1")
     implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
     implementation("com.google.android.material:material:1.13.0")

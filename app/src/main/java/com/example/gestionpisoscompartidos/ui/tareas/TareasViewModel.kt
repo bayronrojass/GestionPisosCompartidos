@@ -2,6 +2,7 @@ package com.example.gestionpisoscompartidos.ui.tareas
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
@@ -35,6 +36,7 @@ class TareasViewModel(
             try {
                 _tareas.value = repository.getTareasByCasaId(casaId)
             } catch (e: Exception) {
+                Log.e("TareasViewModel", "Error en cargarTareas", e)
                 _error.value = e.message ?: "Error cargando tareas"
                 _tareas.value = emptyList()
             } finally {
@@ -54,7 +56,8 @@ class TareasViewModel(
                 repository.crearTarea(casaId, request)
                 cargarTareas()
             } catch (e: Exception) {
-                _error.value = e.message
+                Log.e("TareasViewModel", "Error en crearTarea", e)
+                _error.value = "Error al crear tarea: ${e.message}"
                 _isLoading.value = false
             }
         }
@@ -62,11 +65,12 @@ class TareasViewModel(
 
     fun toggleCompletado(tarea: Tarea) {
         viewModelScope.launch {
-            val request = TareaRequest(null, null, !tarea.completado, null, null, null, null)
+            val request = TareaRequest(tarea.nombre, tarea.descripcion, !tarea.completado, null, null, null, null)
             try {
                 repository.actualizarTarea(tarea.id, request)
                 cargarTareas()
             } catch (e: Exception) {
+                Log.e("TareasViewModel", "Error en toggleCompletado", e)
                 _error.value = e.message
             }
         }
@@ -78,6 +82,7 @@ class TareasViewModel(
                 repository.borrarTarea(tarea.id)
                 cargarTareas()
             } catch (e: Exception) {
+                Log.e("TareasViewModel", "Error en borrarTarea", e)
                 _error.value = e.message
             }
         }
