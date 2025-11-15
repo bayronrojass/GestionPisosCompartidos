@@ -3,27 +3,7 @@
             xmlns:app="http://schemas.android.com/apk/res-auto"
             xmlns:tools="http://schemas.android.com/tools"
             android:id="@+id/nav_graph"
-            app:startDestination="@id/homeFragment">
-
-    <fragment
-            android:id="@+id/homeFragment"
-            android:name="com.example.gestionpisoscompartidos.ui.home.HomeFragment"
-            android:label="Inicio"
-            tools:layout="@layout/fragment_home">
-        <action
-                android:id="@+id/action_homeFragment_to_loginFragment"
-                app:destination="@id/loginFragment" />
-        <action
-                android:id="@+id/action_homeFragment_to_crearPisoFragment"
-                app:destination="@id/crearPisoFragment" />
-        <action
-                android:id="@+id/action_homeFragment_to_pizarraFragment"
-                app:destination="@id/pizarraFragment" />
-
-        <action
-                android:id="@+id/action_homeFragment_to_gestionUsuariosPisoFragment"
-                app:destination="@id/gestionUsuariosPisoFragment" />
-    </fragment>
+            app:startDestination="@id/loginFragment">
 
     <fragment
             android:id="@+id/loginFragment"
