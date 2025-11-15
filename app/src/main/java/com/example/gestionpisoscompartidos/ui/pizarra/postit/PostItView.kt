@@ -12,7 +12,10 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.core.graphics.toColorInt
+import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryImagen
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryPostIt
+import com.example.gestionpisoscompartidos.model.dtos.ImagenDTO
 import com.example.gestionpisoscompartidos.model.dtos.PostItDTO
 import com.example.gestionpisoscompartidos.ui.pizarra.PizarraView
 import com.example.gestionpisoscompartidos.ui.pizarra.PizarraViewModel
@@ -25,9 +28,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
-import androidx.core.graphics.toColorInt
-import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryImagen
-import com.example.gestionpisoscompartidos.model.dtos.ImagenDTO
 import kotlin.math.max
 
 class PostItView
