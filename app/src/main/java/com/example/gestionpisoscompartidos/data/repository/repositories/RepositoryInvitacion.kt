@@ -1,7 +1,7 @@
 package com.example.gestionpisoscompartidos.data.repository.repositories
 
-import com.example.gestionpisoscompartidos.model.AccionInvitacionRequest
 import com.example.gestionpisoscompartidos.data.repository.APIs.InvitacionAPI
+import com.example.gestionpisoscompartidos.model.AccionInvitacionRequest
 import com.example.gestionpisoscompartidos.model.InvitacionRequest
 import com.example.gestionpisoscompartidos.model.InvitacionResponse
 import retrofit2.Response

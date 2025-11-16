@@ -1,138 +1,109 @@
 package com.example.gestionpisoscompartidos.ui.login
 
-import android.os.Bundle
-import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.content.Context
 import android.widget.Toast
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
-import androidx.navigation.fragment.findNavController
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryLogin
-import com.example.gestionpisoscompartidos.databinding.FragmentLoginBinding
-import com.example.gestionpisoscompartidos.model.LoginResponse
-import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.model.Casa
+import com.example.gestionpisoscompartidos.model.LoginResponse
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.builtins.ArraySerializer
+import kotlinx.serialization.json.Json
 
-class Login : Fragment() {
-    companion object {
-        fun newInstance() = Login()
-    }
-
-    private var _binding: FragmentLoginBinding? = null
-    private val binding get() = _binding!!
-
-    private lateinit var sessionManager: SessionManager
-
-    private val viewModel: LoginViewModel by viewModels {
-        val apiService = NetworkModule.loginApiService
-        val repository = RepositoryLogin(apiService)
-        LoginViewModelFactory(repository)
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        sessionManager = SessionManager(requireContext().applicationContext)
-    }
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?,
-    ): View {
-        _binding = FragmentLoginBinding.inflate(inflater, container, false)
-        return binding.root
-    }
-
-    override fun onViewCreated(
-        view: View,
-        savedInstanceState: Bundle?,
-    ) {
-        super.onViewCreated(view, savedInstanceState)
-        setupListeners()
-        setupObservers()
-    }
-
-    private fun setupListeners() {
-        binding.btnIniciar.setOnClickListener {
-            val email =
-                binding.etUsuario.text
-                    .toString()
-                    .trim()
-            val password =
-                binding.etContrasena.text
-                    .toString()
-                    .trim()
-            viewModel.login(email, password)
-        }
-
-        binding.tvRegistrate.setOnClickListener {
-            // TODO: Navegar a la pantalla de registro
-            Toast.makeText(context, "Ir a Registro", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun setupObservers() {
-        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            binding.btnIniciar.isEnabled = !isLoading
-        }
-
-        viewModel.error.observe(viewLifecycleOwner) { errorMessage ->
-            if (errorMessage != null) {
-                Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
-            }
-        }
-
-        viewModel.loginResult.observe(viewLifecycleOwner) { response ->
-            if (response != null) {
-                handleLoginSuccess(response)
-                viewModel.clearLoginResult()
-            }
-        }
-    }
-
-    private fun handleLoginSuccess(response: LoginResponse) {
-        Toast.makeText(context, "¡Bienvenido, ${response.user.nombre}!", Toast.LENGTH_SHORT).show()
-
-        sessionManager.saveAuthData(
-            token = response.authToken,
-            userId = response.user.id,
-            email = response.user.correo,
+@Composable
+fun LoginDestination(
+    navController: NavController,
+    sessionManager: SessionManager,
+) {
+    val viewModel: LoginViewModel =
+        viewModel(
+            factory =
+                LoginViewModelFactory(
+                    RepositoryLogin(NetworkModule.loginApiService),
+                ),
         )
 
-        if (response.flats.isNotEmpty()) {
-            Log.d("LoginSuccess", "Pisos encontrados: ${response.flats.size}")
+    val isLoading by viewModel.isLoading.observeAsState(false)
+    val errorMessage by viewModel.error.observeAsState()
+    val loginResult by viewModel.loginResult.observeAsState()
 
-            val casasList: List<Casa> =
-                response.flats.map { casaDto ->
-                    Casa(
-                        id = casaDto.id,
-                        nombre = casaDto.nombre,
-                        descripcion = casaDto.descripcion,
-                        rutaImagen = null,
-                        fechaCreacion = casaDto.fechaCreacion,
-                    )
-                }
+    val context = LocalContext.current
 
-            val casasArray = casasList.toTypedArray()
-
-            val action = LoginDirections.actionLoginFragmentToListaCasasFragment(casasArray)
-            findNavController().navigate(action)
-        } else {
-            Log.d("LoginSuccess", "La lista 'flats' está vacía.")
-            Toast.makeText(context, "No tienes pisos asignados.", Toast.LENGTH_LONG).show()
-
-            val emptyCasasArray = arrayOf<Casa>()
-
-            val action = LoginDirections.actionLoginFragmentToListaCasasFragment(emptyCasasArray)
-            findNavController().navigate(action)
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let { error ->
+            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
         }
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
+    LaunchedEffect(loginResult) {
+        loginResult?.let { response ->
+            handleLoginSuccess(
+                context = context,
+                response = response,
+                sessionManager = sessionManager,
+                navController = navController,
+            )
+            viewModel.clearLoginResult()
+        }
+    }
+
+    LoginScreen(
+        isLoading = isLoading,
+        onLoginClick = { email, password ->
+            viewModel.login(email.trim(), password.trim())
+        },
+        onRegisterClick = {
+            Toast.makeText(context, "Ir a Registro", Toast.LENGTH_SHORT).show()
+        },
+        onForgotPasswordClick = {
+            Toast.makeText(context, "Recuperar contraseña", Toast.LENGTH_SHORT).show()
+        },
+    )
+}
+
+@OptIn(ExperimentalSerializationApi::class)
+private fun handleLoginSuccess(
+    context: Context,
+    response: LoginResponse,
+    sessionManager: SessionManager,
+    navController: NavController,
+) {
+    Toast
+        .makeText(
+            context,
+            "¡Bienvenido, ${response.user.nombre}!",
+            Toast.LENGTH_SHORT,
+        ).show()
+
+    sessionManager.saveAuthData(
+        token = response.authToken,
+        userId = response.user.id,
+        email = response.user.correo,
+    )
+
+    val casasList =
+        response.flats.map { casaDto ->
+            Casa(
+                id = casaDto.id,
+                nombre = casaDto.nombre,
+                descripcion = casaDto.descripcion,
+                rutaImagen = null,
+                fechaCreacion = casaDto.fechaCreacion,
+            )
+        }
+
+    val casasJson = Json.encodeToString(ArraySerializer(Casa.serializer()), casasList.toTypedArray())
+    val casaId = 1L
+    val casaNombre = "Temp"
+    navController.navigate("lista_casas?casas=$casasJson") {
+        popUpTo("login") { inclusive = true }
     }
 }

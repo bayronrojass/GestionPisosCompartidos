@@ -4,17 +4,18 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     id("androidx.navigation.safeargs.kotlin")
     id("kotlin-parcelize")
+    kotlin("plugin.serialization") version "2.2.21"
 }
 
 android {
     namespace = "com.example.gestionpisoscompartidos"
-    compileSdk = 35
+    compileSdk = 36
     defaultConfig {
         applicationId = "com.example.gestionpisoscompartidos"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
-        versionName = "1.0"
+        versionName = "2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -59,8 +60,16 @@ dependencies {
 
     // Jetpack Compose
     implementation(libs.ui)
-    implementation(libs.material3)
-    implementation(libs.androidx.activity.compose.v1100)
+
+    implementation("androidx.activity:activity-compose:1.11.0")
+    implementation("androidx.compose.material3:material3:1.4.0")
+    implementation("androidx.compose.material3:material3-window-size-class:1.4.0")
+
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
+    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("androidx.navigation:navigation-compose:2.9.6")
+    implementation("androidx.compose.runtime:runtime-livedata:1.9.4")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
