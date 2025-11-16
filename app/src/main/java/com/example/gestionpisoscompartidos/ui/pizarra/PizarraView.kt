@@ -10,6 +10,7 @@ import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
+import androidx.core.graphics.scale
 import com.example.gestionpisoscompartidos.model.Point
 import com.example.gestionpisoscompartidos.model.dtos.PointDeltaDTO
 import kotlinx.coroutines.CoroutineScope
@@ -20,7 +21,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
-import androidx.core.graphics.scale
 
 class PizarraView
     @JvmOverloads

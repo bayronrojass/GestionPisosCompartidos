@@ -4,6 +4,8 @@ import android.content.ContentResolver
 import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
+import android.webkit.MimeTypeMap
+import androidx.core.graphics.scale
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.remote.RemoteRepository
 import com.example.gestionpisoscompartidos.data.repository.APIs.ImagenAPI
@@ -14,8 +16,6 @@ import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.util.UUID
-import android.webkit.MimeTypeMap
-import androidx.core.graphics.scale
 
 class RepositoryImagen {
     private val repository = RemoteRepository(NetworkModule.retrofit.create(ImagenAPI::class.java))
