@@ -53,6 +53,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.gestionpisoscompartidos.model.Tarea
 import com.google.android.material.progressindicator.CircularProgressIndicator
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.Pending
+import androidx.compose.material3.Divider
+import androidx.compose.ui.graphics.vector.ImageVector
 
 @Composable
 fun TareasScreen(
@@ -74,6 +82,7 @@ fun TareasScreen(
     // Estado para diálogos
     var showCreateDialog by remember { mutableStateOf(false) }
     var taskToEdit by remember { mutableStateOf<Tarea?>(null) }
+    var taskToView by remember { mutableStateOf<Tarea?>(null) }
 
     Tasks(
         modifier = Modifier.fillMaxSize(),
@@ -82,8 +91,7 @@ fun TareasScreen(
         tareas = tareas ?: listOf(),
         onAddTaskClick = { showCreateDialog = true },
         onTaskClick = { tarea ->
-            // Mostrar detalles (equivalente al diálogo original)
-            // TODO: Implementar diálogo de detalles
+            taskToView = tarea
         },
         onTaskComplete = { tarea -> viewModel.toggleCompletado(tarea) },
         onTaskEdit = { tarea -> taskToEdit = tarea },
@@ -122,6 +130,14 @@ fun TareasScreen(
                     Toast.makeText(current, "El nombre es obligatorio", Toast.LENGTH_SHORT).show()
                 }
             },
+        )
+    }
+
+    // Diálogo detalles tarea
+    taskToView?.let { tarea ->
+        TaskDetailDialog(
+            tarea = tarea,
+            onDismiss = { taskToView = null },
         )
     }
 }
@@ -429,4 +445,117 @@ fun TasksScreenPreview() {
         onTaskDelete = {},
         context = LocalContext.current,
     )
+}
+
+@Composable
+fun TaskDetailDialog(
+    tarea: Tarea,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = tarea.nombre,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                // Descripción
+                if (!tarea.descripcion.isNullOrBlank()) {
+                    Text(
+                        text = tarea.descripcion,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.Black,
+                    )
+                } else {
+                    Text(
+                        text = "Sin descripción adicional.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray,
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                    )
+                }
+
+                Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Estado
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = if (tarea.completado) Icons.Default.CheckCircle else Icons.Default.Pending,
+                        contentDescription = null,
+                        tint = if (tarea.completado) Color(0xFF4CAF50) else Color(0xFFFF9800),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = if (tarea.completado) "Completada" else "Pendiente",
+                        fontWeight = FontWeight.Bold,
+                        color = if (tarea.completado) Color(0xFF4CAF50) else Color(0xFFFF9800),
+                    )
+                }
+
+                // Asignado a
+                DetailRow(
+                    icon = Icons.Default.Person,
+                    label = "Asignado a:",
+                    value = tarea.asignadoA?.nombre ?: "Sin asignar", // Asumiendo que Usuario tiene propiedad 'nombre'
+                )
+
+                // Fecha límite
+                DetailRow(
+                    icon = Icons.Default.CalendarToday,
+                    label = "Fecha límite:",
+                    value = tarea.fechaFin ?: "Sin fecha límite",
+                )
+
+                // Frecuencia (si es periódica)
+                if (tarea.periodica) {
+                    DetailRow(
+                        icon = Icons.Default.Repeat,
+                        label = "Frecuencia:",
+                        value = tarea.frecuencia ?: "No especificada",
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cerrar")
+            }
+        },
+    )
+}
+
+// Componente auxiliar para filas de detalles
+@Composable
+fun DetailRow(
+    icon: ImageVector,
+    label: String,
+    value: String,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = Color.Gray,
+            modifier = Modifier.padding(end = 8.dp),
+        )
+        Column {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.Gray,
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Black,
+            )
+        }
+    }
 }
