@@ -7,6 +7,7 @@ import com.example.gestionpisoscompartidos.data.repository.APIs.ItemAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.ListaAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.LoginAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.TareaAPI
+import com.example.gestionpisoscompartidos.data.repository.APIs.UsuarioAPI
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.Strictness
@@ -19,7 +20,7 @@ import retrofit2.converter.gson.GsonConverterFactory
  * y proporciona las instancias de los servicios API.
  */
 object NetworkModule {
-    private const val BASE_URL = "http://localhost:8080/"
+    private const val BASE_URL = "http://10.0.2.2:8080/"
 
     private val gson: Gson =
         GsonBuilder()
@@ -64,5 +65,9 @@ object NetworkModule {
 
     val tareaApiService: TareaAPI by lazy {
         retrofit.create(TareaAPI::class.java)
+    }
+
+    val usuarioApiService: UsuarioAPI by lazy {
+        retrofit.create(UsuarioAPI::class.java)
     }
 }

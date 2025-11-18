@@ -39,14 +39,17 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.ui.home.HomeScreen
 import com.example.gestionpisoscompartidos.ui.listas.ListaScreen
 import com.example.gestionpisoscompartidos.ui.listas.ListasViewModel
 import com.example.gestionpisoscompartidos.ui.listas.ListasViewModelFactory
+import com.example.gestionpisoscompartidos.ui.perfil.PerfilScreen
 import com.example.gestionpisoscompartidos.ui.tareas.TareasScreen
 import com.example.gestionpisoscompartidos.ui.tareas.TareasViewModel
 import com.example.gestionpisoscompartidos.ui.tareas.TareasViewModelFactory
@@ -215,6 +218,18 @@ fun MainScreenWithNavigation(
             factory = ListasViewModelFactory(casaId),
         )
 
+    val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context) }
+
+    val onLogout = {
+        // Usamos el contexto para reiniciar la actividad o navegar fuera
+        // En un entorno Compose puro con NavHost, deberías pasar navController y navegar a "login"
+        // Aquí un ejemplo simple asumiendo que el NavHost padre maneja esto o reiniciando Activity:
+        (context as? android.app.Activity)?.finish()
+        Unit
+        // O si prefieres navegar: navController.navigate(Route.Login.route) { popUpTo(0) }
+    }
+
     // val onNavigateToItem: (Long, String) -> Unit = { id, nombre ->
     //  Log.d("Navegación", "Item clickeado: $id - $nombre")
     // }
@@ -241,7 +256,7 @@ fun MainScreenWithNavigation(
                     0 -> HomeScreen()
                     1 -> ListaScreen(listaViewModel, onNavigateToItem)
                     2 -> TareasScreen(tareasViewModel, casaNombre)
-//                    3 -> PerfilTabContent()
+                    3 -> PerfilScreen(sessionManager, onLogout)
                 }
             }
         }
