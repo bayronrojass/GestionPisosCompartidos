@@ -102,7 +102,9 @@ class TareasViewModel(
         asignadoAId: Long?,
     ) {
         viewModelScope.launch {
-            val request = TareaRequest(nuevoNombre, nuevaDesc, null, null, null, null, asignadoAId)
+            // Si asignadoAId es null, enviamos -1L, de lo contrario enviamos el ID real
+            val idParaEnviar = asignadoAId ?: -1L
+            val request = TareaRequest(nuevoNombre, nuevaDesc, null, null, null, null, idParaEnviar)
             try {
                 repository.actualizarTarea(tarea.id, request)
                 cargarTareas()
