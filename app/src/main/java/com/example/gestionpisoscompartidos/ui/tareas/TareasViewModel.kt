@@ -6,15 +6,18 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
+import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryTarea
 import com.example.gestionpisoscompartidos.model.Tarea
 import com.example.gestionpisoscompartidos.model.TareaRequest
+import com.example.gestionpisoscompartidos.model.Usuario
 import kotlinx.coroutines.launch
 
 class TareasViewModel(
     private val casaId: Long,
 ) : ViewModel() {
     private val repository = RepositoryTarea(NetworkModule.tareaApiService)
+    private val repositoryCasa = RepositoryCasa(NetworkModule.casaApiService)
 
     private val _tareas = MutableLiveData<List<Tarea>>()
     val tareas: LiveData<List<Tarea>> = _tareas
@@ -24,6 +27,9 @@ class TareasViewModel(
 
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
+
+    private val _miembros = MutableLiveData<List<Usuario>>()
+    val miembros: LiveData<List<Usuario>> = _miembros
 
     init {
         cargarTareas()
@@ -48,11 +54,12 @@ class TareasViewModel(
     fun crearTarea(
         nombre: String,
         descripcion: String?,
+        asignadoAId: Long?,
     ) {
         _isLoading.value = true
         viewModelScope.launch {
             try {
-                val request = TareaRequest(nombre, descripcion, false, null, null, false, null)
+                val request = TareaRequest(nombre, descripcion, false, null, null, false, asignadoAId)
                 repository.crearTarea(casaId, request)
                 cargarTareas()
             } catch (e: Exception) {
@@ -101,6 +108,21 @@ class TareasViewModel(
                 cargarTareas()
             } catch (e: Exception) {
                 _error.value = e.message
+            }
+        }
+    }
+
+    fun cargarMiembros(token: String) {
+        viewModelScope.launch {
+            try {
+                val response = repositoryCasa.getPisoMiembros(token, casaId)
+                if (response.isSuccessful) {
+                    _miembros.value = response.body() ?: emptyList()
+                } else {
+                    Log.e("TareasViewModel", "Error cargando miembros: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e("TareasViewModel", "Excepción cargando miembros", e)
             }
         }
     }

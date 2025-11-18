@@ -61,6 +61,9 @@ import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Pending
 import androidx.compose.material3.Divider
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.gestionpisoscompartidos.data.SessionManager
+import com.example.gestionpisoscompartidos.model.Usuario
+import androidx.compose.material.icons.filled.ArrowDropDown
 
 @Composable
 fun TareasScreen(
@@ -71,6 +74,16 @@ fun TareasScreen(
     val isLoading by viewModel.isLoading.observeAsState()
     val error by viewModel.error.observeAsState()
     val current = LocalContext.current
+    val miembros by viewModel.miembros.observeAsState(emptyList())
+    val sessionManager = remember { SessionManager(current) }
+
+    // Cargar miembros al iniciar
+    LaunchedEffect(Unit) {
+        val token = sessionManager.fetchAuthToken()
+        if (token != null) {
+            viewModel.cargarMiembros(token)
+        }
+    }
 
     // Manejo de errores
     LaunchedEffect(error) {
@@ -105,10 +118,11 @@ fun TareasScreen(
     // Diálogo de crear tarea
     if (showCreateDialog) {
         CreateTaskDialog(
+            miembros = miembros, // Pasamos la lista
             onDismiss = { showCreateDialog = false },
-            onCreate = { nombre, descripcion ->
+            onCreate = { nombre, descripcion, asignadoId ->
                 if (nombre.isNotBlank()) {
-                    viewModel.crearTarea(nombre, descripcion)
+                    viewModel.crearTarea(nombre, descripcion, asignadoId)
                     showCreateDialog = false
                 } else {
                     Toast.makeText(current, "El nombre es obligatorio", Toast.LENGTH_SHORT).show()
@@ -121,10 +135,11 @@ fun TareasScreen(
     taskToEdit?.let { tarea ->
         EditTaskDialog(
             tarea = tarea,
+            miembros = miembros, // Pasamos la lista
             onDismiss = { taskToEdit = null },
-            onSave = { nombre, descripcion ->
+            onSave = { nombre, descripcion, asignadoId ->
                 if (nombre.isNotBlank()) {
-                    viewModel.editarTarea(tarea, nombre, descripcion, null)
+                    viewModel.editarTarea(tarea, nombre, descripcion, asignadoId)
                     taskToEdit = null
                 } else {
                     Toast.makeText(current, "El nombre es obligatorio", Toast.LENGTH_SHORT).show()
@@ -145,11 +160,13 @@ fun TareasScreen(
 // Diálogo de crear tarea
 @Composable
 fun CreateTaskDialog(
+    miembros: List<Usuario>,
     onDismiss: () -> Unit,
-    onCreate: (String, String?) -> Unit,
+    onCreate: (String, String?, Long?) -> Unit, // Añadido Long?
 ) {
     var nombre by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
+    var asignadoAId by remember { mutableStateOf<Long?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -169,10 +186,18 @@ fun CreateTaskDialog(
                     label = { Text("Descripción (opcional)") },
                     modifier = Modifier.fillMaxWidth(),
                 )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Selector de usuario
+                UserSelectionDropdown(
+                    miembros = miembros,
+                    selectedUserId = asignadoAId,
+                    onUserSelected = { asignadoAId = it },
+                )
             }
         },
         confirmButton = {
-            Button(onClick = { onCreate(nombre, descripcion.ifBlank { null }) }) {
+            Button(onClick = { onCreate(nombre, descripcion.ifBlank { null }, asignadoAId) }) {
                 Text("Crear")
             }
         },
@@ -188,11 +213,14 @@ fun CreateTaskDialog(
 @Composable
 fun EditTaskDialog(
     tarea: Tarea,
+    miembros: List<Usuario>,
     onDismiss: () -> Unit,
-    onSave: (String, String?) -> Unit,
+    onSave: (String, String?, Long?) -> Unit, // Añadido Long?
 ) {
     var nombre by remember { mutableStateOf(tarea.nombre) }
     var descripcion by remember { mutableStateOf(tarea.descripcion ?: "") }
+    // Pre-seleccionar usuario actual
+    var asignadoAId by remember { mutableStateOf(tarea.asignadoA?.id) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -212,10 +240,18 @@ fun EditTaskDialog(
                     label = { Text("Descripción (opcional)") },
                     modifier = Modifier.fillMaxWidth(),
                 )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Selector de usuario
+                UserSelectionDropdown(
+                    miembros = miembros,
+                    selectedUserId = asignadoAId,
+                    onUserSelected = { asignadoAId = it },
+                )
             }
         },
         confirmButton = {
-            Button(onClick = { onSave(nombre, descripcion.ifBlank { null }) }) {
+            Button(onClick = { onSave(nombre, descripcion.ifBlank { null }, asignadoAId) }) {
                 Text("Guardar")
             }
         },
@@ -378,6 +414,13 @@ fun TaskCard(
                         style = TextStyle(fontSize = 14.sp),
                     )
                 }
+                tarea.asignadoA?.let { usuario ->
+                    Text(
+                        text = "Asignado a: ${usuario.nombre}",
+                        color = Color(0xFF1976D2),
+                        style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold),
+                    )
+                }
             }
 
             // Menú de opciones
@@ -503,7 +546,7 @@ fun TaskDetailDialog(
                 DetailRow(
                     icon = Icons.Default.Person,
                     label = "Asignado a:",
-                    value = tarea.asignadoA?.nombre ?: "Sin asignar", // Asumiendo que Usuario tiene propiedad 'nombre'
+                    value = tarea.asignadoA?.nombre ?: "Sin asignar",
                 )
 
                 // Fecha límite
@@ -513,7 +556,7 @@ fun TaskDetailDialog(
                     value = tarea.fechaFin ?: "Sin fecha límite",
                 )
 
-                // Frecuencia (si es periódica)
+                // Frecuencia
                 if (tarea.periodica) {
                     DetailRow(
                         icon = Icons.Default.Repeat,
@@ -556,6 +599,75 @@ fun DetailRow(
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Black,
             )
+        }
+    }
+}
+
+@Composable
+fun UserSelectionDropdown(
+    miembros: List<Usuario>,
+    selectedUserId: Long?,
+    onUserSelected: (Long?) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    // Buscar el nombre del usuario seleccionado o mostrar "Sin asignar"
+    val selectedUserName = miembros.find { it.id == selectedUserId }?.nombre ?: "Sin asignar"
+
+    Box(modifier = Modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = selectedUserName,
+            onValueChange = {},
+            label = { Text("Asignado a") },
+            readOnly = true,
+            trailingIcon = {
+                Icon(Icons.Default.ArrowDropDown, "Desplegar")
+            },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = true },
+            enabled = false, // Deshabilitamos input directo
+            colors =
+                androidx.compose.material3.TextFieldDefaults.colors(
+                    disabledTextColor = Color.Black,
+                    disabledContainerColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Gray,
+                    disabledLabelColor = Color.Gray,
+                    disabledTrailingIconColor = Color.Black,
+                ),
+        )
+        // Capa invisible clickeable para abrir el menú (porque el TextField está disabled)
+        Box(
+            modifier =
+                Modifier
+                    .matchParentSize()
+                    .clickable { expanded = true },
+        )
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxWidth(0.8f), // Ajuste visual
+        ) {
+            // Opción "Sin asignar"
+            DropdownMenuItem(
+                text = { Text("Sin asignar") },
+                onClick = {
+                    onUserSelected(null)
+                    expanded = false
+                },
+            )
+            // Lista de miembros
+            miembros.forEach { miembro ->
+                DropdownMenuItem(
+                    text = { Text(miembro.nombre) },
+                    onClick = {
+                        onUserSelected(miembro.id)
+                        expanded = false
+                    },
+                )
+            }
         }
     }
 }
