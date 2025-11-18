@@ -56,6 +56,7 @@ class PerfilViewModel(
         viewModelScope.launch {
             try {
                 val actualizado = repository.updateUsuario(userId, nuevoNombre, nuevoCorreo)
+                cargarPerfil()
                 _usuario.value = actualizado
                 // Actualizamos también la sesión local por si acaso
                 val token = sessionManager.fetchAuthToken()?.replace("Bearer ", "") ?: ""
