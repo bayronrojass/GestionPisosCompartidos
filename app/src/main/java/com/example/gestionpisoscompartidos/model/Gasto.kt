@@ -9,5 +9,5 @@ data class Gasto(
     val importe: Double,
     val fecha: String,
     val categoria: CategoriaGasto,
-    val pagadoPor: Usuario?
+    val pagadoPor: Usuario?,
 )

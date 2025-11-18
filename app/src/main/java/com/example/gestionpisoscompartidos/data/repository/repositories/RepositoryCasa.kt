@@ -80,8 +80,8 @@ class RepositoryCasa(
         request: JoinCasaRequest,
     ): Response<String> = apiService.joinCasa(token, casaId, request)
 
-    suspend fun getEventosCasa(token: String, casaId: Long): Response<List<Evento>> {
-        return apiService.getEventosCasa(token, casaId)
-    }
-
+    suspend fun getEventosCasa(
+        token: String,
+        casaId: Long,
+    ): Response<List<Evento>> = apiService.getEventosCasa(token, casaId)
 }

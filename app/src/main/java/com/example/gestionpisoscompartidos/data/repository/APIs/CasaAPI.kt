@@ -59,6 +59,6 @@ interface CasaAPI {
     @GET("casas/{id}/eventos")
     suspend fun getEventosCasa(
         @Header("Authorization") token: String,
-        @Path("id") casaId: Long
+        @Path("id") casaId: Long,
     ): Response<List<Evento>>
 }

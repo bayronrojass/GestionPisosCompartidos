@@ -40,11 +40,18 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.gestionpisoscompartidos.data.SessionManager
+import com.example.gestionpisoscompartidos.data.remote.NetworkModule
+import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
+import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryLista
 import com.example.gestionpisoscompartidos.ui.home.HomeScreen
+import com.example.gestionpisoscompartidos.ui.home.HomeViewModel
+import com.example.gestionpisoscompartidos.ui.home.HomeViewModelFactory
 import com.example.gestionpisoscompartidos.ui.listas.ListaScreen
 import com.example.gestionpisoscompartidos.ui.listas.ListasViewModel
 import com.example.gestionpisoscompartidos.ui.listas.ListasViewModelFactory
@@ -108,7 +115,7 @@ fun NavigationBar(
 
             // Botón 4 - Perfil
             NavigationItem(
-                icon = Icons.Default.AssignmentInd, // Cambia por tu icono real
+                icon = Icons.Default.AssignmentInd,
                 isSelected = selectedTab == 3,
                 onClick = { onTabSelected(3) },
                 padding = 19.dp,
@@ -144,7 +151,6 @@ fun NavigationItem(
     }
 }
 
-// PREVIEWS
 @Preview
 @Composable
 fun NavigationBarPreview() {
@@ -171,33 +177,6 @@ fun NavigationBarPreview() {
     }
 }
 
-@Preview
-@Composable
-fun NavigationBarPreviewTab2() {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(Color.Gray)
-                .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        NavigationBar(
-            selectedTab = 2,
-            onTabSelected = { },
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Preview - Tab 2 seleccionado",
-            color = Color.White,
-        )
-    }
-}
-
-// USO CON NAVEGACIÓN
 @Composable
 fun MainScreenWithNavigation(
     casaId: Long,
@@ -205,14 +184,26 @@ fun MainScreenWithNavigation(
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val savedStateHandle = rememberSaveableStateHolder()
+    val context = LocalContext.current.applicationContext
+
+    val sessionManager = remember { SessionManager(context) }
+    val repositoryCasa = remember { RepositoryCasa(NetworkModule.casaApiService) }
+    val repositoryLista = remember { RepositoryLista(NetworkModule.listaApiService) }
+
+    val homeViewModel: HomeViewModel =
+        viewModel(
+            factory = HomeViewModelFactory(repositoryCasa, sessionManager, casaId),
+        )
+
+    val listaViewModel: ListasViewModel =
+        viewModel(
+            // factory = ListasViewModelFactory(casaId, repositoryLista, sessionManager)
+            factory = ListasViewModelFactory(casaId),
+        )
 
     val tareasViewModel: TareasViewModel =
         viewModel(
             factory = TareasViewModelFactory(casaId),
-        )
-    val listaViewModel: ListasViewModel =
-        viewModel(
-            factory = ListasViewModelFactory(casaId),
         )
 
     val onNavigateToItem: (Long, String) -> Unit = { id, nombre ->
@@ -238,7 +229,7 @@ fun MainScreenWithNavigation(
         Box(modifier = Modifier.padding(padding)) {
             savedStateHandle.SaveableStateProvider(selectedTab) {
                 when (selectedTab) {
-                    0 -> HomeScreen()
+                    0 -> HomeScreen(viewModel = homeViewModel)
                     1 -> ListaScreen(listaViewModel, onNavigateToItem)
                     2 -> TareasScreen(tareasViewModel, casaNombre)
 //                    3 -> PerfilTabContent()
@@ -246,11 +237,4 @@ fun MainScreenWithNavigation(
             }
         }
     }
-}
-
-// PREVIEW de la pantalla completa
-@Preview
-@Composable
-fun MainScreenWithNavigationPreview() {
-    MainScreenWithNavigation(1L, "1")
 }

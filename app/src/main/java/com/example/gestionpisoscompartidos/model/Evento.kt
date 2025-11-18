@@ -6,5 +6,5 @@ data class Evento(
     val descripcion: String?,
     val fechaInicio: String,
     val fechaFin: String?,
-    val creadoPorNombre: String
+    val creadoPorNombre: String,
 )
