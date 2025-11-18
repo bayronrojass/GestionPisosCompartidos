@@ -1,6 +1,7 @@
 package com.example.gestionpisoscompartidos.ui.pizarra
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -23,16 +24,6 @@ import kotlin.random.Random
 open class Pizarra : Fragment() {
     private var casaId: Long = 0
 
-    companion object {
-        fun newInstance(casaId: Long) =
-            Pizarra().apply {
-                arguments =
-                    Bundle().apply {
-                        putLong("casa_id", casaId)
-                    }
-            }
-    }
-
     private val repositoryLienzo = RepositoryLienzo()
     private val repositoryPostIt = RepositoryPostIt()
     private val repositoryImagen = RepositoryImagen()
@@ -43,6 +34,16 @@ open class Pizarra : Fragment() {
     private lateinit var mainContainer: ConstraintLayout
     private lateinit var imagePicker: ImagePicker
     private var postItList: MutableList<PostIt> = mutableListOf()
+
+    companion object {
+        fun newInstance(casaId: Long) =
+            Pizarra().apply {
+                arguments =
+                    Bundle().apply {
+                        putLong("casa_id", casaId)
+                    }
+            }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -62,6 +63,7 @@ open class Pizarra : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d("Pizarra", "Cargando...")
         val args = PizarraArgs.fromBundle(requireArguments())
         casaId = args.casaId
     }
