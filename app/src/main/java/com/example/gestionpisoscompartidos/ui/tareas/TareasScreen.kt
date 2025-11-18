@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -64,6 +63,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.model.Usuario
 import androidx.compose.material.icons.filled.ArrowDropDown
+import android.app.DatePickerDialog
+import java.util.Calendar
+import androidx.compose.material.icons.filled.DateRange
 
 @Composable
 fun TareasScreen(
@@ -118,11 +120,12 @@ fun TareasScreen(
     // Diálogo de crear tarea
     if (showCreateDialog) {
         CreateTaskDialog(
-            miembros = miembros, // Pasamos la lista
+            miembros = miembros,
             onDismiss = { showCreateDialog = false },
-            onCreate = { nombre, descripcion, asignadoId ->
+            // Actualizado con nuevos parámetros
+            onCreate = { nombre, descripcion, asignadoId, fechaFin, frecuencia ->
                 if (nombre.isNotBlank()) {
-                    viewModel.crearTarea(nombre, descripcion, asignadoId)
+                    viewModel.crearTarea(nombre, descripcion, asignadoId, fechaFin, frecuencia)
                     showCreateDialog = false
                 } else {
                     Toast.makeText(current, "El nombre es obligatorio", Toast.LENGTH_SHORT).show()
@@ -135,11 +138,12 @@ fun TareasScreen(
     taskToEdit?.let { tarea ->
         EditTaskDialog(
             tarea = tarea,
-            miembros = miembros, // Pasamos la lista
+            miembros = miembros,
             onDismiss = { taskToEdit = null },
-            onSave = { nombre, descripcion, asignadoId ->
+            // Actualizado con nuevos parámetros
+            onSave = { nombre, descripcion, asignadoId, fechaFin, frecuencia ->
                 if (nombre.isNotBlank()) {
-                    viewModel.editarTarea(tarea, nombre, descripcion, asignadoId)
+                    viewModel.editarTarea(tarea, nombre, descripcion, asignadoId, fechaFin, frecuencia)
                     taskToEdit = null
                 } else {
                     Toast.makeText(current, "El nombre es obligatorio", Toast.LENGTH_SHORT).show()
@@ -162,49 +166,63 @@ fun TareasScreen(
 fun CreateTaskDialog(
     miembros: List<Usuario>,
     onDismiss: () -> Unit,
-    onCreate: (String, String?, Long?) -> Unit, // Añadido Long?
+    // Callback
+    onCreate: (String, String?, Long?, String?, String?) -> Unit,
 ) {
     var nombre by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
     var asignadoAId by remember { mutableStateOf<Long?>(null) }
+    var fechaFin by remember { mutableStateOf<String?>(null) }
+    var frecuencia by remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Nueva Tarea") },
         text = {
-            Column {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Espaciado automático
                 OutlinedTextField(
                     value = nombre,
                     onValueChange = { nombre = it },
                     label = { Text("Nombre de la tarea") },
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+
                 OutlinedTextField(
                     value = descripcion,
                     onValueChange = { descripcion = it },
                     label = { Text("Descripción (opcional)") },
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Spacer(modifier = Modifier.height(16.dp))
 
-                // Selector de usuario
                 UserSelectionDropdown(
                     miembros = miembros,
                     selectedUserId = asignadoAId,
                     onUserSelected = { asignadoAId = it },
                 )
+
+                // Nuevos campos
+                DatePickerField(
+                    label = "Fecha Límite",
+                    selectedDate = fechaFin,
+                    onDateSelected = { fechaFin = it },
+                )
+
+                FrequencySelector(
+                    selectedFrequency = frecuencia,
+                    onFrequencySelected = { frecuencia = it },
+                )
             }
         },
         confirmButton = {
-            Button(onClick = { onCreate(nombre, descripcion.ifBlank { null }, asignadoAId) }) {
+            Button(onClick = {
+                onCreate(nombre, descripcion.ifBlank { null }, asignadoAId, fechaFin, frecuencia)
+            }) {
                 Text("Crear")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
         },
     )
 }
@@ -215,50 +233,61 @@ fun EditTaskDialog(
     tarea: Tarea,
     miembros: List<Usuario>,
     onDismiss: () -> Unit,
-    onSave: (String, String?, Long?) -> Unit, // Añadido Long?
+    // Callback
+    onSave: (String, String?, Long?, String?, String?) -> Unit,
 ) {
     var nombre by remember { mutableStateOf(tarea.nombre) }
     var descripcion by remember { mutableStateOf(tarea.descripcion ?: "") }
-    // Pre-seleccionar usuario actual
     var asignadoAId by remember { mutableStateOf(tarea.asignadoA?.id) }
+    var fechaFin by remember { mutableStateOf(tarea.fechaFin) }
+    var frecuencia by remember { mutableStateOf(tarea.frecuencia) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Editar Tarea") },
         text = {
-            Column {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = nombre,
                     onValueChange = { nombre = it },
                     label = { Text("Nombre de la tarea") },
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+
                 OutlinedTextField(
                     value = descripcion,
                     onValueChange = { descripcion = it },
                     label = { Text("Descripción (opcional)") },
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Spacer(modifier = Modifier.height(16.dp))
 
-                // Selector de usuario
                 UserSelectionDropdown(
                     miembros = miembros,
                     selectedUserId = asignadoAId,
                     onUserSelected = { asignadoAId = it },
                 )
+
+                DatePickerField(
+                    label = "Fecha Límite",
+                    selectedDate = fechaFin,
+                    onDateSelected = { fechaFin = it },
+                )
+
+                FrequencySelector(
+                    selectedFrequency = frecuencia,
+                    onFrequencySelected = { frecuencia = it },
+                )
             }
         },
         confirmButton = {
-            Button(onClick = { onSave(nombre, descripcion.ifBlank { null }, asignadoAId) }) {
+            Button(onClick = {
+                onSave(nombre, descripcion.ifBlank { null }, asignadoAId, fechaFin, frecuencia)
+            }) {
                 Text("Guardar")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
         },
     )
 }
@@ -549,11 +578,21 @@ fun TaskDetailDialog(
                     value = tarea.asignadoA?.nombre ?: "Sin asignar",
                 )
 
-                // Fecha límite
+                // Fecha límite con formato día/mes/año
+                val fechaMostrar =
+                    tarea.fechaFin?.let { fechaIso ->
+                        try {
+                            // Convierte "2023-11-20..." a "20/11/2023"
+                            val partes = fechaIso.take(10).split("-")
+                            "${partes[2]}/${partes[1]}/${partes[0]}"
+                        } catch (e: Exception) {
+                            fechaIso.take(10) // Fallback si falla el formato
+                        }
+                    } ?: "Sin fecha límite"
                 DetailRow(
                     icon = Icons.Default.CalendarToday,
                     label = "Fecha límite:",
-                    value = tarea.fechaFin ?: "Sin fecha límite",
+                    value = fechaMostrar,
                 )
 
                 // Frecuencia
@@ -664,6 +703,122 @@ fun UserSelectionDropdown(
                     text = { Text(miembro.nombre) },
                     onClick = {
                         onUserSelected(miembro.id)
+                        expanded = false
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DatePickerField(
+    label: String,
+    selectedDate: String?, // Formato esperado por backend: yyyy-MM-ddTHH:mm:ss
+    onDateSelected: (String?) -> Unit,
+) {
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+
+    // Si ya hay fecha seleccionada, intentamos parsearla para mostrarla en el calendario
+    // (Simplificado para el ejemplo, usaremos la fecha actual por defecto si es nulo o formato complejo)
+
+    val datePickerDialog =
+        DatePickerDialog(
+            context,
+            { _, year, month, dayOfMonth ->
+                // Formateamos al estándar ISO-8601 que espera tu backend (LocalDateTime)
+                // Añadimos una hora por defecto (ej: final del día o 00:00)
+                val formattedMonth = (month + 1).toString().padStart(2, '0')
+                val formattedDay = dayOfMonth.toString().padStart(2, '0')
+                val isoDate = "$year-$formattedMonth-${formattedDay}T00:00:00"
+                onDateSelected(isoDate)
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH),
+        )
+
+    // Texto para mostrar al usuario (quitamos la parte de la hora para que sea legible)
+    val displayText = selectedDate?.take(10) ?: ""
+
+    OutlinedTextField(
+        value = displayText,
+        onValueChange = { },
+        label = { Text(label) },
+        readOnly = true,
+        trailingIcon = {
+            IconButton(onClick = { datePickerDialog.show() }) {
+                Icon(Icons.Default.DateRange, contentDescription = "Seleccionar fecha")
+            }
+        },
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable { datePickerDialog.show() },
+        enabled = false, // Deshabilitamos escritura manual
+        colors =
+            androidx.compose.material3.TextFieldDefaults.colors(
+                disabledTextColor = Color.Black,
+                disabledContainerColor = Color.Transparent,
+                disabledIndicatorColor = Color.Gray,
+                disabledLabelColor = Color.Gray,
+                disabledTrailingIconColor = Color.Black,
+            ),
+    )
+}
+
+@Composable
+fun FrequencySelector(
+    selectedFrequency: String?,
+    onFrequencySelected: (String?) -> Unit,
+) {
+    val options = listOf("Sin repetir", "Diaria", "Semanal", "Mensual", "Anual")
+    var expanded by remember { mutableStateOf(false) }
+
+    val displayText = selectedFrequency ?: "Sin repetir"
+
+    Box(modifier = Modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = displayText,
+            onValueChange = {},
+            label = { Text("Frecuencia") },
+            readOnly = true,
+            trailingIcon = {
+                Icon(Icons.Default.Repeat, "Frecuencia")
+            },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = true },
+            enabled = false,
+            colors =
+                androidx.compose.material3.TextFieldDefaults.colors(
+                    disabledTextColor = Color.Black,
+                    disabledContainerColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Gray,
+                    disabledLabelColor = Color.Gray,
+                    disabledTrailingIconColor = Color.Black,
+                ),
+        )
+        Box(
+            modifier =
+                Modifier
+                    .matchParentSize()
+                    .clickable { expanded = true },
+        )
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxWidth(0.8f),
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        val valueToSend = if (option == "Sin repetir") null else option
+                        onFrequencySelected(valueToSend)
                         expanded = false
                     },
                 )

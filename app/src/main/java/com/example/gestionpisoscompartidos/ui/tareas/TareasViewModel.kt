@@ -55,11 +55,14 @@ class TareasViewModel(
         nombre: String,
         descripcion: String?,
         asignadoAId: Long?,
+        fechaFin: String?,
+        frecuencia: String?,
     ) {
         _isLoading.value = true
         viewModelScope.launch {
             try {
-                val request = TareaRequest(nombre, descripcion, false, null, null, false, asignadoAId)
+                val esPeriodica = !frecuencia.isNullOrBlank()
+                val request = TareaRequest(nombre, descripcion, false, fechaFin, frecuencia, esPeriodica, asignadoAId)
                 repository.crearTarea(casaId, request)
                 cargarTareas()
             } catch (e: Exception) {
@@ -100,11 +103,14 @@ class TareasViewModel(
         nuevoNombre: String,
         nuevaDesc: String?,
         asignadoAId: Long?,
+        nuevaFechaFin: String?,
+        nuevaFrecuencia: String?,
     ) {
         viewModelScope.launch {
             // Si asignadoAId es null, enviamos -1L, de lo contrario enviamos el ID real
             val idParaEnviar = asignadoAId ?: -1L
-            val request = TareaRequest(nuevoNombre, nuevaDesc, null, null, null, null, idParaEnviar)
+            val esPeriodica = !nuevaFrecuencia.isNullOrBlank()
+            val request = TareaRequest(nuevoNombre, nuevaDesc, null, nuevaFechaFin, nuevaFrecuencia, esPeriodica, idParaEnviar)
             try {
                 repository.actualizarTarea(tarea.id, request)
                 cargarTareas()
