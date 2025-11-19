@@ -1,5 +1,10 @@
 package com.example.gestionpisoscompartidos.ui.navigation
 
+import android.app.Activity
+import android.app.AlertDialog
+import android.content.Context
+import android.content.ContextWrapper
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AdfScanner
 import androidx.compose.material.icons.filled.AssignmentInd
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryAddCheck
 import androidx.compose.material.icons.filled.Mail
@@ -44,6 +50,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.gestionpisoscompartidos.ui.eventos.eventosViewModel
 import com.example.gestionpisoscompartidos.ui.home.HomeScreen
 import com.example.gestionpisoscompartidos.ui.listas.ListaScreen
 import com.example.gestionpisoscompartidos.ui.listas.ListasViewModel
@@ -52,6 +59,7 @@ import com.example.gestionpisoscompartidos.ui.pizarra.PizarraScreen
 import com.example.gestionpisoscompartidos.ui.tareas.TareasScreen
 import com.example.gestionpisoscompartidos.ui.tareas.TareasViewModel
 import com.example.gestionpisoscompartidos.ui.tareas.TareasViewModelFactory
+import com.example.gestionpisoscompartidos.ui.eventos.EventosScreen
 
 @Composable
 fun NavigationBar(
@@ -115,11 +123,18 @@ fun NavigationBar(
                 padding = 19.dp,
             )
 
+            NavigationItem(
+                icon = Icons.Default.CalendarMonth, // Cambia por tu icono real
+                isSelected = selectedTab == 4,
+                onClick = { onTabSelected(4) },
+                padding = 19.dp,
+            )
+
             // Botón 5 - Pizarra
             NavigationItem(
                 icon = Icons.Default.AdfScanner,
-                isSelected = selectedTab == 4,
-                onClick = { onTabSelected(4) },
+                isSelected = selectedTab == 5,
+                onClick = { onTabSelected(5) },
                 padding = 19.dp,
             )
         }
@@ -224,13 +239,25 @@ fun MainScreenWithNavigation(
             factory = ListasViewModelFactory(casaId),
         )
 
+    val eventosViewModel: eventosViewModel =
+        viewModel()
+
     val onNavigateToItem: (Long, String) -> Unit = { id, nombre ->
-//        val itemScreenModel: ItemViewModel =
-//            viewModel(
-//                factory = InvitacionesViewModelFactory(),
-//            )
-//
-//        ItemScreen()
+        Log.d("Navegación", "Item clickeado: $id - $nombre")
+    }
+
+    fun showSimpleEventDialog(activity: Activity?) {
+        val alertDialog =
+            AlertDialog
+                .Builder(activity ?: return)
+                .setTitle("¡Crea un evento!")
+                .setMessage("Función de eventos - versión simple")
+                .setPositiveButton("OK") { dialog, _ ->
+                    dialog.dismiss()
+                }.setNegativeButton("Cancelar") { dialog, _ ->
+                    dialog.dismiss()
+                }.create()
+        alertDialog.show()
     }
 
     Scaffold(
@@ -256,11 +283,23 @@ fun MainScreenWithNavigation(
                     1 -> ListaScreen(listaViewModel, onNavigateToItem)
                     2 -> TareasScreen(tareasViewModel, casaNombre)
 //                    3 -> PerfilTabContent()
-                    4 -> PizarraScreen(casaId)
+                    4 -> EventosScreen(eventosViewModel)
+                    5 -> PizarraScreen(casaId)
                 }
             }
         }
     }
+}
+
+fun Context.findActivity(): Activity? {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is Activity) {
+            return context
+        }
+        context = context.baseContext
+    }
+    return null
 }
 
 // PREVIEW de la pantalla completa
