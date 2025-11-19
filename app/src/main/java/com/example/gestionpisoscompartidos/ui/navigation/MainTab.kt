@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AdfScanner
 import androidx.compose.material.icons.filled.AssignmentInd
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryAddCheck
@@ -113,6 +114,14 @@ fun NavigationBar(
                 icon = Icons.Default.AssignmentInd, // Cambia por tu icono real
                 isSelected = selectedTab == 3,
                 onClick = { onTabSelected(3) },
+                padding = 19.dp,
+            )
+
+            // Botón 5 - Pizarra
+            NavigationItem(
+                icon = Icons.Default.AdfScanner,
+                isSelected = selectedTab == 4,
+                onClick = { onTabSelected(4) },
                 padding = 19.dp,
             )
         }
@@ -222,17 +231,9 @@ fun MainScreenWithNavigation(
     val sessionManager = remember { SessionManager(context) }
 
     val onLogout = {
-        // Usamos el contexto para reiniciar la actividad o navegar fuera
-        // En un entorno Compose puro con NavHost, deberías pasar navController y navegar a "login"
-        // Aquí un ejemplo simple asumiendo que el NavHost padre maneja esto o reiniciando Activity:
         (context as? android.app.Activity)?.finish()
         Unit
-        // O si prefieres navegar: navController.navigate(Route.Login.route) { popUpTo(0) }
     }
-
-    // val onNavigateToItem: (Long, String) -> Unit = { id, nombre ->
-    //  Log.d("Navegación", "Item clickeado: $id - $nombre")
-    // }
 
     Scaffold(
         bottomBar = {
@@ -257,6 +258,7 @@ fun MainScreenWithNavigation(
                     1 -> ListaScreen(listaViewModel, onNavigateToItem)
                     2 -> TareasScreen(tareasViewModel, casaNombre)
                     3 -> PerfilScreen(sessionManager, onLogout)
+                    4 -> PizarraScreen(casaId)
                 }
             }
         }
