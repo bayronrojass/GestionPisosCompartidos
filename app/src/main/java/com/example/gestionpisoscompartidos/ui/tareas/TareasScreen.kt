@@ -1,5 +1,6 @@
 package com.example.gestionpisoscompartidos.ui.tareas
 
+import android.app.DatePickerDialog
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -12,17 +13,26 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Pending
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
@@ -43,6 +53,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -50,22 +61,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gestionpisoscompartidos.model.Tarea
-import com.google.android.material.progressindicator.CircularProgressIndicator
-import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material.icons.filled.Pending
-import androidx.compose.material3.Divider
-import androidx.compose.ui.graphics.vector.ImageVector
 import com.example.gestionpisoscompartidos.data.SessionManager
+import com.example.gestionpisoscompartidos.model.Tarea
 import com.example.gestionpisoscompartidos.model.Usuario
-import androidx.compose.material.icons.filled.ArrowDropDown
-import android.app.DatePickerDialog
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import java.util.Calendar
-import androidx.compose.material.icons.filled.DateRange
 
 @Composable
 fun TareasScreen(

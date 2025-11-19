@@ -1,9 +1,6 @@
 package com.example.gestionpisoscompartidos.ui.navigation
 
 import android.app.Activity
-import android.app.AlertDialog
-import android.content.Context
-import android.content.ContextWrapper
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -52,16 +49,17 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gestionpisoscompartidos.data.SessionManager
+import com.example.gestionpisoscompartidos.ui.eventos.EventosScreen
 import com.example.gestionpisoscompartidos.ui.eventos.eventosViewModel
 import com.example.gestionpisoscompartidos.ui.home.HomeScreen
 import com.example.gestionpisoscompartidos.ui.listas.ListaScreen
 import com.example.gestionpisoscompartidos.ui.listas.ListasViewModel
 import com.example.gestionpisoscompartidos.ui.listas.ListasViewModelFactory
 import com.example.gestionpisoscompartidos.ui.perfil.PerfilScreen
+import com.example.gestionpisoscompartidos.ui.pizarra.PizarraScreen
 import com.example.gestionpisoscompartidos.ui.tareas.TareasScreen
 import com.example.gestionpisoscompartidos.ui.tareas.TareasViewModel
 import com.example.gestionpisoscompartidos.ui.tareas.TareasViewModelFactory
-import com.example.gestionpisoscompartidos.ui.eventos.EventosScreen
 
 @Composable
 fun NavigationBar(
@@ -246,28 +244,12 @@ fun MainScreenWithNavigation(
     val sessionManager = remember { SessionManager(context) }
 
     val onLogout = {
-        (context as? android.app.Activity)?.finish()
+        (context as? Activity)?.finish()
         Unit
+    }
+
     val eventosViewModel: eventosViewModel =
         viewModel()
-
-    val onNavigateToItem: (Long, String) -> Unit = { id, nombre ->
-        Log.d("Navegación", "Item clickeado: $id - $nombre")
-    }
-
-    fun showSimpleEventDialog(activity: Activity?) {
-        val alertDialog =
-            AlertDialog
-                .Builder(activity ?: return)
-                .setTitle("¡Crea un evento!")
-                .setMessage("Función de eventos - versión simple")
-                .setPositiveButton("OK") { dialog, _ ->
-                    dialog.dismiss()
-                }.setNegativeButton("Cancelar") { dialog, _ ->
-                    dialog.dismiss()
-                }.create()
-        alertDialog.show()
-    }
 
     Scaffold(
         bottomBar = {
@@ -300,20 +282,13 @@ fun MainScreenWithNavigation(
     }
 }
 
-fun Context.findActivity(): Activity? {
-    var context = this
-    while (context is ContextWrapper) {
-        if (context is Activity) {
-            return context
-        }
-        context = context.baseContext
-    }
-    return null
+val foo: (Long, String) -> Unit = { id, nombre ->
+    Log.d("Navegación", "Item clickeado: $id - $nombre")
 }
 
 // PREVIEW de la pantalla completa
 @Preview
 @Composable
 fun MainScreenWithNavigationPreview() {
-    // MainScreenWithNavigation(1L, "1")
+    MainScreenWithNavigation(1L, "1", foo)
 }
