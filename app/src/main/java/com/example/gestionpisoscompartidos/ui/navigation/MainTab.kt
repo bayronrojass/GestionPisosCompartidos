@@ -1,6 +1,5 @@
 package com.example.gestionpisoscompartidos.ui.navigation
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AdfScanner
 import androidx.compose.material.icons.filled.AssignmentInd
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryAddCheck
@@ -48,6 +48,7 @@ import com.example.gestionpisoscompartidos.ui.home.HomeScreen
 import com.example.gestionpisoscompartidos.ui.listas.ListaScreen
 import com.example.gestionpisoscompartidos.ui.listas.ListasViewModel
 import com.example.gestionpisoscompartidos.ui.listas.ListasViewModelFactory
+import com.example.gestionpisoscompartidos.ui.pizarra.PizarraScreen
 import com.example.gestionpisoscompartidos.ui.tareas.TareasScreen
 import com.example.gestionpisoscompartidos.ui.tareas.TareasViewModel
 import com.example.gestionpisoscompartidos.ui.tareas.TareasViewModelFactory
@@ -111,6 +112,14 @@ fun NavigationBar(
                 icon = Icons.Default.AssignmentInd, // Cambia por tu icono real
                 isSelected = selectedTab == 3,
                 onClick = { onTabSelected(3) },
+                padding = 19.dp,
+            )
+
+            // Botón 5 - Pizarra
+            NavigationItem(
+                icon = Icons.Default.AdfScanner,
+                isSelected = selectedTab == 4,
+                onClick = { onTabSelected(4) },
                 padding = 19.dp,
             )
         }
@@ -216,7 +225,12 @@ fun MainScreenWithNavigation(
         )
 
     val onNavigateToItem: (Long, String) -> Unit = { id, nombre ->
-        Log.d("Navegación", "Item clickeado: $id - $nombre")
+//        val itemScreenModel: ItemViewModel =
+//            viewModel(
+//                factory = InvitacionesViewModelFactory(),
+//            )
+//
+//        ItemScreen()
     }
 
     Scaffold(
@@ -242,6 +256,7 @@ fun MainScreenWithNavigation(
                     1 -> ListaScreen(listaViewModel, onNavigateToItem)
                     2 -> TareasScreen(tareasViewModel, casaNombre)
 //                    3 -> PerfilTabContent()
+                    4 -> PizarraScreen(casaId)
                 }
             }
         }
