@@ -55,12 +55,20 @@ fun PerfilScreen(
     val isLoading by viewModel.isLoading.observeAsState(false)
     val error by viewModel.error.observeAsState()
     val navEvent by viewModel.navigationEvent.observeAsState()
+    val toastMessage by viewModel.toastMessage.observeAsState()
 
     val context = LocalContext.current
 
     // Estados para diálogos
     var showEditDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(toastMessage) {
+        toastMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+        }
+    }
 
     // Navegación tras borrar cuenta o logout
     LaunchedEffect(navEvent) {
@@ -136,7 +144,7 @@ fun PerfilScreen(
 
         // Botón Cerrar Sesión
         OutlinedButton(
-            onClick = { viewModel.cerrarSesion() },
+            onClick = { showLogoutDialog = true },
             modifier = Modifier.fillMaxWidth(),
         ) {
             Icon(Icons.Default.ExitToApp, contentDescription = null)
@@ -213,6 +221,26 @@ fun PerfilScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) { Text("Cancelar") }
+            },
+        )
+    }
+
+    // --- DIÁLOGO: CERRAR SESION ---
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text("Cerrar Sesión") },
+            text = { Text("¿Estás seguro de que quieres cerrar sesión?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.cerrarSesion()
+                        showLogoutDialog = false
+                    },
+                ) { Text("Cerrar Sesión") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) { Text("Cancelar") }
             },
         )
     }

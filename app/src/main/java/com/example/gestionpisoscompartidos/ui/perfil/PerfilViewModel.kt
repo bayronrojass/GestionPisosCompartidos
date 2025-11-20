@@ -25,7 +25,10 @@ class PerfilViewModel(
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
-    private val _navigationEvent = MutableLiveData<String?>() // Para navegar al Login tras borrar
+    private val _toastMessage = MutableLiveData<String?>()
+    val toastMessage: LiveData<String?> = _toastMessage
+
+    private val _navigationEvent = MutableLiveData<String?>()
     val navigationEvent: LiveData<String?> = _navigationEvent
 
     init {
@@ -75,6 +78,7 @@ class PerfilViewModel(
         viewModelScope.launch {
             try {
                 repository.deleteUsuario(userId)
+                _toastMessage.value = "Cuenta eliminada correctamente"
                 cerrarSesion()
             } catch (e: Exception) {
                 _error.value = e.message
@@ -85,6 +89,9 @@ class PerfilViewModel(
 
     fun cerrarSesion() {
         sessionManager.logoutUser()
+        if (_toastMessage.value == null) {
+            _toastMessage.value = "Sesión cerrada con éxito"
+        }
         _navigationEvent.value = "Login"
     }
 }
