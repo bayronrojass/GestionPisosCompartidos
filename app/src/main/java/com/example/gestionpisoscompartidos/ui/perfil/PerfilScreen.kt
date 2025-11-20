@@ -225,7 +225,7 @@ fun PerfilScreen(
         )
     }
 
-    // --- DIÁLOGO: CERRAR SESION ---
+    // --- DIÁLOGO: CERRAR SESIÓN ---
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
