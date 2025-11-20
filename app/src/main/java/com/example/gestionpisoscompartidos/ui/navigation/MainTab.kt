@@ -1,6 +1,5 @@
 package com.example.gestionpisoscompartidos.ui.navigation
 
-import android.app.Activity
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -227,6 +226,7 @@ fun MainScreenWithNavigation(
     casaId: Long,
     casaNombre: String,
     onNavigateToItem: (Long, String) -> Unit,
+    onLogout: () -> Unit,
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val savedStateHandle = rememberSaveableStateHolder()
@@ -242,11 +242,6 @@ fun MainScreenWithNavigation(
 
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
-
-    val onLogout = {
-        (context as? Activity)?.finish()
-        Unit
-    }
 
     val eventosViewModel: eventosViewModel =
         viewModel()
@@ -290,5 +285,5 @@ val foo: (Long, String) -> Unit = { id, nombre ->
 @Preview
 @Composable
 fun MainScreenWithNavigationPreview() {
-    MainScreenWithNavigation(1L, "1", foo)
+    MainScreenWithNavigation(1L, "1", foo, {})
 }
