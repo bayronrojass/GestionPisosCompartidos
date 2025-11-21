@@ -1,9 +1,5 @@
 package com.example.gestionpisoscompartidos.ui.navigation
 
-import android.app.Activity
-import android.app.AlertDialog
-import android.content.Context
-import android.content.ContextWrapper
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,12 +19,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AdfScanner
 import androidx.compose.material.icons.filled.AssignmentInd
-import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.EuroSymbol
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryAddCheck
 import androidx.compose.material.icons.filled.Mail
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Scaffold
@@ -46,20 +42,27 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.gestionpisoscompartidos.ui.eventos.eventosViewModel
+import com.example.gestionpisoscompartidos.data.SessionManager
+import com.example.gestionpisoscompartidos.data.remote.NetworkModule
+import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
+import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryLista
+import com.example.gestionpisoscompartidos.ui.gastos.GastosScreen
+import com.example.gestionpisoscompartidos.ui.gastos.GastosViewModel
+import com.example.gestionpisoscompartidos.ui.gastos.GastosViewModelFactory
 import com.example.gestionpisoscompartidos.ui.home.HomeScreen
+import com.example.gestionpisoscompartidos.ui.home.HomeViewModel
+import com.example.gestionpisoscompartidos.ui.home.HomeViewModelFactory
 import com.example.gestionpisoscompartidos.ui.listas.ListaScreen
 import com.example.gestionpisoscompartidos.ui.listas.ListasViewModel
 import com.example.gestionpisoscompartidos.ui.listas.ListasViewModelFactory
-import com.example.gestionpisoscompartidos.ui.pizarra.PizarraScreen
 import com.example.gestionpisoscompartidos.ui.tareas.TareasScreen
 import com.example.gestionpisoscompartidos.ui.tareas.TareasViewModel
 import com.example.gestionpisoscompartidos.ui.tareas.TareasViewModelFactory
-import com.example.gestionpisoscompartidos.ui.eventos.EventosScreen
 
 @Composable
 fun NavigationBar(
@@ -67,75 +70,63 @@ fun NavigationBar(
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val barWidth = 380.dp
+
     Card(
-        modifier =
-            modifier
-                .width(350.dp)
-                .height(60.dp)
-                .shadow(
-                    elevation = 8.dp,
-                    shape = RoundedCornerShape(30.dp),
-                    clip = false,
-                ),
+        modifier = modifier
+            .width(barWidth)
+            .height(60.dp)
+            .shadow(
+                elevation = 8.dp,
+                shape = RoundedCornerShape(30.dp),
+                clip = false,
+            ),
         shape = RoundedCornerShape(30.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Row(
-            modifier =
-                modifier
-                    .requiredWidth(350.dp)
-                    .requiredHeight(60.dp)
-                    .clip(RoundedCornerShape(30.dp))
-                    .background(Color.Black)
-                    .padding(horizontal = 10.dp),
+            modifier = modifier
+                .requiredWidth(barWidth)
+                .requiredHeight(60.dp)
+                .clip(RoundedCornerShape(30.dp))
+                .background(Color.Black)
+                .padding(horizontal = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Botón 1 - Home
             NavigationItem(
                 icon = Icons.Default.Home,
                 isSelected = selectedTab == 0,
                 onClick = { onTabSelected(0) },
-                padding = 21.dp,
+                padding = 12.dp,
             )
 
-            // Botón 2 - Listas
             NavigationItem(
                 icon = Icons.Default.LibraryAddCheck,
                 isSelected = selectedTab == 1,
                 onClick = { onTabSelected(1) },
-                padding = 22.dp,
+                padding = 12.dp,
             )
 
-            // Botón 3 - Tareas
             NavigationItem(
-                icon = Icons.Default.Mail,
+                icon = Icons.Default.EuroSymbol,
                 isSelected = selectedTab == 2,
                 onClick = { onTabSelected(2) },
-                padding = 17.dp,
+                padding = 12.dp,
             )
 
-            // Botón 4 - Perfil
             NavigationItem(
-                icon = Icons.Default.AssignmentInd, // Cambia por tu icono real
+                icon = Icons.Default.Mail,
                 isSelected = selectedTab == 3,
                 onClick = { onTabSelected(3) },
-                padding = 19.dp,
+                padding = 12.dp,
             )
 
             NavigationItem(
-                icon = Icons.Default.CalendarMonth, // Cambia por tu icono real
+                icon = Icons.Default.Person,
                 isSelected = selectedTab == 4,
                 onClick = { onTabSelected(4) },
-                padding = 19.dp,
-            )
-
-            // Botón 5 - Pizarra
-            NavigationItem(
-                icon = Icons.Default.AdfScanner,
-                isSelected = selectedTab == 5,
-                onClick = { onTabSelected(5) },
-                padding = 19.dp,
+                padding = 12.dp,
             )
         }
     }
@@ -149,35 +140,32 @@ fun NavigationItem(
     padding: Dp,
 ) {
     Box(
-        modifier =
-            Modifier
-                .clip(RoundedCornerShape(20.dp))
-                .background(if (isSelected) Color.White else Color.Transparent)
-                .clickable(onClick = onClick)
-                .padding(horizontal = padding, vertical = 14.dp),
+        modifier = Modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(if (isSelected) Color.White else Color.Transparent)
+            .clickable(onClick = onClick)
+            .padding(horizontal = padding, vertical = 10.dp),
+        contentAlignment = Alignment.Center
     ) {
         Image(
             imageVector = icon,
             contentDescription = null,
-            colorFilter =
-                ColorFilter.tint(
-                    if (isSelected) Color.Black else Color.White,
-                ),
-            modifier = Modifier.size(20.dp),
+            colorFilter = ColorFilter.tint(
+                if (isSelected) Color.Black else Color.White,
+            ),
+            modifier = Modifier.size(24.dp),
         )
     }
 }
 
-// PREVIEWS
 @Preview
 @Composable
 fun NavigationBarPreview() {
     Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(Color.Gray)
-                .padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Gray)
+            .padding(16.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -185,43 +173,11 @@ fun NavigationBarPreview() {
             selectedTab = 0,
             onTabSelected = { },
         )
-
         Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Preview - Tab 0 seleccionado",
-            color = Color.White,
-        )
+        Text(text = "Preview - Tab 0 seleccionado", color = Color.White)
     }
 }
 
-@Preview
-@Composable
-fun NavigationBarPreviewTab2() {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(Color.Gray)
-                .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        NavigationBar(
-            selectedTab = 2,
-            onTabSelected = { },
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Preview - Tab 2 seleccionado",
-            color = Color.White,
-        )
-    }
-}
-
-// USO CON NAVEGACIÓN
 @Composable
 fun MainScreenWithNavigation(
     casaId: Long,
@@ -229,44 +185,38 @@ fun MainScreenWithNavigation(
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val savedStateHandle = rememberSaveableStateHolder()
+    val context = LocalContext.current.applicationContext
 
-    val tareasViewModel: TareasViewModel =
-        viewModel(
-            factory = TareasViewModelFactory(casaId),
-        )
-    val listaViewModel: ListasViewModel =
-        viewModel(
-            factory = ListasViewModelFactory(casaId),
-        )
+    val sessionManager = remember { SessionManager(context) }
+    val repositoryCasa = remember { RepositoryCasa(NetworkModule.casaApiService) }
+    val repositoryLista = remember { RepositoryLista(NetworkModule.listaApiService) }
 
-    val eventosViewModel: eventosViewModel =
-        viewModel()
+    val homeViewModel: HomeViewModel = viewModel(
+        factory = HomeViewModelFactory(repositoryCasa, sessionManager, casaId),
+    )
+
+    val listaViewModel: ListasViewModel = viewModel(
+        factory = ListasViewModelFactory(casaId),
+    )
+
+    val tareasViewModel: TareasViewModel = viewModel(
+        factory = TareasViewModelFactory(casaId),
+    )
+
+    val gastosViewModel: GastosViewModel = viewModel(
+        factory = GastosViewModelFactory(repositoryCasa, sessionManager, casaId)
+    )
 
     val onNavigateToItem: (Long, String) -> Unit = { id, nombre ->
         Log.d("Navegación", "Item clickeado: $id - $nombre")
     }
 
-    fun showSimpleEventDialog(activity: Activity?) {
-        val alertDialog =
-            AlertDialog
-                .Builder(activity ?: return)
-                .setTitle("¡Crea un evento!")
-                .setMessage("Función de eventos - versión simple")
-                .setPositiveButton("OK") { dialog, _ ->
-                    dialog.dismiss()
-                }.setNegativeButton("Cancelar") { dialog, _ ->
-                    dialog.dismiss()
-                }.create()
-        alertDialog.show()
-    }
-
     Scaffold(
         bottomBar = {
             Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 20.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 20.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 NavigationBar(
@@ -279,32 +229,15 @@ fun MainScreenWithNavigation(
         Box(modifier = Modifier.padding(padding)) {
             savedStateHandle.SaveableStateProvider(selectedTab) {
                 when (selectedTab) {
-                    0 -> HomeScreen()
+                    0 -> HomeScreen(viewModel = homeViewModel)
                     1 -> ListaScreen(listaViewModel, onNavigateToItem)
-                    2 -> TareasScreen(tareasViewModel, casaNombre)
-//                    3 -> PerfilTabContent()
-                    4 -> EventosScreen(eventosViewModel)
-                    5 -> PizarraScreen(casaId)
+                    2 -> GastosScreen(viewModel = gastosViewModel)
+                    3 -> TareasScreen(tareasViewModel, casaNombre)
+                    4 -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Perfil")
+                    }
                 }
             }
         }
     }
-}
-
-fun Context.findActivity(): Activity? {
-    var context = this
-    while (context is ContextWrapper) {
-        if (context is Activity) {
-            return context
-        }
-        context = context.baseContext
-    }
-    return null
-}
-
-// PREVIEW de la pantalla completa
-@Preview
-@Composable
-fun MainScreenWithNavigationPreview() {
-    MainScreenWithNavigation(1L, "1")
 }

@@ -33,7 +33,6 @@ fun EventDialogComposeContent(
                 .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // Title Section
         Text(
             text = "Título",
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
@@ -52,7 +51,6 @@ fun EventDialogComposeContent(
             },
         )
 
-        // Description Section
         Text(
             text = "Descripción",
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
@@ -66,7 +64,6 @@ fun EventDialogComposeContent(
             modifier = Modifier.fillMaxWidth(),
         )
 
-        // Date Section
         Text(
             text = "Fecha",
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
@@ -89,7 +86,6 @@ fun EventDialogComposeContent(
             )
         }
 
-        // Buttons Row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
@@ -107,7 +103,6 @@ fun EventDialogComposeContent(
         }
     }
 
-    // Date Picker
     if (showDatePicker) {
         MaterialDatePickerDialog(
             onDismissRequest = { showDatePicker = false },
