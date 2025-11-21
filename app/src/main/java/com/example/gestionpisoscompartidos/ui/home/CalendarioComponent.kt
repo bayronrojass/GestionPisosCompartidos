@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.gestionpisoscompartidos.model.Evento
@@ -25,6 +26,7 @@ import java.time.LocalDate
 import java.time.format.TextStyle as JavaTextStyle
 import java.util.Locale
 
+// Colores
 val ColorRosaFuerte = Color(0xffff5686)
 val ColorFondoGris = Color(0xfff8f8f8)
 val ColorAmarilloNota = Color(0xfffff8cf)
@@ -33,10 +35,13 @@ val ColorAmarilloNota = Color(0xfffff8cf)
 fun SelectorDiasSemana(
     fechaSeleccionada: LocalDate,
     onFechaClick: (LocalDate) -> Unit,
+    onVistaMensualClick: () -> Unit,
 ) {
+    // Generamos los próximos 30 días
     val listaDias = (0..30).map { LocalDate.now().plusDays(it.toLong()) }
 
     Column(modifier = Modifier.fillMaxWidth()) {
+        // Título del Mes y Botón "Vista mensual"
         Row(
             modifier =
                 Modifier
@@ -47,14 +52,16 @@ fun SelectorDiasSemana(
         ) {
             Text(
                 text = fechaSeleccionada.month.getDisplayName(JavaTextStyle.FULL, Locale("es", "ES")).uppercase(),
-                style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold),
+                style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black),
             )
             Text(
                 text = "Vista mensual",
-                style = TextStyle(fontSize = 13.sp, color = Color.Gray),
+                style = TextStyle(fontSize = 13.sp, textDecoration = TextDecoration.Underline, color = Color.Black),
+                modifier = Modifier.clickable { onVistaMensualClick() },
             )
         }
 
+        // Fila de días
         LazyRow(
             contentPadding = PaddingValues(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -128,9 +135,7 @@ fun ListaEventosDelDia(eventos: List<Evento>) {
                 modifier = Modifier.padding(start = 40.dp, top = 10.dp),
             )
         } else {
-            eventos.forEach { evento ->
-                ItemEventoTimeline(evento)
-            }
+            eventos.forEach { evento -> ItemEventoTimeline(evento) }
         }
     }
 }
@@ -142,38 +147,91 @@ fun ItemEventoTimeline(evento: Evento) {
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.width(30.dp),
         ) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(ColorRosaFuerte),
-            )
+            Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(ColorRosaFuerte))
         }
-
         Box(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .height(50.dp) // Altura fija o wrapContentHeight
+                    .height(50.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(Color.White) // O ColorAmarilloNota según el tipo
+                    .background(ColorAmarilloNota)
                     .shadow(elevation = 4.dp, shape = RoundedCornerShape(10.dp))
                     .padding(horizontal = 15.dp),
             contentAlignment = Alignment.CenterStart,
         ) {
             Column {
-                Text(
-                    text = evento.nombre,
-                    style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium),
-                )
+                Text(text = evento.nombre, style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.Black))
                 if (!evento.descripcion.isNullOrBlank()) {
-                    Text(
-                        text = evento.descripcion,
-                        style = TextStyle(fontSize = 12.sp, color = Color.Gray),
-                    )
+                    Text(text = evento.descripcion, style = TextStyle(fontSize = 12.sp, color = Color.Gray))
                 }
             }
         }
     }
 }
+
+@Composable
+fun ListaEventosAgrupados(eventos: List<Evento>) {
+    val eventosPorFecha =
+        eventos.groupBy {
+            try {
+                LocalDate.parse(it.fechaInicio.take(10))
+            } catch (e: Exception) {
+                LocalDate.now()
+            }
+        }
+
+    Column(
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        if (eventos.isEmpty()) {
+            Text(
+                text = "No hay más eventos esta semana",
+                style = TextStyle(fontSize = 14.sp, color = Color.Gray),
+                modifier = Modifier.padding(start = 40.dp, top = 10.dp),
+            )
+        } else {
+            eventosPorFecha.forEach { (fecha, lista) ->
+
+                val tituloCabecera =
+                    when {
+                        fecha.isEqual(LocalDate.now()) -> "Hoy"
+                        fecha.isEqual(LocalDate.now().plusDays(1)) -> "Mañana"
+                        else -> {
+                            val diaSemana =
+                                fecha.dayOfWeek
+                                    .getDisplayName(java.time.format.TextStyle.SHORT, Locale("es", "ES"))
+                                    .replace(".", "")
+                                    .replaceFirstChar { it.uppercase() }
+                            val diaMes = fecha.dayOfMonth
+                            "$diaSemana $diaMes"
+                        }
+                    }
+
+                Text(
+                    text = tituloCabecera,
+                    style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black),
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+
+                lista.forEach { evento ->
+                    ItemEventoTimeline(evento)
+                }
+            }
+        }
+    }
+}
+
+fun parsearFechaSegura(fechaString: String): LocalDate =
+    try {
+        java.time.LocalDateTime
+            .parse(fechaString, java.time.format.DateTimeFormatter.ISO_DATE_TIME)
+            .toLocalDate()
+    } catch (e: Exception) {
+        try {
+            LocalDate.parse(fechaString.take(10))
+        } catch (e2: Exception) {
+            LocalDate.now()
+        }
+    }

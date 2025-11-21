@@ -49,6 +49,7 @@ import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryLista
+import com.example.gestionpisoscompartidos.ui.gastos.GastosScreen
 import com.example.gestionpisoscompartidos.ui.home.HomeScreen
 import com.example.gestionpisoscompartidos.ui.home.HomeViewModel
 import com.example.gestionpisoscompartidos.ui.home.HomeViewModelFactory
@@ -58,6 +59,9 @@ import com.example.gestionpisoscompartidos.ui.listas.ListasViewModelFactory
 import com.example.gestionpisoscompartidos.ui.tareas.TareasScreen
 import com.example.gestionpisoscompartidos.ui.tareas.TareasViewModel
 import com.example.gestionpisoscompartidos.ui.tareas.TareasViewModelFactory
+import com.example.gestionpisoscompartidos.ui.gastos.GastosViewModel
+import androidx.compose.material.icons.filled.EuroSymbol
+import com.example.gestionpisoscompartidos.ui.gastos.GastosViewModelFactory
 
 @Composable
 fun NavigationBar(
@@ -118,6 +122,13 @@ fun NavigationBar(
                 icon = Icons.Default.AssignmentInd,
                 isSelected = selectedTab == 3,
                 onClick = { onTabSelected(3) },
+                padding = 12.dp,
+            )
+
+            NavigationItem(
+                icon = Icons.Default.EuroSymbol, // O AttachMoney
+                isSelected = selectedTab == 4,
+                onClick = { onTabSelected(4) },
                 padding = 19.dp,
             )
         }
@@ -206,6 +217,11 @@ fun MainScreenWithNavigation(
             factory = TareasViewModelFactory(casaId),
         )
 
+    val gastosViewModel: GastosViewModel =
+        viewModel(
+            factory = GastosViewModelFactory(repositoryCasa, sessionManager, casaId),
+        )
+
     val onNavigateToItem: (Long, String) -> Unit = { id, nombre ->
         Log.d("Navegación", "Item clickeado: $id - $nombre")
     }
@@ -233,6 +249,7 @@ fun MainScreenWithNavigation(
                     1 -> ListaScreen(listaViewModel, onNavigateToItem)
                     2 -> TareasScreen(tareasViewModel, casaNombre)
 //                    3 -> PerfilTabContent()
+                    4 -> GastosScreen(viewModel = gastosViewModel)
                 }
             }
         }

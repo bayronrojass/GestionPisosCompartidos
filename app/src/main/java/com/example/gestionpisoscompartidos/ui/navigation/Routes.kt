@@ -57,4 +57,8 @@ sealed class Route(
     }
 
     object Invitaciones : Route("invitaciones")
+
+    object Estadisticas : Route("estadisticas/{casaId}") {
+        fun createRoute(casaId: Long) = "estadisticas/$casaId"
+    }
 }
