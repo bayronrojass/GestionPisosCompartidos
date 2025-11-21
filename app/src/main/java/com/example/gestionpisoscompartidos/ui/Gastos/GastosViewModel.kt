@@ -13,11 +13,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-// Modelo simple para el gráfico
 data class PieChartData(
-    val categoria: String,
-    val porcentaje: Float, // 0.0 a 1.0
-    val textoPorcentaje: String, // "64%"
+    val categoria: String, // Nombre de la persona
+    val porcentaje: Float,
+    val textoPorcentaje: String,
     val color: Color,
 )
 
@@ -32,9 +31,20 @@ class GastosViewModel(
     private val _stats = MutableStateFlow<List<PieChartData>>(emptyList())
     val stats: StateFlow<List<PieChartData>> = _stats.asStateFlow()
 
-    // Estado para controlar qué vista mostramos (Lista o Estadísticas)
     private val _mostrarEstadisticas = MutableStateFlow(false)
     val mostrarEstadisticas: StateFlow<Boolean> = _mostrarEstadisticas.asStateFlow()
+
+    // Paleta de colores del diseño (Orden: 1º, 2º, 3º, 4º...)
+    private val colorPalette =
+        listOf(
+            Color(0xFFB1395B), // Rosa (Top 1)
+            Color(0xFF8061A2), // Morado (Top 2)
+            Color(0xFF93BBEC), // Azul (Top 3)
+            Color(0xFF61995F), // Verde (Top 4)
+            Color(0xFFFFD54F), // Amarillo (Extra)
+            Color(0xFFFF8A65), // Naranja (Extra)
+            Color(0xFF90A4AE), // Gris (Extra)
+        )
 
     init {
         cargarGastos()
@@ -64,41 +74,41 @@ class GastosViewModel(
 
     private fun calcularEstadisticas(lista: List<Gasto>) {
         val total = lista.sumOf { it.importe }
-        if (total == 0.0) return
+        if (total == 0.0) {
+            _stats.value = emptyList()
+            return
+        }
 
-        // Agrupar por persona que pagó (o categoría, según tu diseño visual parece por persona)
-        val agrupado = lista.groupBy { it.pagadoPor }
+        // 1. Agrupar gastos por nombre de la persona
+        val agrupado = lista.groupBy { it.pagadoPorNombre ?: "Desconocido" }
 
-        val datosGrafico =
+        // 2. Calcular totales y ordenar de MAYOR a MENOR gasto
+        val datosOrdenados =
             agrupado
                 .map { (nombre, gastos) ->
                     val totalPersona = gastos.sumOf { it.importe }
                     val porcentaje = (totalPersona / total).toFloat()
+                    Pair(nombre, porcentaje)
+                }.sortedByDescending { it.second } // Ordenar por porcentaje descendente
 
-                    PieChartData(
-                        categoria = nombre.toString(),
-                        porcentaje = porcentaje,
-                        textoPorcentaje = "${(porcentaje * 100).toInt()}%",
-                        color = getColorPorNombre(nombre.toString()),
-                    )
-                }.sortedByDescending { it.porcentaje }
+        // 3. Asignar colores según la posición en el ranking
+        val estadisticasFinales =
+            datosOrdenados.mapIndexed { index, (nombre, porcentaje) ->
+                // Usamos el operador módulo (%) para ciclar colores si hay más personas que colores
+                val colorAsignado = colorPalette[index % colorPalette.size]
 
-        _stats.value = datosGrafico
-    }
+                PieChartData(
+                    categoria = nombre,
+                    porcentaje = porcentaje,
+                    textoPorcentaje = "${(porcentaje * 100).toInt()}%",
+                    color = colorAsignado,
+                )
+            }
 
-    private fun getColorPorNombre(nombre: String): Color {
-        // Colores fijos basados en tu diseño
-        return when {
-            nombre.contains("Natalia", true) -> Color(0xFFB1395B) // Rojo
-            nombre.contains("Daniel", true) -> Color(0xFF8061A2) // Morado
-            nombre.contains("Marta", true) -> Color(0xFF93BBEC) // Azul
-            nombre.contains("Raquel", true) -> Color(0xFF61995F) // Verde
-            else -> Color.Gray
-        }
+        _stats.value = estadisticasFinales
     }
 }
 
-// Factory necesaria para pasar parámetros al ViewModel
 class GastosViewModelFactory(
     private val repository: RepositoryCasa,
     private val sessionManager: SessionManager,

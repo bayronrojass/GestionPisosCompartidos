@@ -10,19 +10,23 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.gestionpisoscompartidos.model.Gasto
+import androidx.compose.material.icons.filled.EuroSymbol
 
-// Colores del diseño
+// Colores UI generales
 val ColorFondo = Color(0xFFF8F8F8)
 val ColorLila = Color(0xFFDDC1FB)
 val ColorTextoGris = Color(0xFF6C6C6C)
@@ -53,20 +57,17 @@ fun GastosScreen(viewModel: GastosViewModel) {
     ) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             if (mostrarEstadisticas) {
-                // --- VISTA ESTADÍSTICAS ---
                 VistaEstadisticas(
                     stats = stats,
                     onBack = { viewModel.toggleVista(false) },
                 )
             } else {
-                // --- VISTA LISTA DE GASTOS ---
                 VistaListaGastos(
                     gastos = gastos,
                     onVerEstadisticas = { viewModel.toggleVista(true) },
                 )
             }
 
-            // Diálogo para añadir gasto (Placeholder visual)
             if (showAddDialog) {
                 NuevoGastoDialog(onDismiss = { showAddDialog = false })
             }
@@ -81,9 +82,8 @@ fun VistaListaGastos(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // Cabecera
         item {
             Spacer(modifier = Modifier.height(20.dp))
             Row(
@@ -91,7 +91,7 @@ fun VistaListaGastos(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Gastos", fontSize = 36.sp, fontWeight = FontWeight.Bold)
+                Text("Gastos", fontSize = 32.sp, fontWeight = FontWeight.Bold)
                 Text(
                     "Estadísticas",
                     fontSize = 14.sp,
@@ -101,40 +101,38 @@ fun VistaListaGastos(
             }
         }
 
-        // Toggle Gastos/Saldos (Visual)
         item {
+            Spacer(modifier = Modifier.height(16.dp))
             Row(
                 modifier =
                     Modifier
                         .width(180.dp)
-                        .background(Color.White, RoundedCornerShape(20.dp))
+                        .background(Color.White, RoundedCornerShape(50.dp))
                         .padding(4.dp),
             ) {
                 Box(
                     modifier =
                         Modifier
                             .weight(1f)
-                            .height(26.dp)
-                            .background(ColorLila, RoundedCornerShape(13.dp)),
+                            .height(32.dp)
+                            .background(ColorLila, RoundedCornerShape(50.dp)),
                     contentAlignment = Alignment.Center,
-                ) { Text("Gastos", fontSize = 12.sp) }
+                ) { Text("Gastos", fontSize = 14.sp, fontWeight = FontWeight.Medium) }
                 Box(
-                    modifier = Modifier.weight(1f).height(26.dp),
+                    modifier = Modifier.weight(1f).height(32.dp),
                     contentAlignment = Alignment.Center,
-                ) { Text("Saldos", fontSize = 12.sp) }
+                ) { Text("Saldos", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = ColorTextoGris) }
             }
+            Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // Lista dinámica desde BD
         if (gastos.isEmpty()) {
             item { Text("No hay gastos aún.", color = Color.Gray) }
         } else {
-            // Agrupar por si quieres cabeceras (opcional), aquí lista simple
             items(gastos) { gasto ->
                 ItemGasto(gasto)
             }
         }
-
         item { Spacer(modifier = Modifier.height(80.dp)) }
     }
 }
@@ -142,21 +140,33 @@ fun VistaListaGastos(
 @Composable
 fun ItemGasto(gasto: Gasto) {
     Card(
-        shape = RoundedCornerShape(15.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp),
+        elevation = CardDefaults.cardElevation(0.dp),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
             modifier = Modifier.padding(16.dp).fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Top,
         ) {
-            Column {
-                Text(gasto.nombre, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                Text("Pagado por: ${gasto.pagadoPor}", fontSize = 12.sp, color = Color.Gray)
+            Icon(
+                imageVector = Icons.Default.EuroSymbol,
+                contentDescription = null,
+                modifier = Modifier.padding(top = 4.dp, end = 16.dp).size(24.dp),
+                tint = Color.Black,
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(gasto.nombre, fontSize = 18.sp, fontWeight = FontWeight.W600)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Pagado por: ${gasto.pagadoPorNombre ?: "Desconocido"}",
+                    fontSize = 13.sp,
+                    color = ColorTextoGris,
+                )
             }
-            Text("${gasto.importe}€", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Column(horizontalAlignment = Alignment.End) {
+                Text("${gasto.importe.toInt()}€", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
@@ -170,7 +180,6 @@ fun VistaEstadisticas(
         modifier = Modifier.fillMaxSize().padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Cabecera Estadísticas
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -179,58 +188,128 @@ fun VistaEstadisticas(
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
             }
             Spacer(modifier = Modifier.weight(1f))
-            Text("Estadísticas", color = Color.Gray)
+            Text("Estadísticas", color = ColorTextoGris, fontSize = 16.sp)
         }
 
         Spacer(modifier = Modifier.height(20.dp))
-        Text("¿Cuánto\nhas pagado?", fontSize = 32.sp, fontWeight = FontWeight.Bold, lineHeight = 36.sp)
+        Text(
+            "¿Cuánto\nhas pagado?",
+            fontSize = 36.sp,
+            fontWeight = FontWeight.Bold,
+            lineHeight = 40.sp,
+            modifier = Modifier.fillMaxWidth(),
+        )
 
         Spacer(modifier = Modifier.height(40.dp))
 
-        // Gráfico de "Flor" (Burbujas)
-        Box(modifier = Modifier.size(300.dp)) {
-            stats.forEachIndexed { index, data ->
-                // Posicionamiento simple de burbujas según índice para simular la flor
-                val align =
-                    when (index) {
-                        0 -> Alignment.TopStart
-                        1 -> Alignment.BottomEnd
-                        2 -> Alignment.BottomStart
-                        else -> Alignment.TopEnd
-                    }
-                // Tamaño relativo al porcentaje (mínimo 80dp)
-                val size = (data.porcentaje * 300).dp.coerceAtLeast(80.dp)
-
-                Box(
-                    modifier =
-                        Modifier
-                            .align(align)
-                            .size(size)
-                            .clip(CircleShape)
-                            .background(data.color),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(data.textoPorcentaje, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                }
-            }
-
+        // --- GRÁFICO DINÁMICO ---
+        Box(modifier = Modifier.size(320.dp)) {
             if (stats.isEmpty()) {
                 Text("Sin datos", modifier = Modifier.align(Alignment.Center))
+            } else {
+                // Dibujamos solo los primeros 4 o 5 para que no se sature
+                stats.take(5).forEachIndexed { index, data ->
+                    when (index) {
+                        0 ->
+                            BubbleShape( // 1º (Más gasto) -> Flor Grande
+                                text = data.textoPorcentaje,
+                                color = data.color,
+                                size = 200.dp,
+                                shape = RoundedCornerShape(40),
+                                rotation = 10f,
+                                offset = DpOffset(10.dp, 10.dp),
+                                modifier = Modifier.align(Alignment.TopStart),
+                            )
+                        1 ->
+                            BubbleShape( // 2º -> Círculo
+                                text = data.textoPorcentaje,
+                                color = data.color,
+                                size = 150.dp,
+                                shape = CircleShape,
+                                rotation = 0f,
+                                offset = DpOffset(20.dp, (-10).dp),
+                                modifier = Modifier.align(Alignment.BottomStart),
+                            )
+                        2 ->
+                            BubbleShape( // 3º -> Cuadrado Rotado
+                                text = data.textoPorcentaje,
+                                color = data.color,
+                                size = 130.dp,
+                                shape = RoundedCornerShape(30.dp),
+                                rotation = -25f,
+                                offset = DpOffset((-10).dp, 60.dp),
+                                modifier = Modifier.align(Alignment.TopEnd),
+                            )
+                        3 ->
+                            BubbleShape( // 4º -> Píldora
+                                text = data.textoPorcentaje,
+                                color = data.color,
+                                width = 120.dp,
+                                height = 70.dp,
+                                shape = RoundedCornerShape(20.dp),
+                                rotation = 5f,
+                                offset = DpOffset(0.dp, 0.dp),
+                                modifier = Modifier.align(Alignment.BottomEnd),
+                            )
+                        else -> { /* Ignorar o poner burbujitas pequeñas */ }
+                    }
+                }
             }
         }
 
         Spacer(modifier = Modifier.weight(1f))
 
         // Leyenda
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            stats.forEach {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            stats.take(4).forEach {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(10.dp).background(it.color, CircleShape))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(it.categoria, fontSize = 12.sp)
+                    Box(modifier = Modifier.size(12.dp).background(it.color, CircleShape))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(it.categoria, fontSize = 14.sp, color = ColorTextoGris)
                 }
             }
         }
+        Spacer(modifier = Modifier.height(20.dp))
+    }
+}
+
+@Composable
+fun BubbleShape(
+    text: String,
+    color: Color,
+    size: androidx.compose.ui.unit.Dp? = null,
+    width: androidx.compose.ui.unit.Dp? = null,
+    height: androidx.compose.ui.unit.Dp? = null,
+    shape: androidx.compose.ui.graphics.Shape,
+    rotation: Float,
+    offset: DpOffset,
+    modifier: Modifier,
+) {
+    Box(
+        modifier =
+            modifier
+                .offset(x = offset.x, y = offset.y)
+                .rotate(rotation)
+                .then(
+                    if (size != null) {
+                        Modifier.size(size)
+                    } else {
+                        Modifier.size(width = width!!, height = height!!)
+                    },
+                ).clip(shape)
+                .background(color),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = text,
+            color = Color.White,
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.rotate(-rotation),
+        )
     }
 }
 
@@ -239,13 +318,11 @@ fun VistaEstadisticas(
 fun NuevoGastoDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        confirmButton = {
-            Button(onClick = onDismiss, colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black)) {
-                Text("Aceptar")
-            }
-        },
-        title = { Text("Nuevo Gasto") },
-        text = { Text("Formulario de gasto aquí...") },
         containerColor = Color.White,
+        title = { Text("Nuevo Gasto") },
+        text = { Text("Formulario aquí...") },
+        confirmButton = {
+            Button(onClick = onDismiss) { Text("Aceptar") }
+        },
     )
 }
