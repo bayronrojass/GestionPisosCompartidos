@@ -1,10 +1,9 @@
 package com.example.gestionpisoscompartidos.model
 
-data class Evento(
-    val id: Long? = null,
+data class eventRequest(
     val nombre: String,
-    val descripcion: String?,
+    val descripcion: String? = null,
     val fechaInicio: String,
-    val fechaFin: String?,
+    val fechaFin: String? = null,
     val creadoPor: Long,
 )

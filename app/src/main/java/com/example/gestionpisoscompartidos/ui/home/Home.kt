@@ -33,7 +33,7 @@ fun HomeScreen(
 ) {
     var showFullCalendar by remember { mutableStateOf(false) }
     val fechaSeleccionada by viewModel.fechaSeleccionada.collectAsState()
-    val eventosDelDia by viewModel.eventosDelDia.collectAsState() // Ahora contiene eventos de hoy al domingo
+    val eventosDelDia by viewModel.eventosDelDia.collectAsState()
     val todosLosEventos by viewModel.eventos.collectAsState()
 
     if (showFullCalendar) {
@@ -42,6 +42,7 @@ fun HomeScreen(
             eventos = todosLosEventos,
             onFechaClick = { nuevaFecha -> viewModel.seleccionarFecha(nuevaFecha) },
             onBackClick = { showFullCalendar = false },
+            viewModel = viewModel,
         )
     } else {
         val scrollState = rememberScrollState()
@@ -183,6 +184,7 @@ fun HomeScreen(
 
             SelectorDiasSemana(
                 fechaSeleccionada = fechaSeleccionada,
+                viewModel = viewModel,
                 onFechaClick = { nuevaFecha -> viewModel.seleccionarFecha(nuevaFecha) },
                 onVistaMensualClick = { showFullCalendar = true },
             )

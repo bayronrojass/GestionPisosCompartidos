@@ -194,10 +194,17 @@ fun MainScreenWithNavigation(
     val sessionManager = remember { SessionManager(context) }
     val repositoryCasa = remember { RepositoryCasa(NetworkModule.casaApiService) }
     val repositoryLista = remember { RepositoryLista(NetworkModule.listaApiService) }
+    val contentResolver = LocalContext.current.applicationContext.contentResolver
 
     val homeViewModel: HomeViewModel =
         viewModel(
-            factory = HomeViewModelFactory(repositoryCasa, sessionManager, casaId),
+            factory =
+                HomeViewModelFactory(
+                    repositoryCasa,
+                    sessionManager,
+                    casaId,
+                    contentResolver,
+                ),
         )
 
     val listaViewModel: ListasViewModel =

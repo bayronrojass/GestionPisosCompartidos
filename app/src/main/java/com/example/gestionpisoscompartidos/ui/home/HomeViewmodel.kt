@@ -1,22 +1,29 @@
 package com.example.gestionpisoscompartidos.ui.home
 
+import android.content.ContentResolver
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionpisoscompartidos.data.SessionManager
+import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
+import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryEvento
 import com.example.gestionpisoscompartidos.model.Evento
+import com.example.gestionpisoscompartidos.model.eventRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.DayOfWeek
+import java.time.LocalDateTime
 import java.time.temporal.TemporalAdjusters
 
 class HomeViewModel(
     private val repository: RepositoryCasa,
     private val sessionManager: SessionManager,
     private val casaId: Long,
+    private val contentResolver: ContentResolver,
 ) : ViewModel() {
     private val _eventos = MutableStateFlow<List<Evento>>(emptyList())
     val eventos: StateFlow<List<Evento>> = _eventos
@@ -26,6 +33,9 @@ class HomeViewModel(
 
     private val _eventosDelDia = MutableStateFlow<List<Evento>>(emptyList())
     val eventosDelDia: StateFlow<List<Evento>> = _eventosDelDia
+
+    private val _createEventResult = MutableStateFlow<Boolean?>(null)
+    val createEventResult: StateFlow<Boolean?> = _createEventResult.asStateFlow()
 
     init {
         cargarEventos()
@@ -46,7 +56,6 @@ class HomeViewModel(
 
                     _eventos.value = listaRecibida
 
-                    // Refrescar la lista del día actual
                     seleccionarFecha(_fechaSeleccionada.value)
                 } else {
                     Log.e("CALENDARIO", "Error al cargar eventos: ${response.code()}")
@@ -86,4 +95,51 @@ class HomeViewModel(
         } catch (e: Exception) {
             LocalDate.now()
         }
+
+    fun crea(
+        title: String,
+        description: String,
+        startDate: LocalDateTime,
+        endDate: LocalDateTime,
+    ) {
+        viewModelScope.launch {
+            createEvent(title, description, startDate, endDate)
+        }
+    }
+
+    suspend fun createEvent(
+        title: String,
+        description: String,
+        startDate: LocalDateTime,
+        endDate: LocalDateTime,
+    ): Boolean {
+        try {
+            val eventRepository = RepositoryEvento(NetworkModule.eventoAPIService)
+            val eventRequest =
+                eventRequest(
+                    nombre = title,
+                    descripcion = description,
+                    fechaInicio = startDate.toString(),
+                    fechaFin = endDate.toString(),
+                    creadoPor = sessionManager.fetchCurrentUserId(),
+                )
+
+            val response = eventRepository.crearEvento(eventRequest, casaId, contentResolver)
+            kotlinx.coroutines.delay(1000L)
+            cargarEventos()
+            _createEventResult.value = true
+            return true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            _createEventResult.value = false
+            return false
+        }
+    }
+
+    data class Event(
+        val title: String,
+        val description: String,
+        val startDate: LocalDateTime,
+        val endDate: LocalDateTime,
+    )
 }
