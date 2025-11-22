@@ -26,7 +26,6 @@ import java.time.LocalDate
 import java.time.format.TextStyle as JavaTextStyle
 import java.util.Locale
 
-
 val ColorRosaFuerte = Color(0xffff5686)
 val ColorFondoGris = Color(0xfff8f8f8)
 val ColorAmarilloNota = Color(0xfffff8cf)

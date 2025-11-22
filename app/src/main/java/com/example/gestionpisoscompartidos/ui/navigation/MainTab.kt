@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AssignmentInd
 import androidx.compose.material.icons.filled.EuroSymbol
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryAddCheck
@@ -73,24 +72,26 @@ fun NavigationBar(
     val barWidth = 380.dp
 
     Card(
-        modifier = modifier
-            .width(barWidth)
-            .height(60.dp)
-            .shadow(
-                elevation = 8.dp,
-                shape = RoundedCornerShape(30.dp),
-                clip = false,
-            ),
+        modifier =
+            modifier
+                .width(barWidth)
+                .height(60.dp)
+                .shadow(
+                    elevation = 8.dp,
+                    shape = RoundedCornerShape(30.dp),
+                    clip = false,
+                ),
         shape = RoundedCornerShape(30.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Row(
-            modifier = modifier
-                .requiredWidth(barWidth)
-                .requiredHeight(60.dp)
-                .clip(RoundedCornerShape(30.dp))
-                .background(Color.Black)
-                .padding(horizontal = 10.dp),
+            modifier =
+                modifier
+                    .requiredWidth(barWidth)
+                    .requiredHeight(60.dp)
+                    .clip(RoundedCornerShape(30.dp))
+                    .background(Color.Black)
+                    .padding(horizontal = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -140,19 +141,21 @@ fun NavigationItem(
     padding: Dp,
 ) {
     Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(if (isSelected) Color.White else Color.Transparent)
-            .clickable(onClick = onClick)
-            .padding(horizontal = padding, vertical = 10.dp),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .clip(RoundedCornerShape(20.dp))
+                .background(if (isSelected) Color.White else Color.Transparent)
+                .clickable(onClick = onClick)
+                .padding(horizontal = padding, vertical = 10.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Image(
             imageVector = icon,
             contentDescription = null,
-            colorFilter = ColorFilter.tint(
-                if (isSelected) Color.Black else Color.White,
-            ),
+            colorFilter =
+                ColorFilter.tint(
+                    if (isSelected) Color.Black else Color.White,
+                ),
             modifier = Modifier.size(24.dp),
         )
     }
@@ -162,10 +165,11 @@ fun NavigationItem(
 @Composable
 fun NavigationBarPreview() {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Gray)
-            .padding(16.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(Color.Gray)
+                .padding(16.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -191,21 +195,25 @@ fun MainScreenWithNavigation(
     val repositoryCasa = remember { RepositoryCasa(NetworkModule.casaApiService) }
     val repositoryLista = remember { RepositoryLista(NetworkModule.listaApiService) }
 
-    val homeViewModel: HomeViewModel = viewModel(
-        factory = HomeViewModelFactory(repositoryCasa, sessionManager, casaId),
-    )
+    val homeViewModel: HomeViewModel =
+        viewModel(
+            factory = HomeViewModelFactory(repositoryCasa, sessionManager, casaId),
+        )
 
-    val listaViewModel: ListasViewModel = viewModel(
-        factory = ListasViewModelFactory(casaId),
-    )
+    val listaViewModel: ListasViewModel =
+        viewModel(
+            factory = ListasViewModelFactory(casaId),
+        )
 
-    val tareasViewModel: TareasViewModel = viewModel(
-        factory = TareasViewModelFactory(casaId),
-    )
+    val tareasViewModel: TareasViewModel =
+        viewModel(
+            factory = TareasViewModelFactory(casaId),
+        )
 
-    val gastosViewModel: GastosViewModel = viewModel(
-        factory = GastosViewModelFactory(repositoryCasa, sessionManager, casaId)
-    )
+    val gastosViewModel: GastosViewModel =
+        viewModel(
+            factory = GastosViewModelFactory(repositoryCasa, sessionManager, casaId),
+        )
 
     val onNavigateToItem: (Long, String) -> Unit = { id, nombre ->
         Log.d("Navegación", "Item clickeado: $id - $nombre")
@@ -214,9 +222,10 @@ fun MainScreenWithNavigation(
     Scaffold(
         bottomBar = {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 20.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 20.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 NavigationBar(
@@ -233,9 +242,10 @@ fun MainScreenWithNavigation(
                     1 -> ListaScreen(listaViewModel, onNavigateToItem)
                     2 -> GastosScreen(viewModel = gastosViewModel)
                     3 -> TareasScreen(tareasViewModel, casaNombre)
-                    4 -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Perfil")
-                    }
+                    4 ->
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("Perfil")
+                        }
                 }
             }
         }

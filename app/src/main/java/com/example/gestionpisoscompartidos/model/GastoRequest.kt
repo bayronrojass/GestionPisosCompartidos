@@ -5,5 +5,5 @@ data class GastoRequest(
     val descripcion: String = "",
     val importe: Double,
     val categoria: String,
-    val pagadoPorId: Long
+    val pagadoPorId: Long,
 )

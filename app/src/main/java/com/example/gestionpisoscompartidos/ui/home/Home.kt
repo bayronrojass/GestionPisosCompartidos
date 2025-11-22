@@ -181,7 +181,6 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-
             SelectorDiasSemana(
                 fechaSeleccionada = fechaSeleccionada,
                 onFechaClick = { nuevaFecha -> viewModel.seleccionarFecha(nuevaFecha) },
@@ -189,7 +188,6 @@ fun HomeScreen(
             )
 
             Spacer(modifier = Modifier.height(10.dp))
-
 
             ListaEventosAgrupados(eventos = eventosDelDia)
 
