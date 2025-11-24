@@ -2,6 +2,7 @@ package com.example.gestionpisoscompartidos.data.remote
 
 import com.example.gestionpisoscompartidos.data.repository.APIs.CasaAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.DatabaseAPI
+import com.example.gestionpisoscompartidos.data.repository.APIs.EventoAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.InvitacionAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.ItemAPI
 import com.example.gestionpisoscompartidos.data.repository.APIs.ListaAPI
@@ -11,9 +12,15 @@ import com.example.gestionpisoscompartidos.data.repository.APIs.UsuarioAPI
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.Strictness
+import com.google.gson.TypeAdapter
 import retrofit2.Retrofit
 import retrofit2.Retrofit.Builder
 import retrofit2.converter.gson.GsonConverterFactory
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
+import java.io.IOException
 
 /**
  * Objeto Singleton que gestiona la configuración de Retrofit
@@ -69,5 +76,34 @@ object NetworkModule {
 
     val usuarioApiService: UsuarioAPI by lazy {
         retrofit.create(UsuarioAPI::class.java)
+    }
+    
+    val eventoAPIService: EventoAPI by lazy {
+        retrofit.create(EventoAPI::class.java)
+    }
+
+    class LocalDateTimeAdapter : TypeAdapter<LocalDateTime>() {
+        private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+
+        @Throws(IOException::class)
+        override fun write(
+            out: JsonWriter,
+            value: LocalDateTime?,
+        ) {
+            if (value == null) {
+                out.nullValue()
+            } else {
+                out.value(formatter.format(value))
+            }
+        }
+
+        @Throws(IOException::class)
+        override fun read(reader: JsonReader): LocalDateTime? =
+            try {
+                val dateString = reader.nextString()
+                LocalDateTime.parse(dateString, formatter)
+            } catch (e: Exception) {
+                null
+            }
     }
 }

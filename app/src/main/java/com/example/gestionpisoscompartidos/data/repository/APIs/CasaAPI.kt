@@ -4,6 +4,9 @@ import com.example.gestionpisoscompartidos.model.CasaDetailsResponse
 import com.example.gestionpisoscompartidos.model.CasaResponse
 import com.example.gestionpisoscompartidos.model.JoinCasaRequest
 import com.example.gestionpisoscompartidos.model.Usuario
+import com.example.gestionpisoscompartidos.model.Evento
+import com.example.gestionpisoscompartidos.model.Gasto
+import com.example.gestionpisoscompartidos.model.GastoRequest
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
@@ -53,5 +56,24 @@ interface CasaAPI {
         @Header("Authorization") token: String,
         @Path("casaId") casaId: Long,
         @Body request: JoinCasaRequest,
+    ): Response<String>
+
+    @GET("casas/{id}/eventos")
+    suspend fun getEventosCasa(
+        @Header("Authorization") token: String,
+        @Path("id") casaId: Long,
+    ): Response<List<Evento>>
+
+    @GET("casas/{id}/gastos")
+    suspend fun getGastosCasa(
+        @Header("Authorization") token: String,
+        @Path("id") id: Long,
+    ): Response<List<Gasto>>
+
+    @POST("casas/{casaId}/crearGasto")
+    suspend fun postGastoCasa(
+        @Header("Authorization") token: String,
+        @Path("casaId") casaId: Long,
+        @Body request: GastoRequest,
     ): Response<String>
 }

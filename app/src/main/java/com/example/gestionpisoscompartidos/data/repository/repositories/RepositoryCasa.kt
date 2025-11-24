@@ -9,6 +9,9 @@ import com.example.gestionpisoscompartidos.model.CasaRequest
 import com.example.gestionpisoscompartidos.model.CasaResponse
 import com.example.gestionpisoscompartidos.model.JoinCasaRequest
 import com.example.gestionpisoscompartidos.model.Usuario
+import com.example.gestionpisoscompartidos.model.Evento
+import com.example.gestionpisoscompartidos.model.Gasto
+import com.example.gestionpisoscompartidos.model.GastoRequest
 import com.google.gson.Gson
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -78,4 +81,20 @@ class RepositoryCasa(
         casaId: Long,
         request: JoinCasaRequest,
     ): Response<String> = apiService.joinCasa(token, casaId, request)
+
+    suspend fun getEventosCasa(
+        token: String,
+        casaId: Long,
+    ): Response<List<Evento>> = apiService.getEventosCasa(token, casaId)
+
+    suspend fun getGastosCasa(
+        token: String,
+        casaId: Long,
+    ): Response<List<Gasto>> = apiService.getGastosCasa(token, casaId)
+
+    suspend fun crearGasto(
+        token: String,
+        casaId: Long,
+        request: GastoRequest,
+    ): Response<String> = apiService.postGastoCasa(token, casaId, request)
 }

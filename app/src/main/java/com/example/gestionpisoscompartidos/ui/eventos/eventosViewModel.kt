@@ -3,34 +3,73 @@ package com.example.gestionpisoscompartidos.ui.eventos
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.gestionpisoscompartidos.data.SessionManager
+import com.example.gestionpisoscompartidos.data.remote.NetworkModule
+import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryEvento
+import com.example.gestionpisoscompartidos.model.eventRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 
-class eventosViewModel(
+class EventosViewModel(
     application: Application,
 ) : AndroidViewModel(application) {
+    private val repository = RepositoryEvento(NetworkModule.eventoAPIService)
     private val _events = MutableStateFlow<List<Event>>(emptyList())
     val events: StateFlow<List<Event>> = _events
 
+    private val contentResolver = application.contentResolver
+
     private val _selectedDate = MutableStateFlow<String>("")
+
     val selectedDate: StateFlow<String> = _selectedDate
 
-    fun addEvent(event: Event) {
+    private val _createEventResult = MutableStateFlow<Boolean?>(null)
+
+    private val sessionManager = SessionManager(application)
+
+    fun crea(
+        title: String,
+        description: String,
+        startDate: LocalDateTime,
+        endDate: LocalDateTime,
+    ) {
         viewModelScope.launch {
-            _events.value = _events.value + event
+            createEvent(title, description, startDate, endDate)
         }
     }
 
-    fun selectDate(date: String) {
-        _selectedDate.value = date
+    suspend fun createEvent(
+        title: String,
+        description: String,
+        startDate: LocalDateTime,
+        endDate: LocalDateTime,
+    ) {
+        try {
+            val eventRequest =
+                eventRequest(
+                    nombre = title,
+                    descripcion = description,
+                    fechaInicio = startDate.toString(),
+                    fechaFin = endDate.toString(),
+                    creadoPor = sessionManager.fetchCurrentUserId(),
+                )
+
+            // val response = repository.crearEvento(eventRequest, contentResolver)
+            _createEventResult.value = true
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            _createEventResult.value = false
+            false
+        }
     }
 }
 
 data class Event(
-    val id: String,
     val title: String,
     val description: String,
-    val date: String,
-    val time: String,
+    val startDate: LocalDateTime,
+    val endDate: LocalDateTime,
 )

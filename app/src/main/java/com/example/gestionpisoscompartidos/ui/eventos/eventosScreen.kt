@@ -1,6 +1,6 @@
 package com.example.gestionpisoscompartidos.ui.eventos
 
-import android.content.Context
+import android.app.DatePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -44,20 +46,84 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.*
+
+enum class PickerState { NONE, START, END }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EventosScreen(viewModel: eventosViewModel) {
+fun EventosScreen(viewModel: EventosViewModel) {
     var showDialog by remember { mutableStateOf(false) }
-    var showDatePicker by remember { mutableStateOf(false) }
     var eventTitle by remember { mutableStateOf("") }
     var eventDescription by remember { mutableStateOf("") }
-    var pickedDate by remember { mutableStateOf<Date?>(null) }
+    var startDate by remember { mutableStateOf<LocalDateTime?>(null) }
+    var endDate by remember { mutableStateOf<LocalDateTime?>(null) }
+    var pickerState by remember { mutableStateOf(PickerState.NONE) }
 
     val context = LocalContext.current
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault()) }
+
+    LaunchedEffect(pickerState) {
+        when (pickerState) {
+            PickerState.START -> {
+                val calendar = Calendar.getInstance()
+                val currentYear = calendar.get(Calendar.YEAR)
+                val currentMonth = calendar.get(Calendar.MONTH)
+                val currentDay = calendar.get(Calendar.DAY_OF_MONTH)
+
+                DatePickerDialog(
+                    context,
+                    { _, year, month, dayOfMonth ->
+                        val selectedDate = LocalDateTime.of(year, month + 1, dayOfMonth, 0, 0)
+                        startDate = selectedDate
+                        endDate = null
+                        pickerState = PickerState.END
+                    },
+                    currentYear,
+                    currentMonth,
+                    currentDay,
+                ).show()
+            }
+
+            PickerState.END -> {
+                if (startDate == null) {
+                    pickerState = PickerState.NONE
+                    return@LaunchedEffect
+                }
+
+                val calendar = Calendar.getInstance()
+
+                calendar.set(startDate!!.year, startDate!!.monthValue - 1, startDate!!.dayOfMonth)
+
+                val currentYear = calendar.get(Calendar.YEAR)
+                val currentMonth = calendar.get(Calendar.MONTH)
+                val currentDay = calendar.get(Calendar.DAY_OF_MONTH)
+
+                DatePickerDialog(
+                    context,
+                    { _, year, month, dayOfMonth ->
+                        val selectedDate = LocalDateTime.of(year, month + 1, dayOfMonth, 0, 0)
+                        endDate = selectedDate
+                        pickerState = PickerState.NONE
+                    },
+                    currentYear,
+                    currentMonth,
+                    currentDay,
+                ).apply {
+                    val calendarMin =
+                        Calendar.getInstance().apply {
+                            set(startDate!!.year, startDate!!.monthValue - 1, startDate!!.dayOfMonth)
+                        }
+                    datePicker.minDate = calendarMin.timeInMillis
+                }.show()
+            }
+
+            PickerState.NONE -> {
+            }
+        }
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -111,7 +177,6 @@ fun EventosScreen(viewModel: eventosViewModel) {
                             expanded = false,
                             onExpandedChange = { },
                         ) {
-                            // Simplified dropdown implementation
                             Text(
                                 text = selectedMonth,
                                 modifier =
@@ -172,12 +237,17 @@ fun EventosScreen(viewModel: eventosViewModel) {
                     Modifier
                         .weight(1f)
                         .padding(16.dp),
+                viewModel = viewModel,
             )
         }
 
         if (showDialog) {
             AlertDialog(
-                onDismissRequest = { showDialog = false },
+                onDismissRequest = {
+                    showDialog = false
+                    // Reset states when dialog is dismissed
+                    pickerState = PickerState.NONE
+                },
                 title = { Text("¡Crea un evento!") },
                 text = {
                     Column {
@@ -186,6 +256,7 @@ fun EventosScreen(viewModel: eventosViewModel) {
                             onValueChange = { eventTitle = it },
                             label = { Text("Título del evento") },
                             modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         OutlinedTextField(
@@ -197,21 +268,37 @@ fun EventosScreen(viewModel: eventosViewModel) {
                         )
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        Text("Fecha", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
+                        Text(
+                            "Fechas del evento",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                            modifier = Modifier.padding(bottom = 8.dp),
+                        )
+
                         Button(
                             onClick = {
-                                showDatePickerDialog(context, initialDate = pickedDate) { date ->
-                                    pickedDate = date
-                                }
+                                pickerState = PickerState.START
                             },
                             modifier = Modifier.fillMaxWidth(),
                         ) {
-                            Icon(Icons.Default.CalendarMonth, contentDescription = "Seleccionar fecha")
+                            Icon(Icons.Default.CalendarMonth, contentDescription = "Seleccionar fechas")
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                pickedDate?.let {
-                                    java.text.SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(it)
-                                } ?: "Seleccionar fecha",
+                                if (startDate != null && endDate != null) {
+                                    "${startDate!!.format(dateFormatter)} - ${endDate!!.format(dateFormatter)}"
+                                } else if (startDate != null) {
+                                    "${startDate!!.format(dateFormatter)} - Seleccionar fecha fin"
+                                } else {
+                                    "Seleccionar rango de fechas"
+                                },
+                            )
+                        }
+
+                        if (startDate != null && endDate != null) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                "Evento: ${startDate!!.format(dateFormatter)} al ${endDate!!.format(dateFormatter)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
                             )
                         }
                     }
@@ -219,21 +306,22 @@ fun EventosScreen(viewModel: eventosViewModel) {
                 confirmButton = {
                     Button(
                         onClick = {
-                            if (eventTitle.isNotBlank() && pickedDate != null) {
-                                val event =
-                                    Event(
-                                        id = System.currentTimeMillis().toString(),
-                                        title = eventTitle,
-                                        description = eventDescription,
-                                        date = "",
-                                        time = "",
-                                    )
+                            if (eventTitle.isNotBlank() && startDate != null && endDate != null) {
+                                viewModel.crea(
+                                    title = eventTitle,
+                                    description = eventDescription,
+                                    startDate = startDate!!,
+                                    endDate = endDate!!,
+                                )
                                 showDialog = false
                                 eventTitle = ""
                                 eventDescription = ""
+                                startDate = null
+                                endDate = null
+                                pickerState = PickerState.NONE
                             }
                         },
-                        enabled = eventTitle.isNotBlank() && pickedDate != null,
+                        enabled = eventTitle.isNotBlank() && startDate != null && endDate != null,
                     ) {
                         Text("Guardar")
                     }
@@ -244,6 +332,9 @@ fun EventosScreen(viewModel: eventosViewModel) {
                             showDialog = false
                             eventTitle = ""
                             eventDescription = ""
+                            startDate = null
+                            endDate = null
+                            pickerState = PickerState.NONE
                         },
                     ) {
                         Text("Cancelar")
@@ -254,38 +345,10 @@ fun EventosScreen(viewModel: eventosViewModel) {
     }
 }
 
-private fun showDatePickerDialog(
-    context: Context,
-    initialDate: Date? = null,
-    onDateSelected: (Date) -> Unit,
-) {
-    val calendar = Calendar.getInstance()
-
-    if (initialDate != null) {
-        calendar.time = initialDate
-    }
-    val year = calendar.get(Calendar.YEAR)
-    val month = calendar.get(Calendar.MONTH)
-    val day = calendar.get(Calendar.DAY_OF_MONTH)
-
-    val datePickerDialog =
-        android.app.DatePickerDialog(
-            context,
-            { _, selectedYear, selectedMonth, selectedDay ->
-                val selectedCalendar = Calendar.getInstance()
-                selectedCalendar.set(selectedYear, selectedMonth, selectedDay)
-                onDateSelected(selectedCalendar.time)
-            },
-            year,
-            month,
-            day,
-        )
-    datePickerDialog.show()
-}
-
 @Composable
 fun CalendarGrid(modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
+        // Day headers
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
@@ -299,14 +362,12 @@ fun CalendarGrid(modifier: Modifier = Modifier) {
             }
         }
 
+        // Calendar days
         LazyVerticalGrid(
-            columns =
-                androidx.compose.foundation.lazy.grid.GridCells
-                    .Fixed(7),
+            columns = GridCells.Fixed(7),
             modifier = Modifier.height(200.dp),
         ) {
             items(42) { index ->
-                // 6 weeks
                 Box(
                     modifier =
                         Modifier
@@ -326,29 +387,43 @@ fun CalendarGrid(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun EventsList(modifier: Modifier = Modifier) {
+fun EventsList(
+    modifier: Modifier = Modifier,
+    viewModel: EventosViewModel,
+) {
+    val events by viewModel.events.collectAsState()
+
     Column(
-        modifier =
-            modifier
-                .verticalScroll(rememberScrollState()),
+        modifier = modifier.verticalScroll(rememberScrollState()),
     ) {
-        // Example events - replace with actual data from ViewModel
-        repeat(10) { index ->
-            EventCard(
-                title = "Evento ${index + 1}",
-                description = "Descripción del evento",
-                modifier = Modifier.padding(vertical = 4.dp),
+        if (events.isEmpty()) {
+            Text(
+                "No hay eventos creados",
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        } else {
+            events.forEach { event ->
+                EventCard(
+                    event = event,
+                    modifier = Modifier.padding(vertical = 4.dp),
+                )
+            }
         }
     }
 }
 
 @Composable
 fun EventCard(
-    title: String,
-    description: String,
+    event: Event,
     modifier: Modifier = Modifier,
 ) {
+    val formatter = remember { java.text.SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) }
+
     Card(
         modifier = modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -357,14 +432,21 @@ fun EventCard(
             modifier = Modifier.padding(16.dp),
         ) {
             Text(
-                text = title,
+                text = event.title,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
             )
             Text(
-                text = description,
+                text = event.description,
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+            Text(
+                text = "${formatter.format(event.startDate)} - ${formatter.format(event.endDate)}",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 8.dp),
             )
         }
     }
