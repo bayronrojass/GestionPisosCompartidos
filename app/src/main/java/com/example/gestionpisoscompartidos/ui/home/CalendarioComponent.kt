@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -39,6 +40,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePickerDefaults.dateFormatter
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.lifecycle.viewmodel.compose.viewModel
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -216,7 +218,10 @@ fun CalendarioFullView(
                     parsearFechaSegura(it.fechaInicio).isEqual(fechaSeleccionada)
                 }
 
-            ListaEventosDelDia(eventos = eventosDelDiaSeleccionado)
+            ListaEventosDelDia(
+                eventosDelDiaSeleccionado,
+                viewModel,
+            )
         }
     }
 
@@ -394,7 +399,10 @@ fun ItemDiaCalendario(
 }
 
 @Composable
-fun ListaEventosDelDia(eventos: List<Evento>) {
+fun ListaEventosDelDia(
+    eventos: List<Evento>,
+    viewModel: HomeViewModel,
+) {
     Column(
         modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -406,13 +414,21 @@ fun ListaEventosDelDia(eventos: List<Evento>) {
                 modifier = Modifier.padding(start = 40.dp, top = 10.dp),
             )
         } else {
-            eventos.forEach { evento -> ItemEventoTimeline(evento) }
+            eventos.forEach { evento ->
+                ItemEventoTimeline(
+                    evento = evento,
+                    onDeleteEvent = { eventId -> viewModel.onDeleteEvent(eventId) },
+                )
+            }
         }
     }
 }
 
 @Composable
-fun ItemEventoTimeline(evento: Evento) {
+fun ItemEventoTimeline(
+    evento: Evento,
+    onDeleteEvent: (Long) -> Unit,
+) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -437,12 +453,22 @@ fun ItemEventoTimeline(evento: Evento) {
                     Text(text = evento.descripcion, style = TextStyle(fontSize = 12.sp, color = Color.Gray))
                 }
             }
+
+            IconButton(
+                onClick = { onDeleteEvent(evento.id!!) },
+                modifier = Modifier.align(Alignment.CenterEnd),
+            ) {
+                Icon(Icons.Filled.Delete, contentDescription = "Eliminar")
+            }
         }
     }
 }
 
 @Composable
-fun ListaEventosAgrupados(eventos: List<Evento>) {
+fun ListaEventosAgrupados(
+    eventos: List<Evento>,
+    viewModel: HomeViewModel,
+) {
     val eventosPorFecha =
         eventos.groupBy {
             try {
@@ -487,7 +513,10 @@ fun ListaEventosAgrupados(eventos: List<Evento>) {
                 )
 
                 lista.forEach { evento ->
-                    ItemEventoTimeline(evento)
+                    ItemEventoTimeline(
+                        evento = evento,
+                        onDeleteEvent = { eventId -> viewModel.onDeleteEvent(eventId) },
+                    )
                 }
             }
         }

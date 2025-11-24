@@ -34,4 +34,13 @@ class RepositoryEvento(
             throw e
         }
     }
+
+    suspend fun eliminarEvento(eventoId: Long): Boolean {
+        try {
+            val response = apiService.eliminarEvento(eventoId)
+            return response.isSuccessful
+        } catch (e: Exception) {
+            throw e
+        }
+    }
 }

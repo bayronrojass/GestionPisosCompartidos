@@ -191,7 +191,7 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            ListaEventosAgrupados(eventos = eventosDelDia)
+            ListaEventosAgrupados(eventos = eventosDelDia, viewModel)
 
             Spacer(modifier = Modifier.height(30.dp))
 

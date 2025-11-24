@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gestionpisoscompartidos.model.Evento
 import java.time.LocalDate
 import java.time.YearMonth
@@ -32,7 +33,10 @@ fun CalendarioFullView(
     eventos: List<Evento>,
     onFechaClick: (LocalDate) -> Unit,
     onBackClick: () -> Unit,
+    onAddEventClick: () -> Unit = {}, // Added parameter for FAB click
 ) {
+    val viewModel: HomeViewModel = viewModel() // Get the viewModel here
+
     val currentMonth = YearMonth.from(fechaSeleccionada)
     val daysInMonth = currentMonth.lengthOfMonth()
     val firstDayOfWeek = currentMonth.atDay(1).dayOfWeek.value
@@ -41,7 +45,7 @@ fun CalendarioFullView(
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { },
+                onClick = onAddEventClick, // Use the provided callback
                 containerColor = Color.Black,
                 contentColor = Color.White,
                 shape = CircleShape,
@@ -141,7 +145,7 @@ fun CalendarioFullView(
                     parsearFechaSegura(it.fechaInicio).isEqual(fechaSeleccionada)
                 }
 
-            ListaEventosDelDia(eventos = eventosDelDiaSeleccionado)
+            ListaEventosDelDia(eventos = eventosDelDiaSeleccionado, viewModel)
         }
     }
 }

@@ -37,6 +37,9 @@ class HomeViewModel(
     private val _createEventResult = MutableStateFlow<Boolean?>(null)
     val createEventResult: StateFlow<Boolean?> = _createEventResult.asStateFlow()
 
+    private val _deleteEventResult = MutableStateFlow<Boolean?>(null)
+    val deleteEventResult: StateFlow<Boolean?> = _deleteEventResult.asStateFlow()
+
     init {
         cargarEventos()
     }
@@ -133,6 +136,43 @@ class HomeViewModel(
             e.printStackTrace()
             _createEventResult.value = false
             return false
+        }
+    }
+
+    private suspend fun eliminarEvento(eventoId: Long): Boolean {
+        return try {
+            val eventRepository = RepositoryEvento(NetworkModule.eventoAPIService)
+            val token = sessionManager.fetchAuthToken() ?: return false
+            eventRepository.eliminarEvento(eventoId)
+            true
+        } catch (e: Exception) {
+            Log.e("HomeViewModel", "Error eliminando evento", e)
+            false
+        }
+    }
+
+    fun eliminar(eventoId: Long) {
+        viewModelScope.launch {
+            try {
+                val success = eliminarEvento(eventoId)
+                if (success) {
+                    cargarEventos()
+                }
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "No se ha podido eliminar evento", e)
+            }
+        }
+    }
+
+    fun onDeleteEvent(eventoId: Long) {
+        viewModelScope.launch {
+            try {
+                eliminar(eventoId)
+                _deleteEventResult.value = true
+            } catch (e: Exception) {
+                _deleteEventResult.value = false
+                Log.e("HomeViewModel", "Error deleting event", e)
+            }
         }
     }
 
