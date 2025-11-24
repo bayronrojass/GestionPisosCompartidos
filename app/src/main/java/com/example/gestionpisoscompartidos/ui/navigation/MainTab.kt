@@ -19,11 +19,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.EuroSymbol
+import androidx.compose.material.icons.filled.AddComment
+import androidx.compose.material.icons.filled.AssignmentInd
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryAddCheck
 import androidx.compose.material.icons.filled.Mail
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Scaffold
@@ -47,9 +49,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gestionpisoscompartidos.data.SessionManager
+import com.example.gestionpisoscompartidos.ui.eventos.EventosScreen
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
-import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryLista
+import com.example.gestionpisoscompartidos.ui.eventos.EventosViewModel
 import com.example.gestionpisoscompartidos.ui.gastos.GastosScreen
 import com.example.gestionpisoscompartidos.ui.gastos.GastosViewModel
 import com.example.gestionpisoscompartidos.ui.gastos.GastosViewModelFactory
@@ -59,6 +62,8 @@ import com.example.gestionpisoscompartidos.ui.home.HomeViewModelFactory
 import com.example.gestionpisoscompartidos.ui.listas.ListaScreen
 import com.example.gestionpisoscompartidos.ui.listas.ListasViewModel
 import com.example.gestionpisoscompartidos.ui.listas.ListasViewModelFactory
+import com.example.gestionpisoscompartidos.ui.perfil.PerfilScreen
+import com.example.gestionpisoscompartidos.ui.pizarra.PizarraScreen
 import com.example.gestionpisoscompartidos.ui.tareas.TareasScreen
 import com.example.gestionpisoscompartidos.ui.tareas.TareasViewModel
 import com.example.gestionpisoscompartidos.ui.tareas.TareasViewModelFactory
@@ -102,20 +107,23 @@ fun NavigationBar(
                 padding = 12.dp,
             )
 
+            // Botón 2 - Gastos
             NavigationItem(
-                icon = Icons.Default.LibraryAddCheck,
+                icon = Icons.Default.AttachMoney,
                 isSelected = selectedTab == 1,
                 onClick = { onTabSelected(1) },
                 padding = 12.dp,
             )
 
+            // Botón 3 - Listas
             NavigationItem(
-                icon = Icons.Default.EuroSymbol,
+                icon = Icons.Default.LibraryAddCheck,
                 isSelected = selectedTab == 2,
                 onClick = { onTabSelected(2) },
                 padding = 12.dp,
             )
 
+            // Botón 4 - Tareas
             NavigationItem(
                 icon = Icons.Default.Mail,
                 isSelected = selectedTab == 3,
@@ -123,11 +131,28 @@ fun NavigationBar(
                 padding = 12.dp,
             )
 
+            // Botón 5 - Perfil
             NavigationItem(
-                icon = Icons.Default.Person,
+                icon = Icons.Default.AssignmentInd, // Cambia por tu icono real
                 isSelected = selectedTab == 4,
                 onClick = { onTabSelected(4) },
                 padding = 12.dp,
+            )
+
+            // Botón 6 - Eventos
+            NavigationItem(
+                icon = Icons.Default.CalendarMonth,
+                isSelected = selectedTab == 5,
+                onClick = { onTabSelected(5) },
+                padding = 12.dp,
+            )
+
+            // Botón 7 - Pizarra
+            NavigationItem(
+                icon = Icons.Default.AddComment,
+                isSelected = selectedTab == 6,
+                onClick = { onTabSelected(6) },
+                padding = 19.dp,
             )
         }
     }
@@ -186,6 +211,7 @@ fun NavigationBarPreview() {
 fun MainScreenWithNavigation(
     casaId: Long,
     casaNombre: String,
+    onLogout: () -> Unit,
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val savedStateHandle = rememberSaveableStateHolder()
@@ -193,7 +219,6 @@ fun MainScreenWithNavigation(
 
     val sessionManager = remember { SessionManager(context) }
     val repositoryCasa = remember { RepositoryCasa(NetworkModule.casaApiService) }
-    val repositoryLista = remember { RepositoryLista(NetworkModule.listaApiService) }
     val contentResolver = LocalContext.current.applicationContext.contentResolver
 
     val homeViewModel: HomeViewModel =
@@ -211,6 +236,9 @@ fun MainScreenWithNavigation(
         viewModel(
             factory = ListasViewModelFactory(casaId),
         )
+
+    val eventosViewModel: EventosViewModel =
+        viewModel()
 
     val tareasViewModel: TareasViewModel =
         viewModel(
@@ -246,15 +274,21 @@ fun MainScreenWithNavigation(
             savedStateHandle.SaveableStateProvider(selectedTab) {
                 when (selectedTab) {
                     0 -> HomeScreen(viewModel = homeViewModel)
-                    1 -> ListaScreen(listaViewModel, onNavigateToItem)
-                    2 -> GastosScreen(viewModel = gastosViewModel)
+                    1 -> GastosScreen(viewModel = gastosViewModel)
+                    2 -> ListaScreen(listaViewModel, onNavigateToItem)
                     3 -> TareasScreen(tareasViewModel, casaNombre)
-                    4 ->
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("Perfil")
-                        }
+                    4 -> PerfilScreen(sessionManager, onLogout)
+                    5 -> EventosScreen(eventosViewModel)
+                    6 -> PizarraScreen(casaId)
                 }
             }
         }
     }
+}
+
+// PREVIEW de la pantalla completa
+@Preview
+@Composable
+fun MainScreenWithNavigationPreview() {
+    MainScreenWithNavigation(1L, "1", {})
 }

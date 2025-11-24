@@ -11,6 +11,7 @@ import androidx.navigation.navArgument
 import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.model.Casa
 import com.example.gestionpisoscompartidos.ui.invitaciones.InvitacionesScreen
+import com.example.gestionpisoscompartidos.ui.item.ItemScreen
 import com.example.gestionpisoscompartidos.ui.login.LoginDestination
 import com.example.gestionpisoscompartidos.ui.piso.crearPiso.CrearCasaScreen
 import com.example.gestionpisoscompartidos.ui.piso.listaPisos.ListaCasasScreen
@@ -87,7 +88,39 @@ fun AppNavigation(
         ) { backStackEntry ->
             val casaId = backStackEntry.arguments?.getLong("casaId") ?: 0L
             val casaNombre = backStackEntry.arguments?.getString("casaNombre") ?: ""
-            MainScreenWithNavigation(casaId, casaNombre)
+
+            MainScreenWithNavigation(
+                casaId = casaId,
+                casaNombre = casaNombre,
+                onLogout = {
+                    navController.navigate(Route.Login.route) {
+                        // Esto limpia toda la pila de navegación hasta el inicio (0)
+                        // Evita que el usuario pueda volver atrás con el botón del móvil
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+            )
+        }
+
+        // PANTALLA DE ITEMS (ELEMENTOS DE UNA LISTA)
+        composable(
+            route = Route.Item.route,
+            arguments =
+                listOf(
+                    navArgument("listaId") { type = NavType.LongType },
+                    navArgument("listaNombre") { type = NavType.StringType },
+                    navArgument("casaNombre") { type = NavType.StringType },
+                ),
+        ) { backStackEntry ->
+            val listaId = backStackEntry.arguments?.getLong("listaId") ?: 0L
+            val listaNombre = backStackEntry.arguments?.getString("listaNombre") ?: ""
+            val casaNombre = backStackEntry.arguments?.getString("casaNombre") ?: ""
+
+            ItemScreen(
+                listaId = listaId,
+                listaNombre = listaNombre,
+                casaNombre = casaNombre,
+            )
         }
     }
 }

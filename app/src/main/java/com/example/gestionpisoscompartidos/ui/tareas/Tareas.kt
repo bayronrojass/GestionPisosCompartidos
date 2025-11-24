@@ -131,7 +131,7 @@ class Tareas : Fragment() {
                 val nombre = nombreInput.text.toString()
                 val descripcion = descripcionInput.text.toString().ifBlank { null }
                 if (nombre.isNotBlank()) {
-                    viewModel.crearTarea(nombre, descripcion)
+                    viewModel.crearTarea(nombre, descripcion, null, null, null)
                 } else {
                     Toast.makeText(context, "El nombre es obligatorio", Toast.LENGTH_SHORT).show()
                 }
@@ -174,7 +174,7 @@ class Tareas : Fragment() {
                 val descripcion = descripcionInput.text.toString().ifBlank { null }
                 if (nombre.isNotBlank()) {
                     // (null para asignadoAId por ahora)
-                    viewModel.editarTarea(tarea, nombre, descripcion, null)
+                    viewModel.editarTarea(tarea, nombre, descripcion, null, null, null)
                 } else {
                     Toast.makeText(context, "El nombre es obligatorio", Toast.LENGTH_SHORT).show()
                 }

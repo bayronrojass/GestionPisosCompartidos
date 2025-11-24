@@ -3,27 +3,31 @@ package com.example.gestionpisoscompartidos.ui.item
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,7 +36,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,92 +45,48 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import com.example.gestionpisoscompartidos.R
 import com.example.gestionpisoscompartidos.model.Elemento
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ItemScreen(
-    viewModel: ItemViewModel,
-    casaNombre: String,
+    listaId: Long,
     listaNombre: String,
-    navController: NavController,
+    casaNombre: String,
+    viewModel: ItemViewModel = viewModel(factory = ItemViewModelFactory(listaId)),
 ) {
+    val context = LocalContext.current
+
     val items by viewModel.items.observeAsState(emptyList())
     val isLoading by viewModel.isLoading.observeAsState(false)
     val error by viewModel.error.observeAsState()
 
-    // Estados para los diálogos
-    var showAddDialog by remember { mutableStateOf(false) }
+    var showCreateDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf<Elemento?>(null) }
     var showDeleteDialog by remember { mutableStateOf<Elemento?>(null) }
-    var showItemDetail by remember { mutableStateOf<Elemento?>(null) }
+    var showDetailDialog by remember { mutableStateOf<Elemento?>(null) }
 
-    val context = LocalContext.current
-    // Mostrar error si existe
-    if (error != null) {
-        LaunchedEffect(error) {
-            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+    LaunchedEffect(error) {
+        error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
         }
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = casaNombre,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                    )
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = {
-                            navController.popBackStack()
-                        },
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Atrás",
-                            tint = Color.White,
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { /* Navegar a perfil */ }) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_user),
-                            contentDescription = "Perfil",
-                            tint = Color.White,
-                        )
-                    }
-                },
-//                backgroundColor = Color(0xFF6200EE) // purple_500
-            )
-        },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showAddDialog = true },
-//                backgroundColor = Color(0xFF6200EE)
+                onClick = { showCreateDialog = true },
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
             ) {
-                Icon(
-                    Icons.Default.Add,
-                    contentDescription = "Añadir item",
-                    tint = Color.White,
-                )
+                Icon(Icons.Default.Add, contentDescription = "Añadir Item")
             }
         },
     ) { paddingValues ->
@@ -135,69 +94,53 @@ fun ItemScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
+                    .background(Color(0xfff8f8f8))
                     .padding(paddingValues)
-                    .background(Color.White),
+                    .padding(horizontal = 20.dp),
         ) {
-            // Título de la sección
+            Spacer(modifier = Modifier.height(20.dp))
+
             Text(
-                text = listaNombre,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                textAlign = TextAlign.Center,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Light,
+                text = casaNombre,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
                 color = Color.Black,
             )
 
-            // Contenido principal
-            when {
-                isLoading -> {
-                    Box(
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .wrapContentSize(Alignment.Center),
-                    ) {
-                        CircularProgressIndicator()
+            Text(
+                text = listaNombre,
+                style = MaterialTheme.typography.titleLarge,
+                color = Color(0xFF6C6C6C),
+                modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
+            )
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                when {
+                    isLoading -> {
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                     }
-                }
-                items.isEmpty() -> {
-                    Box(
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .wrapContentSize(Alignment.Center),
-                    ) {
+                    items.isEmpty() -> {
                         Text(
-                            text = "No hay items en esta lista.\n¡Añade uno!",
-                            textAlign = TextAlign.Center,
-                            fontSize = 18.sp,
+                            text = "No hay elementos en esta lista",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = Color.Gray,
+                            modifier = Modifier.align(Alignment.Center),
                         )
                     }
-                }
-                else -> {
-                    LazyColumn(
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .padding(8.dp),
-                    ) {
-                        val currentListas = items
-
-                        items(
-                            count = currentListas.size,
-                            key = { index -> currentListas[index].id!! },
-                        ) { index ->
-                            val item = currentListas[index]
-                            ItemRow(
-                                item = item,
-                                onCompletadoClick = { viewModel.toggleItemCompletado(item) },
-                                onBorrarClick = { showDeleteDialog = item },
-                                onItemClick = { showItemDetail = item },
-                                onEditClick = { showEditDialog = item },
-                            )
+                    else -> {
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(bottom = 80.dp),
+                        ) {
+                            items(items, key = { it.id ?: it.hashCode() }) { item ->
+                                ItemRow(
+                                    item = item,
+                                    onItemClick = { showDetailDialog = item },
+                                    onCheckClick = { viewModel.toggleItemCompletado(item) },
+                                    onEditClick = { showEditDialog = item },
+                                    onDeleteClick = { showDeleteDialog = item },
+                                )
+                            }
                         }
                     }
                 }
@@ -205,36 +148,27 @@ fun ItemScreen(
         }
     }
 
-    // Diálogos
-    if (showAddDialog) {
-        AddEditItemDialog(
+    if (showCreateDialog) {
+        ItemDialog(
             title = "Añadir Nuevo Item",
+            onDismiss = { showCreateDialog = false },
             onConfirm = { nombre, descripcion ->
-                if (nombre.isNotBlank()) {
-                    viewModel.crearElemento(nombre, descripcion)
-                    showAddDialog = false
-                } else {
-                    Toast.makeText(context, "El nombre no puede estar vacío", Toast.LENGTH_SHORT).show()
-                }
+                viewModel.crearElemento(nombre, descripcion)
+                showCreateDialog = false
             },
-            onDismiss = { showAddDialog = false },
         )
     }
 
     showEditDialog?.let { item ->
-        AddEditItemDialog(
+        ItemDialog(
             title = "Editar Item",
-            initialNombre = item.nombre,
-            initialDescripcion = item.descripcion ?: "",
-            onConfirm = { nombre, descripcion ->
-                if (nombre.isNotBlank()) {
-                    viewModel.actualizarNombreDescripcion(item, nombre, descripcion)
-                    showEditDialog = null
-                } else {
-                    Toast.makeText(context, "El nombre no puede estar vacío", Toast.LENGTH_SHORT).show()
-                }
-            },
+            initialName = item.nombre,
+            initialDescription = item.descripcion ?: "",
             onDismiss = { showEditDialog = null },
+            onConfirm = { nombre, descripcion ->
+                viewModel.actualizarNombreDescripcion(item, nombre, descripcion)
+                showEditDialog = null
+            },
         )
     }
 
@@ -249,9 +183,7 @@ fun ItemScreen(
                         viewModel.borrarElemento(item)
                         showDeleteDialog = null
                     },
-                ) {
-                    Text("Borrar")
-                }
+                ) { Text("Borrar", color = Color.Red) }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = null }) {
@@ -261,13 +193,22 @@ fun ItemScreen(
         )
     }
 
-    showItemDetail?.let { item ->
+    showDetailDialog?.let { item ->
         AlertDialog(
-            onDismissRequest = { showItemDetail = null },
+            onDismissRequest = { showDetailDialog = null },
             title = { Text(item.nombre) },
-            text = { Text(item.descripcion ?: "Sin descripción.") },
+            text = {
+                val desc = item.descripcion
+                Text(
+                    if (desc.isNullOrBlank()) {
+                        "Sin descripción."
+                    } else {
+                        desc
+                    },
+                )
+            },
             confirmButton = {
-                TextButton(onClick = { showItemDetail = null }) {
+                TextButton(onClick = { showDetailDialog = null }) {
                     Text("Cerrar")
                 }
             },
@@ -278,33 +219,35 @@ fun ItemScreen(
 @Composable
 fun ItemRow(
     item: Elemento,
-    onCompletadoClick: (Elemento) -> Unit,
-    onBorrarClick: (Elemento) -> Unit,
-    onItemClick: (Elemento) -> Unit,
-    onEditClick: (Elemento) -> Unit,
+    onItemClick: () -> Unit,
+    onCheckClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit,
 ) {
     Card(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(4.dp)
-                .clickable { onItemClick(item) },
-        elevation = CardDefaults.cardElevation(4.dp),
+                .shadow(2.dp, RoundedCornerShape(12.dp))
+                .clip(RoundedCornerShape(12.dp))
+                .clickable { onItemClick() },
+        colors = CardDefaults.cardColors(containerColor = Color.White),
     ) {
         Row(
             modifier =
                 Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(12.dp)
+                    .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Checkbox para completado
-            Checkbox(
-                checked = item.completado,
-                onCheckedChange = { onCompletadoClick(item) },
-            )
+            IconButton(onClick = onCheckClick) {
+                Icon(
+                    imageVector = if (item.completado) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                    contentDescription = if (item.completado) "Marcar como pendiente" else "Marcar como completado",
+                    tint = if (item.completado) Color(0xFF4CAF50) else Color.Gray,
+                )
+            }
 
-            // Información del item
             Column(
                 modifier =
                     Modifier
@@ -313,41 +256,48 @@ fun ItemRow(
             ) {
                 Text(
                     text = item.nombre,
-                    style = MaterialTheme.typography.headlineSmall,
-                    textDecoration = if (item.completado) TextDecoration.LineThrough else TextDecoration.None,
+                    style =
+                        MaterialTheme.typography.bodyLarge.copy(
+                            textDecoration = if (item.completado) TextDecoration.LineThrough else TextDecoration.None,
+                        ),
+                    color = if (item.completado) Color.Gray else Color.Black,
                 )
-                item.descripcion?.let { descripcion ->
-                    Text(
-                        text = descripcion,
-                        style = MaterialTheme.typography.bodySmall,
-                        textDecoration = if (item.completado) TextDecoration.LineThrough else TextDecoration.None,
-                    )
+
+                item.descripcion?.let { desc ->
+                    if (desc.isNotBlank()) {
+                        Text(
+                            text = desc,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray,
+                            maxLines = 1,
+                        )
+                    }
                 }
             }
 
-            // Botón de editar
-            IconButton(onClick = { onEditClick(item) }) {
-                Icon(Icons.Default.Edit, contentDescription = "Editar")
-            }
-
-            // Botón de borrar
-            IconButton(onClick = { onBorrarClick(item) }) {
-                Icon(Icons.Default.Delete, contentDescription = "Borrar")
+            Row {
+                IconButton(onClick = onEditClick, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Default.Edit, contentDescription = "Editar", tint = Color(0xFF1976D2), modifier = Modifier.size(20.dp))
+                }
+                IconButton(onClick = onDeleteClick, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Default.Delete, contentDescription = "Borrar", tint = Color(0xFFE53935), modifier = Modifier.size(20.dp))
+                }
             }
         }
     }
 }
 
 @Composable
-fun AddEditItemDialog(
+fun ItemDialog(
     title: String,
-    initialNombre: String = "",
-    initialDescripcion: String = "",
-    onConfirm: (String, String?) -> Unit,
+    initialName: String = "",
+    initialDescription: String = "",
     onDismiss: () -> Unit,
+    onConfirm: (String, String?) -> Unit,
 ) {
-    var nombre by remember { mutableStateOf(initialNombre) }
-    var descripcion by remember { mutableStateOf(initialDescripcion) }
+    var nombre by remember { mutableStateOf(initialName) }
+    var descripcion by remember { mutableStateOf(initialDescription) }
+    var isError by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -356,11 +306,23 @@ fun AddEditItemDialog(
             Column {
                 OutlinedTextField(
                     value = nombre,
-                    onValueChange = { nombre = it },
+                    onValueChange = {
+                        nombre = it
+                        isError = false
+                    },
                     label = { Text("Nombre del item") },
-                    maxLines = 1,
+                    singleLine = true,
+                    isError = isError,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                if (isError) {
+                    Text(
+                        "El nombre no puede estar vacío",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(start = 16.dp),
+                    )
+                }
                 Spacer(modifier = Modifier.height(16.dp))
                 OutlinedTextField(
                     value = descripcion,
@@ -372,9 +334,13 @@ fun AddEditItemDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            Button(
                 onClick = {
-                    onConfirm(nombre, descripcion.ifBlank { null })
+                    if (nombre.isNotBlank()) {
+                        onConfirm(nombre, descripcion.ifBlank { null })
+                    } else {
+                        isError = true
+                    }
                 },
             ) {
                 Text("Guardar")
@@ -386,10 +352,4 @@ fun AddEditItemDialog(
             }
         },
     )
-}
-
-@Preview
-@Composable
-fun ItemScreenPreview() {
-    ItemScreen(viewModel(), "", "", rememberNavController())
 }
