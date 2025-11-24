@@ -8,34 +8,55 @@ import com.example.gestionpisoscompartidos.data.repository.repositories.Reposito
 import com.example.gestionpisoscompartidos.model.CasaRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class CrearCasaViewModel(
     application: Application,
 ) : AndroidViewModel(application) {
     private val contentResolver = application.contentResolver
-
     private val repository = RepositoryCasa(NetworkModule.casaApiService)
+
+    private val _uiState = MutableStateFlow(CrearCasaUiState())
+    val uiState: StateFlow<CrearCasaUiState> = _uiState.asStateFlow()
+
     private val _createFlatResult = MutableStateFlow<Boolean?>(null)
     val createFlatResult: StateFlow<Boolean?> = _createFlatResult
 
-    fun nameNull(s: String): Boolean = s.trim().isEmpty()
+    fun updateNombre(nombre: String) {
+        _uiState.value =
+            _uiState.value.copy(
+                nombre = nombre,
+                isButtonEnabled = isButtonEnabled(nombre, _uiState.value.imagenUri),
+            )
+    }
 
-    fun buttonConditions(apartmentName: String): Boolean = !nameNull(apartmentName)
+    fun updateDescripcion(descripcion: String) {
+        _uiState.value = _uiState.value.copy(descripcion = descripcion)
+    }
 
-    suspend fun CrearCasa(
-        name: String,
-        description: String?,
-        pickedPhoto: Uri?,
-    ): Boolean =
+    fun updateImagenUri(imagenUri: Uri?) {
+        _uiState.value =
+            _uiState.value.copy(
+                imagenUri = imagenUri,
+                isButtonEnabled = isButtonEnabled(_uiState.value.nombre, imagenUri),
+            )
+    }
+
+    private fun isButtonEnabled(
+        nombre: String,
+        imagenUri: Uri?,
+    ): Boolean = nombre.isNotBlank() && imagenUri != null
+
+    suspend fun crearCasa(): Boolean =
         try {
             val casaRequest =
                 CasaRequest(
-                    nombre = name,
-                    descripcion = description,
+                    nombre = _uiState.value.nombre,
+                    descripcion = _uiState.value.descripcion,
                     rutaImagen = null,
                 )
 
-            val response = repository.crearCasa(casaRequest, pickedPhoto, contentResolver)
+            val response = repository.crearCasa(casaRequest, _uiState.value.imagenUri, contentResolver)
             _createFlatResult.value = true
             true
         } catch (e: Exception) {
@@ -44,3 +65,10 @@ class CrearCasaViewModel(
             false
         }
 }
+
+data class CrearCasaUiState(
+    val nombre: String = "",
+    val descripcion: String = "",
+    val imagenUri: Uri? = null,
+    val isButtonEnabled: Boolean = false,
+)

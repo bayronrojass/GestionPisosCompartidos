@@ -1,6 +1,7 @@
 package com.example.gestionpisoscompartidos.ui.piso.crearPiso
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -24,11 +25,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,10 +49,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CrearCasaScreen(viewModel: CrearCasaViewModel = viewModel()) {
-    var nombre by remember { mutableStateOf("") }
-    var descripcion by remember { mutableStateOf("") }
-    var imagenUri by remember { mutableStateOf<Uri?>(null) }
-
+    val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -61,15 +57,13 @@ fun CrearCasaScreen(viewModel: CrearCasaViewModel = viewModel()) {
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.GetContent(),
         ) { uri: Uri? ->
-            imagenUri = uri
+            viewModel.updateImagenUri(uri)
         }
-
-    val isButtonEnabled = nombre.isNotBlank() && imagenUri != null
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mis Casas") },
+                title = { Text("Crear Nuevo Piso") },
                 colors =
                     TopAppBarDefaults.topAppBarColors(
                         containerColor = Color(0xFF6200EE),
@@ -95,54 +89,76 @@ fun CrearCasaScreen(viewModel: CrearCasaViewModel = viewModel()) {
 
             Spacer(Modifier.height(24.dp))
 
-            // Campo Nombre
-            Text("Nombre", color = Color(0xFF3F51B5), fontSize = 24.sp)
+            Text(
+                "Nombre",
+                color = Color(0xFF3F51B5),
+                fontSize = 24.sp,
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
             OutlinedTextField(
-                value = nombre,
-                onValueChange = { nombre = it },
+                value = uiState.nombre,
+                onValueChange = { viewModel.updateNombre(it) },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Nombre del piso") },
-//                colors = TextFieldDefaults.outlinedTextFieldColors(
-//                    focusedBorderColor = Color(0xFF3F51B5),
-//                    unfocusedBorderColor = Color.Gray
-//                )
+                isError = uiState.nombre.isBlank(),
+                singleLine = true,
             )
+
+            if (uiState.nombre.isBlank()) {
+                Text(
+                    "Introduzca un nombre para el piso",
+                    color = Color.Red,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(start = 4.dp, top = 4.dp),
+                )
+            }
 
             Spacer(Modifier.height(16.dp))
 
             // Campo Descripción
-            Text("Descripción", color = Color(0xFF3F51B5), fontSize = 24.sp)
+            Text(
+                "Descripción",
+                color = Color(0xFF3F51B5),
+                fontSize = 24.sp,
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
             OutlinedTextField(
-                value = descripcion,
-                onValueChange = { descripcion = it },
+                value = uiState.descripcion,
+                onValueChange = { viewModel.updateDescripcion(it) },
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .height(100.dp),
-                placeholder = { Text("Descripción") },
-//                colors = TextFieldDefaults.outlinedTextFieldColors(
-//                    focusedBorderColor = Color(0xFF3F51B5),
-//                    unfocusedBorderColor = Color.Gray
-//                )
+                        .height(120.dp),
+                placeholder = { Text("Descripción del piso") },
             )
 
             Spacer(Modifier.height(16.dp))
 
-            // Selección de imagen
-            Text("Foto", color = Color(0xFF3F51B5), fontSize = 24.sp)
+            Text(
+                "Foto",
+                color = Color(0xFF3F51B5),
+                fontSize = 24.sp,
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(vertical = 16.dp),
+                modifier = Modifier.padding(vertical = 8.dp),
             ) {
                 Button(
                     onClick = { launcher.launch("image/*") },
-//                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White),
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = Color.White,
+                            contentColor = Color.Black,
+                        ),
                     elevation = ButtonDefaults.buttonElevation(4.dp),
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.ic_insert_photo),
-                        contentDescription = null,
+                        contentDescription = "Seleccionar foto",
                         tint = Color.Black,
+                        modifier = Modifier.size(20.dp),
                     )
                     Spacer(Modifier.width(8.dp))
                     Text("Seleccionar Foto", color = Color.Black)
@@ -150,88 +166,155 @@ fun CrearCasaScreen(viewModel: CrearCasaViewModel = viewModel()) {
 
                 Spacer(Modifier.width(16.dp))
 
-                imagenUri?.let { uri ->
+                uiState.imagenUri?.let { uri ->
                     AsyncImage(
                         model = uri,
-                        contentDescription = null,
+                        contentDescription = "Imagen seleccionada",
                         modifier =
                             Modifier
                                 .size(100.dp)
                                 .clip(RoundedCornerShape(8.dp)),
                         contentScale = ContentScale.Crop,
                     )
+                } ?: run {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_insert_photo),
+                        contentDescription = "Sin imagen",
+                        modifier =
+                            Modifier
+                                .size(100.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                        tint = Color.Gray,
+                    )
                 }
+            }
+
+            if (uiState.imagenUri == null) {
+                Text(
+                    "Seleccione una imagen para el piso",
+                    color = Color.Red,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(start = 4.dp, top = 4.dp),
+                )
             }
 
             Spacer(Modifier.height(24.dp))
 
-            // Sección miembros
             Text(
-                "Miembros",
+                "Invitar Miembros",
                 color = Color(0xFF3F51B5),
                 fontSize = 24.sp,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
             )
 
             Button(
-                onClick = { /* QR */ },
-//                colors = ButtonDefaults.buttonColors(backgroundColor = Color.White),
+                onClick = {
+                },
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color.Black,
+                    ),
                 elevation = ButtonDefaults.buttonElevation(4.dp),
-                modifier = Modifier.align(Alignment.CenterHorizontally),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 32.dp, vertical = 4.dp),
             ) {
-                Text("Invitar usando QR", color = Color.Black)
-                Spacer(Modifier.width(8.dp))
                 Icon(
                     painter = painterResource(R.drawable.ic_qr_code),
-                    contentDescription = null,
+                    contentDescription = "Invitar usando QR",
                     tint = Color.Black,
+                    modifier = Modifier.size(20.dp),
                 )
+                Spacer(Modifier.width(12.dp))
+                Text("Invitar usando QR", color = Color.Black)
             }
 
             Button(
-                onClick = { /* Email */ },
-//                colors = ButtonDefaults.buttonColors(backgroundColor = Color.White),
+                onClick = {
+                },
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color.Black,
+                    ),
                 elevation = ButtonDefaults.buttonElevation(4.dp),
-                modifier = Modifier.align(Alignment.CenterHorizontally),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 32.dp, vertical = 4.dp),
             ) {
-                Text("Invitar por Email", color = Color.Black)
-                Spacer(Modifier.width(8.dp))
                 Icon(
                     painter = painterResource(R.drawable.ic_email),
-                    contentDescription = null,
+                    contentDescription = "Invitar por Email",
                     tint = Color.Black,
+                    modifier = Modifier.size(20.dp),
                 )
+                Spacer(Modifier.width(12.dp))
+                Text("Invitar por Email", color = Color.Black)
             }
 
             Spacer(Modifier.height(32.dp))
 
-            // Botón crear
             Button(
                 onClick = {
-                    // Llamar al ViewModel
                     scope.launch {
-                        viewModel.CrearCasa(nombre, descripcion, imagenUri)
+                        val success = viewModel.crearCasa()
+                        if (success) {
+                            Toast.makeText(context, "Casa creada con éxito", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Error al crear un piso", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 },
-                enabled = isButtonEnabled,
+                enabled = uiState.isButtonEnabled,
                 modifier =
                     Modifier
                         .fillMaxWidth()
                         .height(56.dp),
-                //                colors = ButtonDefaults.buttonColors(
-//                    backgroundColor = if (isButtonEnabled) Color(0xFF6A5ACD) else Color.Gray
-//                ),
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = if (uiState.isButtonEnabled) Color(0xFF6200EE) else Color.Gray,
+                        contentColor = Color.White,
+                    ),
                 elevation = ButtonDefaults.buttonElevation(8.dp),
             ) {
-                Text("Crear Piso", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    "Crear Piso",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+
+            if (!uiState.isButtonEnabled) {
+                Text(
+                    "Complete todos los campos requeridos para crear el piso",
+                    color = Color.Gray,
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
+                )
             }
         }
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 fun CrearCasaScreenPreview() {
+    CrearCasaScreen()
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CrearCasaScreenWithDataPreview() {
     CrearCasaScreen()
 }

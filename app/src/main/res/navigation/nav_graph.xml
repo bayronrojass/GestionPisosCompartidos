@@ -19,7 +19,6 @@
 
     <fragment
             android:id="@+id/crearPisoFragment"
-            android:name="com.example.gestionpisoscompartidos.ui.piso.crearPiso.CrearCasa"
             android:label="Crear Piso"
             tools:layout="@layout/fragment_crear_piso" />
 
@@ -121,7 +120,6 @@
         <action
                 android:id="@+id/action_Home2_toInvitacionesFragment"
                 app:destination="@id/invitacionesFragment" />
-
     </fragment>
 
     <fragment
@@ -142,5 +140,7 @@
             android:name="com.example.gestionpisoscompartidos.ui.invitaciones.InvitacionesFragment"
             android:label="Mis Invitaciones"
             tools:layout="@layout/fragment_invitaciones" />
+
+
 
 </navigation>
