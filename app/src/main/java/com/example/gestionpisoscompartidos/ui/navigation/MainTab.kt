@@ -19,6 +19,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddComment
+import androidx.compose.material.icons.filled.AssignmentInd
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.EuroSymbol
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryAddCheck
@@ -106,20 +110,23 @@ fun NavigationBar(
                 padding = 12.dp,
             )
 
+            // Botón 2 - Gastos
             NavigationItem(
-                icon = Icons.Default.LibraryAddCheck,
+                icon = Icons.Default.AttachMoney,
                 isSelected = selectedTab == 1,
                 onClick = { onTabSelected(1) },
                 padding = 12.dp,
             )
 
+            // Botón 3 - Listas
             NavigationItem(
-                icon = Icons.Default.EuroSymbol,
+                icon = Icons.Default.LibraryAddCheck,
                 isSelected = selectedTab == 2,
                 onClick = { onTabSelected(2) },
                 padding = 12.dp,
             )
 
+            // Botón 4 - Tareas
             NavigationItem(
                 icon = Icons.Default.Mail,
                 isSelected = selectedTab == 3,
@@ -127,25 +134,28 @@ fun NavigationBar(
                 padding = 12.dp,
             )
 
+            // Botón 5 - Perfil
             NavigationItem(
-                icon = Icons.Default.Person,
+                icon = Icons.Default.AssignmentInd, // Cambia por tu icono real
                 isSelected = selectedTab == 4,
                 onClick = { onTabSelected(4) },
                 padding = 12.dp,
             )
-            
+
+            // Botón 6 - Eventos
             NavigationItem(
-                icon = Icons.Default.Person,
+                icon = Icons.Default.AdfScanner,
                 isSelected = selectedTab == 5,
                 onClick = { onTabSelected(5) },
                 padding = 12.dp,
             )
-            
+
+            // Botón 7 - Pizarra
             NavigationItem(
-                icon = Icons.Default.Person,
+                icon = Icons.Default.AddComment,
                 isSelected = selectedTab == 6,
                 onClick = { onTabSelected(6) },
-                padding = 12.dp,
+                padding = 19.dp,
             )
         }
     }
@@ -271,13 +281,13 @@ fun MainScreenWithNavigation(
         Box(modifier = Modifier.padding(padding)) {
             savedStateHandle.SaveableStateProvider(selectedTab) {
                 when (selectedTab) {
-                    0 -> HomeScreen(viewModel = homeViewModel)
                     1 -> GastosScreen(viewModel = gastosViewModel)
-                    2 -> ListaScreen(listaViewModel, onNavigateToItem)
-                    3 -> TareasScreen(tareasViewModel, casaNombre)
                     4 ->  Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Text("Perfil")
                         }
+                    0 -> HomeScreen()
+                    2 -> ListaScreen(listaViewModel, onNavigateToItem)
+                    3 -> TareasScreen(tareasViewModel, casaNombre)
                     5 -> EventosScreen(eventosViewModel)
                     6 -> PizarraScreen(casaId)
                 }
