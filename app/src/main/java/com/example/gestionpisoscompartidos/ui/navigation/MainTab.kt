@@ -23,11 +23,9 @@ import androidx.compose.material.icons.filled.AddComment
 import androidx.compose.material.icons.filled.AssignmentInd
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.EuroSymbol
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryAddCheck
 import androidx.compose.material.icons.filled.Mail
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Scaffold
@@ -52,10 +50,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.ui.eventos.EventosScreen
-import com.example.gestionpisoscompartidos.ui.eventos.eventosViewModel
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
-import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryLista
+import com.example.gestionpisoscompartidos.ui.eventos.EventosViewModel
 import com.example.gestionpisoscompartidos.ui.gastos.GastosScreen
 import com.example.gestionpisoscompartidos.ui.gastos.GastosViewModel
 import com.example.gestionpisoscompartidos.ui.gastos.GastosViewModelFactory
@@ -144,7 +141,7 @@ fun NavigationBar(
 
             // Botón 6 - Eventos
             NavigationItem(
-                icon = Icons.Default.AdfScanner,
+                icon = Icons.Default.CalendarMonth,
                 isSelected = selectedTab == 5,
                 onClick = { onTabSelected(5) },
                 padding = 12.dp,
@@ -214,7 +211,6 @@ fun NavigationBarPreview() {
 fun MainScreenWithNavigation(
     casaId: Long,
     casaNombre: String,
-    onNavigateToItem: (Long, String) -> Unit,
     onLogout: () -> Unit,
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -223,7 +219,6 @@ fun MainScreenWithNavigation(
 
     val sessionManager = remember { SessionManager(context) }
     val repositoryCasa = remember { RepositoryCasa(NetworkModule.casaApiService) }
-    val repositoryLista = remember { RepositoryLista(NetworkModule.listaApiService) }
     val contentResolver = LocalContext.current.applicationContext.contentResolver
 
     val homeViewModel: HomeViewModel =
@@ -242,10 +237,7 @@ fun MainScreenWithNavigation(
             factory = ListasViewModelFactory(casaId),
         )
 
-    val context = LocalContext.current
-    val sessionManager = remember { SessionManager(context) }
-
-    val eventosViewModel: eventosViewModel =
+    val eventosViewModel: EventosViewModel =
         viewModel()
 
     val tareasViewModel: TareasViewModel =
@@ -281,13 +273,11 @@ fun MainScreenWithNavigation(
         Box(modifier = Modifier.padding(padding)) {
             savedStateHandle.SaveableStateProvider(selectedTab) {
                 when (selectedTab) {
+                    0 -> HomeScreen(viewModel = homeViewModel)
                     1 -> GastosScreen(viewModel = gastosViewModel)
-                    4 ->  Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("Perfil")
-                        }
-                    0 -> HomeScreen()
                     2 -> ListaScreen(listaViewModel, onNavigateToItem)
                     3 -> TareasScreen(tareasViewModel, casaNombre)
+                    4 -> PerfilScreen(sessionManager, onLogout)
                     5 -> EventosScreen(eventosViewModel)
                     6 -> PizarraScreen(casaId)
                 }
@@ -296,13 +286,9 @@ fun MainScreenWithNavigation(
     }
 }
 
-val foo: (Long, String) -> Unit = { id, nombre ->
-    Log.d("Navegación", "Item clickeado: $id - $nombre")
-}
-
 // PREVIEW de la pantalla completa
 @Preview
 @Composable
 fun MainScreenWithNavigationPreview() {
-    MainScreenWithNavigation(1L, "1", foo, {})
+    MainScreenWithNavigation(1L, "1", {})
 }

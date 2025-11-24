@@ -92,11 +92,6 @@ fun AppNavigation(
             MainScreenWithNavigation(
                 casaId = casaId,
                 casaNombre = casaNombre,
-                onNavigateToItem = { listaId, listaNombre ->
-                    navController.navigate(
-                        Route.Item.createRoute(listaId, listaNombre, casaNombre),
-                    )
-                },
                 onLogout = {
                     navController.navigate(Route.Login.route) {
                         // Esto limpia toda la pila de navegación hasta el inicio (0)

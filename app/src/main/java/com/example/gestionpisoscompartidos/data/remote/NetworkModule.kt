@@ -77,7 +77,7 @@ object NetworkModule {
     val usuarioApiService: UsuarioAPI by lazy {
         retrofit.create(UsuarioAPI::class.java)
     }
-    
+
     val eventoAPIService: EventoAPI by lazy {
         retrofit.create(EventoAPI::class.java)
     }
