@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,11 +34,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.gestionpisoscompartidos.model.Evento
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.format.TextStyle as JavaTextStyle
 import java.util.*
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DatePickerDefaults.dateFormatter
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -79,7 +80,6 @@ fun SelectorDiasSemana(
             )
         }
 
-        // Fila de días
         LazyRow(
             contentPadding = PaddingValues(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -105,11 +105,61 @@ fun CalendarioFullView(
 ) {
     val context = LocalContext.current
 
-    var showDialog by remember { mutableStateOf(false) }
+    var showCreateDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var eventoToEdit by remember { mutableStateOf<Evento?>(null) }
+
     var nuevoNombre by remember { mutableStateOf("") }
     var nuevaDescripcion by remember { mutableStateOf("") }
     var startDate by remember { mutableStateOf<LocalDate?>(null) }
     var endDate by remember { mutableStateOf<LocalDate?>(null) }
+
+    // Function declarations in correct order
+    fun resetDialogFields() {
+        nuevoNombre = ""
+        nuevaDescripcion = ""
+        startDate = null
+        endDate = null
+        eventoToEdit = null
+    }
+
+    fun openEditDialog(evento: Evento) {
+        eventoToEdit = evento
+        nuevoNombre = evento.nombre
+        nuevaDescripcion = evento.descripcion ?: ""
+
+        try {
+            startDate = parsearFechaSegura(evento.fechaInicio)
+            if (!evento.fechaFin.isNullOrEmpty()) {
+                endDate = parsearFechaSegura(evento.fechaFin)
+            } else {
+                endDate = startDate
+            }
+        } catch (e: Exception) {
+            startDate = LocalDate.now()
+            endDate = LocalDate.now()
+        }
+
+        showEditDialog = true
+    }
+
+    fun saveEditedEvent() {
+        eventoToEdit?.let { evento ->
+            startDate?.let { start ->
+                endDate?.let { end ->
+                    viewModel.actualizarEvento(
+                        evento = evento,
+                        nuevoNombre = nuevoNombre,
+                        nuevaDescripcion = nuevaDescripcion.ifBlank { null },
+                        nuevaFechaInicio = start.atStartOfDay(),
+                        nuevaFechaFin = end.atStartOfDay(),
+                    )
+                }
+            }
+        }
+        showEditDialog = false
+        resetDialogFields()
+    }
 
     val currentMonth = YearMonth.from(fechaSeleccionada)
     val daysInMonth = currentMonth.lengthOfMonth()
@@ -122,9 +172,8 @@ fun CalendarioFullView(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    showDialog = true
-                    startDate = null
-                    endDate = null
+                    showCreateDialog = true
+                    resetDialogFields()
                 },
                 containerColor = Color.Black,
                 contentColor = Color.White,
@@ -221,136 +270,183 @@ fun CalendarioFullView(
             ListaEventosDelDia(
                 eventosDelDiaSeleccionado,
                 viewModel,
+                onEditEvent = { evento -> openEditDialog(evento) },
             )
         }
     }
 
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = {
-                showDialog = false
-                nuevoNombre = ""
-                nuevaDescripcion = ""
-                startDate = null
-                endDate = null
+    if (showCreateDialog) {
+        EventDialog(
+            title = "Nuevo Evento",
+            nombre = nuevoNombre,
+            onNombreChange = { nuevoNombre = it },
+            descripcion = nuevaDescripcion,
+            onDescripcionChange = { nuevaDescripcion = it },
+            startDate = startDate,
+            endDate = endDate,
+            onDateRangeSelected = { start, end ->
+                startDate = start
+                endDate = end
             },
-            confirmButton = {
-                TextButton(
-                    enabled = nuevoNombre.isNotBlank() && startDate != null && endDate != null,
-                    onClick = {
-                        startDate?.let { start ->
-                            endDate?.let { end ->
-                                viewModel.crea(
-                                    title = nuevoNombre,
-                                    description = nuevaDescripcion,
-                                    startDate = start.atStartOfDay(),
-                                    endDate = end.atStartOfDay(),
-                                )
-                                showDialog = false
-                                nuevoNombre = ""
-                                nuevaDescripcion = ""
-                                startDate = null
-                                endDate = null
-                            }
-                        }
-                    },
-                ) {
-                    Text("Guardar")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    showDialog = false
-                    nuevoNombre = ""
-                    nuevaDescripcion = ""
-                    startDate = null
-                    endDate = null
-                }) {
-                    Text("Cancelar")
-                }
-            },
-            title = { Text("Nuevo Evento") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(
-                        value = nuevoNombre,
-                        onValueChange = { nuevoNombre = it },
-                        label = { Text("Nombre") },
-                        isError = nuevoNombre.isBlank(),
-                    )
-                    OutlinedTextField(
-                        value = nuevaDescripcion,
-                        onValueChange = { nuevaDescripcion = it },
-                        label = { Text("Descripción") },
-                    )
-
-                    Button(
-                        onClick = {
-                            val initialStartDate = startDate ?: fechaSeleccionada
-                            DatePickerDialog(
-                                context,
-                                { _, year, month, day ->
-                                    val selectedStartDate = LocalDate.of(year, month + 1, day)
-                                    startDate = selectedStartDate
-
-                                    val initialEndDate = endDate ?: selectedStartDate
-                                    DatePickerDialog(
-                                        context,
-                                        { _, endYear, endMonth, endDay ->
-                                            val selectedEndDate = LocalDate.of(endYear, endMonth + 1, endDay)
-                                            endDate = selectedEndDate
-                                        },
-                                        selectedStartDate.year,
-                                        selectedStartDate.monthValue - 1,
-                                        selectedStartDate.dayOfMonth,
-                                    ).apply {
-                                        datePicker.minDate =
-                                            selectedStartDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                                    }.show()
-                                },
-                                initialStartDate.year,
-                                initialStartDate.monthValue - 1,
-                                initialStartDate.dayOfMonth,
-                            ).show()
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Icon(Icons.Default.CalendarMonth, contentDescription = "Seleccionar rango de fechas")
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            if (startDate != null && endDate != null) {
-                                "${startDate!!.format(dateFormatter)} - ${endDate!!.format(dateFormatter)}"
-                            } else if (startDate != null) {
-                                "${startDate!!.format(dateFormatter)} - Seleccionar fecha fin"
-                            } else {
-                                "Seleccionar rango de fechas"
-                            },
+            onConfirm = {
+                startDate?.let { start ->
+                    endDate?.let { end ->
+                        viewModel.crea(
+                            title = nuevoNombre,
+                            description = nuevaDescripcion,
+                            startDate = start.atStartOfDay(),
+                            endDate = end.atStartOfDay(),
                         )
-                    }
-
-                    if (startDate != null && endDate != null) {
-                        Text(
-                            text = "Rango seleccionado: ${startDate!!.format(dateFormatter)} - ${endDate!!.format(dateFormatter)}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray,
-                        )
-                    } else if (startDate != null) {
-                        Text(
-                            text = "Selecciona la fecha de fin",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray,
-                        )
-                    } else {
-                        Text(
-                            text = "Haz clic para seleccionar las fechas",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray,
-                        )
+                        showCreateDialog = false
+                        resetDialogFields()
                     }
                 }
             },
+            onDismiss = {
+                showCreateDialog = false
+                resetDialogFields()
+            },
+            isEditMode = false,
         )
     }
+
+    if (showEditDialog) {
+        EventDialog(
+            title = "Editar Evento",
+            nombre = nuevoNombre,
+            onNombreChange = { nuevoNombre = it },
+            descripcion = nuevaDescripcion,
+            onDescripcionChange = { nuevaDescripcion = it },
+            startDate = startDate,
+            endDate = endDate,
+            onDateRangeSelected = { start, end ->
+                startDate = start
+                endDate = end
+            },
+            onConfirm = { saveEditedEvent() },
+            onDismiss = {
+                showEditDialog = false
+                resetDialogFields()
+            },
+            isEditMode = true,
+        )
+    }
+}
+
+@Composable
+fun EventDialog(
+    title: String,
+    nombre: String,
+    onNombreChange: (String) -> Unit,
+    descripcion: String,
+    onDescripcionChange: (String) -> Unit,
+    startDate: LocalDate?,
+    endDate: LocalDate?,
+    onDateRangeSelected: (LocalDate, LocalDate) -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+    isEditMode: Boolean = false,
+) {
+    val context = LocalContext.current
+    val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                enabled = nombre.isNotBlank() && startDate != null && endDate != null,
+                onClick = onConfirm,
+            ) {
+                Text(if (isEditMode) "Guardar" else "Crear")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        },
+        title = { Text(title) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(
+                    value = nombre,
+                    onValueChange = onNombreChange,
+                    label = { Text("Nombre") },
+                    isError = nombre.isBlank(),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = descripcion,
+                    onValueChange = onDescripcionChange,
+                    label = { Text("Descripción") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Button(
+                    onClick = {
+                        val initialStartDate = startDate ?: LocalDate.now()
+                        DatePickerDialog(
+                            context,
+                            { _, year, month, day ->
+                                val selectedStartDate = LocalDate.of(year, month + 1, day)
+
+                                // Ahora pedimos la fecha de fin
+                                DatePickerDialog(
+                                    context,
+                                    { _, endYear, endMonth, endDay ->
+                                        val selectedEndDate = LocalDate.of(endYear, endMonth + 1, endDay)
+                                        onDateRangeSelected(selectedStartDate, selectedEndDate)
+                                    },
+                                    selectedStartDate.year,
+                                    selectedStartDate.monthValue - 1,
+                                    selectedStartDate.dayOfMonth,
+                                ).apply {
+                                    datePicker.minDate =
+                                        selectedStartDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                                }.show()
+                            },
+                            initialStartDate.year,
+                            initialStartDate.monthValue - 1,
+                            initialStartDate.dayOfMonth,
+                        ).show()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(Icons.Default.CalendarMonth, contentDescription = "Seleccionar rango de fechas")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        if (startDate != null && endDate != null) {
+                            "${startDate.format(dateFormatter)} - ${endDate.format(dateFormatter)}"
+                        } else if (startDate != null) {
+                            "${startDate.format(dateFormatter)} - Seleccionar fecha fin"
+                        } else {
+                            "Seleccionar rango de fechas"
+                        },
+                    )
+                }
+
+                if (startDate != null && endDate != null) {
+                    Text(
+                        text = "Rango seleccionado: ${startDate.format(dateFormatter)} - ${endDate.format(dateFormatter)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray,
+                    )
+                } else if (startDate != null) {
+                    Text(
+                        text = "Selecciona la fecha de fin",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray,
+                    )
+                } else {
+                    Text(
+                        text = "Haz clic para seleccionar las fechas",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray,
+                    )
+                }
+            }
+        },
+    )
 }
 
 @Composable
@@ -402,6 +498,7 @@ fun ItemDiaCalendario(
 fun ListaEventosDelDia(
     eventos: List<Evento>,
     viewModel: HomeViewModel,
+    onEditEvent: (Evento) -> Unit,
 ) {
     Column(
         modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
@@ -417,7 +514,8 @@ fun ListaEventosDelDia(
             eventos.forEach { evento ->
                 ItemEventoTimeline(
                     evento = evento,
-                    onDeleteEvent = { eventId -> viewModel.onDeleteEvent(eventId) },
+                    onEditEvent = { onEditEvent(evento) },
+                    onDeleteEvent = { eventId -> viewModel.eliminar(eventId) },
                 )
             }
         }
@@ -427,6 +525,7 @@ fun ListaEventosDelDia(
 @Composable
 fun ItemEventoTimeline(
     evento: Evento,
+    onEditEvent: () -> Unit,
     onDeleteEvent: (Long) -> Unit,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -454,11 +553,23 @@ fun ItemEventoTimeline(
                 }
             }
 
-            IconButton(
-                onClick = { onDeleteEvent(evento.id!!) },
+            Row(
                 modifier = Modifier.align(Alignment.CenterEnd),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Icon(Icons.Filled.Delete, contentDescription = "Eliminar")
+                IconButton(
+                    onClick = onEditEvent,
+                    modifier = Modifier.size(24.dp),
+                ) {
+                    Icon(Icons.Filled.Edit, contentDescription = "Editar", modifier = Modifier.size(18.dp))
+                }
+
+                IconButton(
+                    onClick = { onDeleteEvent(evento.id!!) },
+                    modifier = Modifier.size(24.dp),
+                ) {
+                    Icon(Icons.Filled.Delete, contentDescription = "Eliminar", modifier = Modifier.size(18.dp))
+                }
             }
         }
     }
@@ -468,6 +579,7 @@ fun ItemEventoTimeline(
 fun ListaEventosAgrupados(
     eventos: List<Evento>,
     viewModel: HomeViewModel,
+    onEditEvent: (Evento) -> Unit,
 ) {
     val eventosPorFecha =
         eventos.groupBy {
@@ -515,7 +627,8 @@ fun ListaEventosAgrupados(
                 lista.forEach { evento ->
                     ItemEventoTimeline(
                         evento = evento,
-                        onDeleteEvent = { eventId -> viewModel.onDeleteEvent(eventId) },
+                        onEditEvent = { onEditEvent(evento) },
+                        onDeleteEvent = { eventId -> viewModel.eliminar(eventId) },
                     )
                 }
             }

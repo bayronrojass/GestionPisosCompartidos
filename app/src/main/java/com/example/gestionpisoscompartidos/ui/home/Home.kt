@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.example.gestionpisoscompartidos.R
+import com.example.gestionpisoscompartidos.model.Evento
 
 @Composable
 fun HomeScreen(
@@ -35,6 +36,10 @@ fun HomeScreen(
     val fechaSeleccionada by viewModel.fechaSeleccionada.collectAsState()
     val eventosDelDia by viewModel.eventosDelDia.collectAsState()
     val todosLosEventos by viewModel.eventos.collectAsState()
+
+    val onEditEvent = { evento: Evento ->
+        // This will be handled in the CalendarioFullView
+    }
 
     if (showFullCalendar) {
         CalendarioFullView(
@@ -191,7 +196,11 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            ListaEventosAgrupados(eventos = eventosDelDia, viewModel)
+            ListaEventosAgrupados(
+                eventos = eventosDelDia,
+                viewModel = viewModel,
+                onEditEvent = onEditEvent,
+            )
 
             Spacer(modifier = Modifier.height(30.dp))
 

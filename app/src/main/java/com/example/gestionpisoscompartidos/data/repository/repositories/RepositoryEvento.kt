@@ -43,4 +43,16 @@ class RepositoryEvento(
             throw e
         }
     }
+
+    suspend fun actualizarEvento(
+        eventoId: Long,
+        request: eventRequest,
+    ): Boolean {
+        try {
+            val response = apiService.actualizarEvento(eventoId, request)
+            return response.isSuccessful
+        } catch (e: Exception) {
+            throw e
+        }
+    }
 }

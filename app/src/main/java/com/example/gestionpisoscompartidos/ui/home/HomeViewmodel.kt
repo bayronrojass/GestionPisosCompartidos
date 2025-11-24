@@ -40,6 +40,12 @@ class HomeViewModel(
     private val _deleteEventResult = MutableStateFlow<Boolean?>(null)
     val deleteEventResult: StateFlow<Boolean?> = _deleteEventResult.asStateFlow()
 
+    private val _updateEventResult = MutableStateFlow<Boolean?>(null)
+    val updateEventResult: StateFlow<Boolean?> = _updateEventResult.asStateFlow()
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
+
     init {
         cargarEventos()
     }
@@ -58,13 +64,14 @@ class HomeViewModel(
                     listaRecibida.forEach { Log.d("CALENDARIO", "Evento: ${it.nombre} - Fecha: ${it.fechaInicio}") }
 
                     _eventos.value = listaRecibida
-
                     seleccionarFecha(_fechaSeleccionada.value)
                 } else {
                     Log.e("CALENDARIO", "Error al cargar eventos: ${response.code()}")
+                    _error.value = "Error al cargar eventos: ${response.code()}"
                 }
             } catch (e: Exception) {
                 Log.e("CALENDARIO", "Excepción: ${e.message}")
+                _error.value = "Error: ${e.message}"
                 e.printStackTrace()
             }
         }
@@ -110,12 +117,12 @@ class HomeViewModel(
         }
     }
 
-    suspend fun createEvent(
+    private suspend fun createEvent(
         title: String,
         description: String,
         startDate: LocalDateTime,
         endDate: LocalDateTime,
-    ): Boolean {
+    ): Boolean =
         try {
             val eventRepository = RepositoryEvento(NetworkModule.eventoAPIService)
             val eventRequest =
@@ -131,25 +138,24 @@ class HomeViewModel(
             kotlinx.coroutines.delay(1000L)
             cargarEventos()
             _createEventResult.value = true
-            return true
+            true
         } catch (e: Exception) {
             e.printStackTrace()
+            _error.value = "Error creando evento: ${e.message}"
             _createEventResult.value = false
-            return false
+            false
         }
-    }
 
-    private suspend fun eliminarEvento(eventoId: Long): Boolean {
-        return try {
+    private suspend fun eliminarEvento(eventoId: Long): Boolean =
+        try {
             val eventRepository = RepositoryEvento(NetworkModule.eventoAPIService)
-            val token = sessionManager.fetchAuthToken() ?: return false
             eventRepository.eliminarEvento(eventoId)
             true
         } catch (e: Exception) {
             Log.e("HomeViewModel", "Error eliminando evento", e)
+            _error.value = "Error eliminando evento: ${e.message}"
             false
         }
-    }
 
     fun eliminar(eventoId: Long) {
         viewModelScope.launch {
@@ -157,29 +163,68 @@ class HomeViewModel(
                 val success = eliminarEvento(eventoId)
                 if (success) {
                     cargarEventos()
+                    _deleteEventResult.value = true
+                } else {
+                    _deleteEventResult.value = false
                 }
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "No se ha podido eliminar evento", e)
+                _error.value = "Error eliminando evento: ${e.message}"
+                _deleteEventResult.value = false
             }
         }
     }
 
-    fun onDeleteEvent(eventoId: Long) {
+    fun actualizarEvento(
+        evento: Evento,
+        nuevoNombre: String,
+        nuevaDescripcion: String?,
+        nuevaFechaInicio: LocalDateTime,
+        nuevaFechaFin: LocalDateTime,
+    ) {
+        _error.value = null
+        _updateEventResult.value = null
+
         viewModelScope.launch {
             try {
-                eliminar(eventoId)
-                _deleteEventResult.value = true
+                val eventRepository = RepositoryEvento(NetworkModule.eventoAPIService)
+                val request =
+                    eventRequest(
+                        nombre = nuevoNombre,
+                        descripcion = nuevaDescripcion,
+                        fechaInicio = nuevaFechaInicio.toString(),
+                        fechaFin = nuevaFechaFin.toString(),
+                        creadoPor = evento.creadoPor,
+                    )
+
+                if (evento.id != null) {
+                    eventRepository.actualizarEvento(evento.id, request)
+                    cargarEventos()
+                    _updateEventResult.value = true
+                } else {
+                    _error.value = "El evento no tiene ID válido"
+                    _updateEventResult.value = false
+                }
             } catch (e: Exception) {
-                _deleteEventResult.value = false
-                Log.e("HomeViewModel", "Error deleting event", e)
+                _error.value = e.message ?: "Error al actualizar evento"
+                _updateEventResult.value = false
             }
         }
     }
 
-    data class Event(
-        val title: String,
-        val description: String,
-        val startDate: LocalDateTime,
-        val endDate: LocalDateTime,
-    )
+    fun clearCreateEventResult() {
+        _createEventResult.value = null
+    }
+
+    fun clearDeleteEventResult() {
+        _deleteEventResult.value = null
+    }
+
+    fun clearUpdateEventResult() {
+        _updateEventResult.value = null
+    }
+
+    fun clearError() {
+        _error.value = null
+    }
 }

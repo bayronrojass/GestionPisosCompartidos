@@ -33,9 +33,18 @@ fun CalendarioFullView(
     eventos: List<Evento>,
     onFechaClick: (LocalDate) -> Unit,
     onBackClick: () -> Unit,
-    onAddEventClick: () -> Unit = {}, // Added parameter for FAB click
+    onAddEventClick: () -> Unit = {},
 ) {
-    val viewModel: HomeViewModel = viewModel() // Get the viewModel here
+    val viewModel: HomeViewModel = viewModel()
+
+    var showEditDialog by remember { mutableStateOf(false) }
+    var eventoToEdit by remember { mutableStateOf<Evento?>(null) }
+
+    // Function to open edit dialog
+    fun openEditDialog(evento: Evento) {
+        eventoToEdit = evento
+        showEditDialog = true
+    }
 
     val currentMonth = YearMonth.from(fechaSeleccionada)
     val daysInMonth = currentMonth.lengthOfMonth()
@@ -45,7 +54,7 @@ fun CalendarioFullView(
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onAddEventClick, // Use the provided callback
+                onClick = onAddEventClick,
                 containerColor = Color.Black,
                 contentColor = Color.White,
                 shape = CircleShape,
@@ -145,7 +154,26 @@ fun CalendarioFullView(
                     parsearFechaSegura(it.fechaInicio).isEqual(fechaSeleccionada)
                 }
 
-            ListaEventosDelDia(eventos = eventosDelDiaSeleccionado, viewModel)
+            ListaEventosDelDia(
+                eventos = eventosDelDiaSeleccionado,
+                viewModel = viewModel,
+                onEditEvent = { evento -> openEditDialog(evento) },
+            )
+        }
+    }
+
+    if (showEditDialog) {
+        eventoToEdit?.let { evento ->
+            AlertDialog(
+                onDismissRequest = { showEditDialog = false },
+                title = { Text("Editar Evento") },
+                text = { Text("Funcionalidad de edición no implementada") },
+                confirmButton = {
+                    TextButton(onClick = { showEditDialog = false }) {
+                        Text("OK")
+                    }
+                },
+            )
         }
     }
 }
