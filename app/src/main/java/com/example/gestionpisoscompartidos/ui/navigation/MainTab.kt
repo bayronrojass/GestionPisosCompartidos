@@ -138,19 +138,11 @@ fun NavigationBar(
                 padding = 12.dp,
             )
 
-            // Botón 6 - Eventos
-            NavigationItem(
-                icon = Icons.Default.CalendarMonth,
-                isSelected = selectedTab == 5,
-                onClick = { onTabSelected(5) },
-                padding = 12.dp,
-            )
-
             // Botón 7 - Pizarra
             NavigationItem(
                 icon = Icons.Default.AddComment,
-                isSelected = selectedTab == 6,
-                onClick = { onTabSelected(6) },
+                isSelected = selectedTab == 5,
+                onClick = { onTabSelected(5) },
                 padding = 19.dp,
             )
         }
@@ -274,8 +266,7 @@ fun MainScreenWithNavigation(
                     2 -> ListaScreen(listaViewModel, onNavigateToItem)
                     3 -> TareasScreen(tareasViewModel, casaNombre)
                     4 -> PerfilScreen(sessionManager, onLogout)
-                    5 -> EventosScreen(eventosViewModel)
-                    6 -> PizarraScreen(casaId)
+                    5 -> PizarraScreen(casaId)
                 }
             }
         }
