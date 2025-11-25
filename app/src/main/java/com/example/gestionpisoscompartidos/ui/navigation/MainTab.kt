@@ -1,6 +1,5 @@
 package com.example.gestionpisoscompartidos.ui.navigation
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -211,6 +210,7 @@ fun NavigationBarPreview() {
 fun MainScreenWithNavigation(
     casaId: Long,
     casaNombre: String,
+    onNavigateToItem: (Long, String) -> Unit,
     onLogout: () -> Unit,
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -250,10 +250,6 @@ fun MainScreenWithNavigation(
             factory = GastosViewModelFactory(repositoryCasa, sessionManager, casaId),
         )
 
-    val onNavigateToItem: (Long, String) -> Unit = { id, nombre ->
-        Log.d("Navegación", "Item clickeado: $id - $nombre")
-    }
-
     Scaffold(
         bottomBar = {
             Box(
@@ -290,5 +286,5 @@ fun MainScreenWithNavigation(
 @Preview
 @Composable
 fun MainScreenWithNavigationPreview() {
-    MainScreenWithNavigation(1L, "1", {})
+    MainScreenWithNavigation(1L, "1", {} as (Long, String) -> Unit, {})
 }
