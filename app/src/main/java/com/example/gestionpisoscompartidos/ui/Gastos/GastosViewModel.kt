@@ -8,12 +8,14 @@ import androidx.lifecycle.viewModelScope
 import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
 import com.example.gestionpisoscompartidos.model.Gasto
-import com.example.gestionpisoscompartidos.model.GastoRequest // Asegúrate de tener este modelo creado
+import com.example.gestionpisoscompartidos.model.GastoRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
+// Modelos de datos compartidos (Definidos AQUÍ solamente)
 data class PieChartData(
     val categoria: String,
     val porcentaje: Float,
@@ -21,19 +23,42 @@ data class PieChartData(
     val color: Color,
 )
 
+data class SaldoUsuario(
+    val nombre: String,
+    val cantidad: Double,
+    val colorAvatar: Color,
+)
+
+data class ParticipantePago(
+    val nombre: String,
+    val cantidad: Double,
+    val colorAvatar: Color,
+)
+
 class GastosViewModel(
     private val repository: RepositoryCasa,
     private val sessionManager: SessionManager,
     private val casaId: Long,
 ) : ViewModel() {
+    private var listaCompleta: List<Gasto> = emptyList()
+
     private val _gastos = MutableStateFlow<List<Gasto>>(emptyList())
     val gastos: StateFlow<List<Gasto>> = _gastos.asStateFlow()
 
     private val _stats = MutableStateFlow<List<PieChartData>>(emptyList())
     val stats: StateFlow<List<PieChartData>> = _stats.asStateFlow()
 
+    private val _saldos = MutableStateFlow<List<SaldoUsuario>>(emptyList())
+    val saldos: StateFlow<List<SaldoUsuario>> = _saldos.asStateFlow()
+
+    private val _usuariosDetectados = MutableStateFlow<List<String>>(emptyList())
+    val usuariosDetectados: StateFlow<List<String>> = _usuariosDetectados.asStateFlow()
+
     private val _mostrarEstadisticas = MutableStateFlow(false)
     val mostrarEstadisticas: StateFlow<Boolean> = _mostrarEstadisticas.asStateFlow()
+
+    private val _filtroCategoria = MutableStateFlow("TODOS")
+    val filtroCategoria: StateFlow<String> = _filtroCategoria.asStateFlow()
 
     private val colorPalette =
         listOf(
@@ -44,6 +69,8 @@ class GastosViewModel(
             Color(0xFFFFD54F),
             Color(0xFFFF8A65),
             Color(0xFF90A4AE),
+            Color(0xFF7986CB),
+            Color(0xFF4DB6AC),
         )
 
     init {
@@ -54,6 +81,15 @@ class GastosViewModel(
         _mostrarEstadisticas.value = verEstadisticas
     }
 
+    fun aplicarFiltro(categoria: String) {
+        _filtroCategoria.value = categoria
+        if (categoria == "TODOS") {
+            _gastos.value = listaCompleta
+        } else {
+            _gastos.value = listaCompleta.filter { it.categoria == categoria }
+        }
+    }
+
     fun cargarGastos() {
         viewModelScope.launch {
             val token = sessionManager.fetchAuthToken() ?: return@launch
@@ -61,8 +97,10 @@ class GastosViewModel(
                 val response = repository.getGastosCasa(token, casaId)
                 if (response.isSuccessful) {
                     val lista = response.body() ?: emptyList()
-                    _gastos.value = lista
+                    listaCompleta = lista
+                    aplicarFiltro(_filtroCategoria.value)
                     calcularEstadisticas(lista)
+                    calcularSaldos(lista)
                 } else {
                     Log.e("GASTOS", "Error al cargar: ${response.code()}")
                 }
@@ -72,7 +110,6 @@ class GastosViewModel(
         }
     }
 
-    // --- ESTA ES LA FUNCIÓN QUE FALTABA ---
     fun crearGasto(
         nombre: String,
         importe: String,
@@ -94,7 +131,7 @@ class GastosViewModel(
             try {
                 val response = repository.crearGasto(token, casaId, request)
                 if (response.isSuccessful) {
-                    cargarGastos() // Recargar lista tras crear
+                    cargarGastos()
                 } else {
                     Log.e("GASTOS", "Error creando gasto: ${response.code()}")
                 }
@@ -122,17 +159,69 @@ class GastosViewModel(
                 }.sortedByDescending { it.second }
 
         val estadisticasFinales =
-            datosOrdenados.mapIndexed { index, (nombre, porcentaje) ->
-                val colorAsignado = colorPalette[index % colorPalette.size]
+            datosOrdenados.map { (nombre, porcentaje) ->
                 PieChartData(
                     categoria = nombre,
                     porcentaje = porcentaje,
                     textoPorcentaje = "${(porcentaje * 100).toInt()}%",
-                    color = colorAsignado,
+                    color = getColorPorNombreDinamico(nombre),
                 )
             }
 
         _stats.value = estadisticasFinales
+    }
+
+    private fun calcularSaldos(lista: List<Gasto>) {
+        if (lista.isEmpty()) {
+            _saldos.value = emptyList()
+            _usuariosDetectados.value = emptyList()
+            return
+        }
+
+        val totalGastado = lista.sumOf { it.importe }
+
+        val usuarios = lista.mapNotNull { it.pagadoPorNombre }.distinct()
+        _usuariosDetectados.value = usuarios
+
+        val numUsuarios = if (usuarios.isEmpty()) 1 else usuarios.size
+        val mediaPorPersona = totalGastado / numUsuarios
+
+        val saldosCalculados =
+            usuarios
+                .map { usuario ->
+                    val pagadoPorUsuario = lista.filter { it.pagadoPorNombre == usuario }.sumOf { it.importe }
+                    val balance = pagadoPorUsuario - mediaPorPersona
+
+                    SaldoUsuario(
+                        nombre = usuario,
+                        cantidad = balance,
+                        colorAvatar = getColorPorNombreDinamico(usuario),
+                    )
+                }.sortedByDescending { it.cantidad }
+
+        _saldos.value = saldosCalculados
+    }
+
+    fun obtenerParticipantesGasto(importeTotal: Double): List<ParticipantePago> {
+        val usuarios = _usuariosDetectados.value
+        if (usuarios.isEmpty()) return emptyList()
+
+        val cuota = importeTotal / usuarios.size
+
+        return usuarios.map { nombre ->
+            ParticipantePago(
+                nombre = nombre,
+                cantidad = cuota,
+                colorAvatar = getColorPorNombreDinamico(nombre),
+            )
+        }
+    }
+
+    fun getColorPorNombreDinamico(nombre: String): Color {
+        if (nombre.isEmpty() || nombre == "Desconocido") return Color.Gray
+        val hash = abs(nombre.hashCode())
+        val index = hash % colorPalette.size
+        return colorPalette[index]
     }
 }
 

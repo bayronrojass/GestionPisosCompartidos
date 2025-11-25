@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,9 +13,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.DirectionsBus
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material.icons.filled.SentimentSatisfiedAlt
 import androidx.compose.material3.*
@@ -24,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
@@ -32,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.gestionpisoscompartidos.model.Gasto
 
+// Colores
 val ColorFondo = Color(0xFFF8F8F8)
 val ColorLila = Color(0xFFDDC1FB)
 val ColorLilaClaroTarjeta = Color(0xFFE8D5FC)
@@ -41,23 +48,13 @@ val ColorRojoSaldo = Color(0xFFE57373)
 val ColorTextoGris = Color(0xFF6C6C6C)
 val ColorMoradoOscuro = Color(0xFF58337F)
 
-data class SaldoUsuario(
-    val nombre: String,
-    val cantidad: Double,
-    val colorAvatar: Color,
-)
-
-data class ParticipantePago(
-    val nombre: String,
-    val cantidad: Double,
-    val colorAvatar: Color,
-)
-
 @Composable
 fun GastosScreen(viewModel: GastosViewModel) {
     val gastos by viewModel.gastos.collectAsState()
     val stats by viewModel.stats.collectAsState()
+    val saldos by viewModel.saldos.collectAsState()
     val mostrarEstadisticas by viewModel.mostrarEstadisticas.collectAsState()
+    val filtroActual by viewModel.filtroCategoria.collectAsState()
 
     var gastoSeleccionado by remember { mutableStateOf<Gasto?>(null) }
     var tabSeleccionado by remember { mutableIntStateOf(0) }
@@ -92,6 +89,7 @@ fun GastosScreen(viewModel: GastosViewModel) {
             } else if (gastoSeleccionado != null) {
                 VistaDetalleGasto(
                     gasto = gastoSeleccionado!!,
+                    viewModel = viewModel,
                     onBack = { gastoSeleccionado = null },
                     onEdit = {
                         isEditing = true
@@ -172,10 +170,13 @@ fun GastosScreen(viewModel: GastosViewModel) {
                     if (tabSeleccionado == 0) {
                         VistaListaGastosContent(
                             gastos = gastos,
+                            filtroActual = filtroActual,
+                            onFiltrar = { viewModel.aplicarFiltro(it) },
                             onGastoClick = { gasto -> gastoSeleccionado = gasto },
+                            viewModel = viewModel,
                         )
                     } else {
-                        VistaSaldosContent()
+                        VistaSaldosContent(saldos)
                     }
                 }
             }
@@ -186,6 +187,7 @@ fun GastosScreen(viewModel: GastosViewModel) {
                     gastoEditar = if (isEditing) gastoSeleccionado else null,
                     onConfirm = { nombre, importe, categoria ->
                         if (isEditing && gastoSeleccionado != null) {
+                            // Lógica de editar futura
                         } else {
                             viewModel.crearGasto(nombre, importe, categoria)
                         }
@@ -201,13 +203,26 @@ fun GastosScreen(viewModel: GastosViewModel) {
 @Composable
 fun VistaListaGastosContent(
     gastos: List<Gasto>,
+    filtroActual: String,
+    onFiltrar: (String) -> Unit,
     onGastoClick: (Gasto) -> Unit,
+    viewModel: GastosViewModel,
 ) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
         item {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                val categorias = listOf("TODOS", "ALQUILER", "COMIDA", "SUMINISTROS", "OCIO", "OTROS")
+                items(categorias) { cat ->
+                    CategoryChip(cat, filtroActual, onFiltrar)
+                }
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(8.dp))
             Text("GASTOS FIJOS", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = ColorTextoGris)
             Spacer(modifier = Modifier.height(8.dp))
         }
@@ -215,7 +230,7 @@ fun VistaListaGastosContent(
 
         item {
             Spacer(modifier = Modifier.height(16.dp))
-            Text("Hoy", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text("Recientes", fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
         }
 
@@ -223,7 +238,7 @@ fun VistaListaGastosContent(
             item { Text("No hay gastos registrados.", color = Color.Gray) }
         } else {
             items(gastos) { gasto ->
-                ItemGasto(gasto, onClick = { onGastoClick(gasto) })
+                ItemGasto(gasto, viewModel, onClick = { onGastoClick(gasto) })
             }
         }
         item { Spacer(modifier = Modifier.height(80.dp)) }
@@ -231,15 +246,7 @@ fun VistaListaGastosContent(
 }
 
 @Composable
-fun VistaSaldosContent() {
-    val listaSaldos =
-        listOf(
-            SaldoUsuario("Natalia (yo)", 15.20, getColorPorNombre("Natalia")),
-            SaldoUsuario("Raquel", -5.15, getColorPorNombre("Raquel")),
-            SaldoUsuario("Daniel", 1.56, getColorPorNombre("Daniel")),
-            SaldoUsuario("Marta", -3.50, getColorPorNombre("Marta")),
-        )
-
+fun VistaSaldosContent(saldos: List<SaldoUsuario>) {
     Column {
         Card(
             colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -262,20 +269,24 @@ fun VistaSaldosContent() {
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("¡Deudas zanjadas!", fontWeight = FontWeight.Bold)
-                    Text("No necesitas compensar", fontSize = 12.sp, color = ColorTextoGris)
+                    Text("Balance del Grupo", fontWeight = FontWeight.Bold)
+                    Text("Saldos calculados equitativamente", fontSize = 12.sp, color = ColorTextoGris)
                 }
                 Icon(Icons.Default.KeyboardArrowRight, null)
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-        Text("TRANSACCIONES", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = ColorTextoGris)
+        Text("BALANCES", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = ColorTextoGris)
         Spacer(modifier = Modifier.height(12.dp))
 
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(listaSaldos) { saldo ->
-                ItemSaldo(saldo)
+        if (saldos.isEmpty()) {
+            Text("No hay datos de saldos suficientes.", color = Color.Gray)
+        } else {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(saldos) { saldo ->
+                    ItemSaldo(saldo)
+                }
             }
         }
     }
@@ -295,7 +306,7 @@ fun ItemSaldo(saldo: SaldoUsuario) {
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(saldo.colorAvatar))
+                AvatarConInicial(saldo.nombre, saldo.colorAvatar)
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(saldo.nombre, fontSize = 16.sp, fontWeight = FontWeight.Medium)
             }
@@ -316,10 +327,12 @@ fun ItemSaldo(saldo: SaldoUsuario) {
 @Composable
 fun ItemGasto(
     gasto: Gasto,
+    viewModel: GastosViewModel,
     onClick: () -> Unit,
 ) {
     val pagadorNombre = gasto.pagadoPorNombre ?: "Desconocido"
-    val colorAvatar = getColorPorNombre(pagadorNombre)
+    val colorAvatar = viewModel.getColorPorNombreDinamico(pagadorNombre)
+    val iconoCategoria = getIconoCategoria(gasto.categoria)
 
     Card(
         shape = RoundedCornerShape(24.dp),
@@ -332,16 +345,17 @@ fun ItemGasto(
             verticalAlignment = Alignment.Top,
         ) {
             Icon(
-                imageVector = Icons.Default.RestaurantMenu,
+                imageVector = iconoCategoria,
                 contentDescription = null,
                 modifier = Modifier.padding(top = 4.dp, end = 16.dp).size(24.dp),
                 tint = Color.Black,
             )
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(gasto.nombre, fontSize = 18.sp, fontWeight = FontWeight.W600)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(24.dp).clip(CircleShape).background(colorAvatar))
+                    AvatarConInicial(pagadorNombre, colorAvatar, size = 24.dp)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Pagado por: $pagadorNombre",
@@ -359,7 +373,7 @@ fun ItemGasto(
                             .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(50))
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                 ) {
-                    Text("Pagado por 4/4", fontSize = 10.sp)
+                    Text("Compartido", fontSize = 10.sp)
                 }
             }
         }
@@ -394,9 +408,9 @@ fun ItemGastoFijoEjemplo() {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row {
-                AvatarSimulado(Color.Gray)
+                AvatarConInicial("S", Color.Gray, 24.dp)
                 Spacer(modifier = Modifier.width(4.dp))
-                AvatarSimulado(Color.Black)
+                AvatarConInicial("J", Color.Black, 24.dp)
             }
             Spacer(modifier = Modifier.width(12.dp))
             Box(
@@ -416,24 +430,14 @@ fun ItemGastoFijoEjemplo() {
 @Composable
 fun VistaDetalleGasto(
     gasto: Gasto,
+    viewModel: GastosViewModel,
     onBack: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val pagadorNombre = gasto.pagadoPorNombre ?: "Desconocido"
-    val colorAvatarPagador = getColorPorNombre(pagadorNombre)
-
-    val usuarios = listOf("Natalia (yo)", "Raquel", "Daniel", "Marta")
-    val importePorPersona = gasto.importe / usuarios.size
-
-    val participantes =
-        usuarios.map { nombre ->
-            ParticipantePago(
-                nombre = nombre,
-                cantidad = importePorPersona,
-                colorAvatar = getColorPorNombre(nombre),
-            )
-        }
+    val colorAvatarPagador = viewModel.getColorPorNombreDinamico(pagadorNombre)
+    val participantes = viewModel.obtenerParticipantesGasto(gasto.importe)
 
     Column(
         modifier = Modifier.fillMaxSize().background(ColorFondo),
@@ -476,7 +480,7 @@ fun VistaDetalleGasto(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(colorAvatarPagador))
+                        AvatarConInicial(pagadorNombre, colorAvatarPagador, 36.dp)
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(pagadorNombre, fontSize = 16.sp)
                     }
@@ -540,7 +544,7 @@ fun ItemParticipante(part: ParticipantePago) {
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(part.colorAvatar))
+                AvatarConInicial(part.nombre, part.colorAvatar, 36.dp)
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(part.nombre, fontSize = 16.sp)
             }
@@ -796,25 +800,35 @@ fun CategoryChip(
 }
 
 @Composable
-fun AvatarSimulado(
-    color: Color,
-    modifier: Modifier = Modifier,
+fun AvatarConInicial(
+    nombre: String,
+    colorFondo: Color,
+    size: androidx.compose.ui.unit.Dp = 40.dp,
 ) {
+    val inicial = nombre.firstOrNull()?.toString()?.uppercase() ?: "?"
     Box(
         modifier =
-            modifier
-                .size(24.dp)
+            Modifier
+                .size(size)
                 .clip(CircleShape)
-                .background(color)
-                .border(1.dp, Color.White, CircleShape),
-    )
+                .background(colorFondo),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = inicial,
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            fontSize = if (size < 30.dp) 12.sp else 16.sp,
+        )
+    }
 }
 
-fun getColorPorNombre(nombre: String): Color =
-    when {
-        nombre.contains("Natalia", true) || nombre.contains("yo", true) -> Color(0xFFB1395B)
-        nombre.contains("Daniel", true) -> Color(0xFF8061A2)
-        nombre.contains("Marta", true) -> Color(0xFF93BBEC)
-        nombre.contains("Raquel", true) -> Color(0xFF61995F)
-        else -> Color.Gray
+fun getIconoCategoria(categoria: String): ImageVector =
+    when (categoria.uppercase()) {
+        "COMIDA" -> Icons.Default.RestaurantMenu
+        "ALQUILER" -> Icons.Default.Home
+        "SUMINISTROS" -> Icons.Default.Lightbulb
+        "OCIO" -> Icons.Default.SentimentSatisfiedAlt
+        "TRANSPORTE" -> Icons.Default.DirectionsBus
+        else -> Icons.Default.AttachMoney
     }
