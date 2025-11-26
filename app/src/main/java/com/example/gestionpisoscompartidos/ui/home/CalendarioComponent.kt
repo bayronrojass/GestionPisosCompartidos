@@ -42,6 +42,10 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.gestionpisoscompartidos.data.remote.NetworkModule
+import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryUsuario
+import com.example.gestionpisoscompartidos.model.Usuario
+import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -528,6 +532,20 @@ fun ItemEventoTimeline(
     onEditEvent: () -> Unit,
     onDeleteEvent: (Long) -> Unit,
 ) {
+    var usuarioCreador by remember { mutableStateOf<Usuario?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(evento.creadoPor) {
+        coroutineScope.launch {
+            try {
+                val repo = RepositoryUsuario(NetworkModule.usuarioApiService)
+                usuarioCreador = repo.getUsuario(evento.creadoPor)
+            } catch (e: Exception) {
+                println("Error loading user: ${e.message}")
+            }
+        }
+    }
+
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -551,6 +569,10 @@ fun ItemEventoTimeline(
                 if (!evento.descripcion.isNullOrBlank()) {
                     Text(text = evento.descripcion, style = TextStyle(fontSize = 12.sp, color = Color.Gray))
                 }
+                Text(
+                    text = "Creado Por: ${usuarioCreador?.nombre ?: "Cargando..."}",
+                    style = TextStyle(fontSize = 12.sp, color = Color.Gray),
+                )
             }
 
             Row(
