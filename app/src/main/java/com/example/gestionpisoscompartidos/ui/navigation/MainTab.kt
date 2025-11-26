@@ -1,6 +1,5 @@
 package com.example.gestionpisoscompartidos.ui.navigation
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -139,19 +138,11 @@ fun NavigationBar(
                 padding = 12.dp,
             )
 
-            // Botón 6 - Eventos
-            NavigationItem(
-                icon = Icons.Default.CalendarMonth,
-                isSelected = selectedTab == 5,
-                onClick = { onTabSelected(5) },
-                padding = 12.dp,
-            )
-
             // Botón 7 - Pizarra
             NavigationItem(
                 icon = Icons.Default.AddComment,
-                isSelected = selectedTab == 6,
-                onClick = { onTabSelected(6) },
+                isSelected = selectedTab == 5,
+                onClick = { onTabSelected(5) },
                 padding = 19.dp,
             )
         }
@@ -211,6 +202,7 @@ fun NavigationBarPreview() {
 fun MainScreenWithNavigation(
     casaId: Long,
     casaNombre: String,
+    onNavigateToItem: (Long, String) -> Unit,
     onLogout: () -> Unit,
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -250,10 +242,6 @@ fun MainScreenWithNavigation(
             factory = GastosViewModelFactory(repositoryCasa, sessionManager, casaId),
         )
 
-    val onNavigateToItem: (Long, String) -> Unit = { id, nombre ->
-        Log.d("Navegación", "Item clickeado: $id - $nombre")
-    }
-
     Scaffold(
         bottomBar = {
             Box(
@@ -278,8 +266,7 @@ fun MainScreenWithNavigation(
                     2 -> ListaScreen(listaViewModel, onNavigateToItem)
                     3 -> TareasScreen(tareasViewModel, casaNombre)
                     4 -> PerfilScreen(sessionManager, onLogout)
-                    5 -> EventosScreen(eventosViewModel)
-                    6 -> PizarraScreen(casaId)
+                    5 -> PizarraScreen(casaId)
                 }
             }
         }
@@ -290,5 +277,5 @@ fun MainScreenWithNavigation(
 @Preview
 @Composable
 fun MainScreenWithNavigationPreview() {
-    MainScreenWithNavigation(1L, "1", {})
+    MainScreenWithNavigation(1L, "1", {} as (Long, String) -> Unit, {})
 }
