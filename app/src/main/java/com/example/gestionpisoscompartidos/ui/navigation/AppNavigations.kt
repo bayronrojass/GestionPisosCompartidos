@@ -99,8 +99,6 @@ fun AppNavigation(
                 },
                 onLogout = {
                     navController.navigate(Route.Login.route) {
-                        // Esto limpia toda la pila de navegación hasta el inicio (0)
-                        // Evita que el usuario pueda volver atrás con el botón del móvil
                         popUpTo(0) { inclusive = true }
                     }
                 },

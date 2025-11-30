@@ -27,6 +27,8 @@ class PerfilViewModel(
 
     private val _toastMessage = MutableLiveData<String?>()
     val toastMessage: LiveData<String?> = _toastMessage
+    private val _logoutEvent = MutableLiveData<String?>()
+    val logoutEvent: LiveData<String?> = _logoutEvent
 
     private val _navigationEvent = MutableLiveData<String?>()
     val navigationEvent: LiveData<String?> = _navigationEvent
@@ -35,7 +37,6 @@ class PerfilViewModel(
         cargarPerfil()
     }
 
-    // UT: Ver Perfil
     fun cargarPerfil() {
         _isLoading.value = true
         viewModelScope.launch {
@@ -50,7 +51,6 @@ class PerfilViewModel(
         }
     }
 
-    // UT: Editar Perfil
     fun actualizarPerfil(
         nuevoNombre: String,
         nuevoCorreo: String,
@@ -58,12 +58,12 @@ class PerfilViewModel(
         _isLoading.value = true
         viewModelScope.launch {
             try {
-                val actualizado = repository.updateUsuario(userId, nuevoNombre, nuevoCorreo)
+                repository.updateUsuario(userId, nuevoNombre, nuevoCorreo)
                 cargarPerfil()
-                _usuario.value = actualizado
-                // Actualizamos también la sesión local por si acaso
+                // Actualizamos también la sesión local
                 val token = sessionManager.fetchAuthToken()?.replace("Bearer ", "") ?: ""
                 sessionManager.saveAuthData(token, userId, nuevoCorreo)
+                _toastMessage.value = "Perfil actualizado correctamente"
             } catch (e: Exception) {
                 _error.value = e.message
             } finally {
@@ -72,14 +72,13 @@ class PerfilViewModel(
         }
     }
 
-    // UT: Eliminar Cuenta
     fun eliminarCuenta() {
         _isLoading.value = true
         viewModelScope.launch {
             try {
                 repository.deleteUsuario(userId)
-                _toastMessage.value = "Cuenta eliminada correctamente"
-                cerrarSesion()
+                // Al borrar, llamamos a cerrar sesión con mensaje específico
+                cerrarSesion("Cuenta eliminada correctamente")
             } catch (e: Exception) {
                 _error.value = e.message
                 _isLoading.value = false
@@ -87,11 +86,9 @@ class PerfilViewModel(
         }
     }
 
-    fun cerrarSesion() {
+    fun cerrarSesion(mensaje: String = "Sesión cerrada con éxito") {
         sessionManager.logoutUser()
-        if (_toastMessage.value == null) {
-            _toastMessage.value = "Sesión cerrada con éxito"
-        }
-        _navigationEvent.value = "Login"
+        // Emitimos el evento con el mensaje para que la UI navegue
+        _logoutEvent.value = mensaje
     }
 }
