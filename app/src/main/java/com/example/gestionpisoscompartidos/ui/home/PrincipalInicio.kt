@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.material3.Button
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -42,8 +43,8 @@ fun PrincipalInicio(
     Box(
         modifier =
             modifier
-                .requiredWidth(width = 390.dp)
-                .requiredHeight(height = 844.dp)
+                .fillMaxWidth()
+                .fillMaxHeight()
                 .background(color = Color(0xfff8f8f8)),
     ) {
         Box(
@@ -70,9 +71,9 @@ fun PrincipalInicio(
                     .align(alignment = Alignment.TopCenter)
                     .offset(
                         x = (-85).dp,
-                        y = 109.dp,
+                        y = 105.dp,
                     ).requiredWidth(width = 190.dp)
-                    .requiredHeight(height = 50.dp),
+                    .requiredHeight(height = 60.dp),
         )
         Text(
             text = "Tu compañero virtual para una convivencia sin caos",
