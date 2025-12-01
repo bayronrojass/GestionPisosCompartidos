@@ -180,7 +180,7 @@ fun PrincipalInicioSesin(modifier: Modifier = Modifier) {
                         ),
                 )
                 Image(
-                    painter = painterResource(id = R.drawable.frame),
+                    painter = painterResource(id = R.drawable.frameojo),
                     contentDescription = "Frame",
                     colorFilter = ColorFilter.tint(Color(0xff6c6c6c)),
                     modifier =
@@ -320,13 +320,7 @@ fun PrincipalInicioSesin(modifier: Modifier = Modifier) {
                 colorFilter = ColorFilter.tint(Color.Black),
                 modifier =
                     Modifier
-                        .requiredSize(size = 30.dp)
-                        .padding(
-                            start = 10.dp,
-                            end = 12.dp,
-                            top = 10.dp,
-                            bottom = 10.dp,
-                        ),
+                        .requiredSize(size = 30.dp),
             )
         }
         Text(
