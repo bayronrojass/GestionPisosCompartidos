@@ -29,7 +29,7 @@ fun rememberSessionManager(): SessionManager {
 @Composable
 fun AppNavigation(
     sessionManager: SessionManager,
-    startDestination: String = Route.Login.route,
+    startDestination: String = Route.InicioCarga.route,
 ) {
     val navController = rememberNavController()
 
