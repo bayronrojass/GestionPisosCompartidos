@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -22,9 +23,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.example.gestionpisoscompartidos.R
+import kotlinx.coroutines.delay
+import com.example.gestionpisoscompartidos.ui.navigation.Route
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 
 @Composable
-fun PrincipalInicioCarga(modifier: Modifier = Modifier) {
+fun PrincipalInicioCarga(
+    navController: NavController,
+    modifier: Modifier = Modifier,
+) {
+    LaunchedEffect(Unit) {
+        delay(3000)
+        navController.navigate(Route.InicioPrincipal.route) {
+            // Elimina esta pantalla de la pila para que no se pueda volver atrás
+            popUpTo(Route.InicioCarga.route) { inclusive = true }
+        }
+    }
+
     Box(
         modifier =
             modifier
@@ -88,5 +104,5 @@ fun PrincipalInicioCarga(modifier: Modifier = Modifier) {
 @Preview(widthDp = 390, heightDp = 844)
 @Composable
 private fun PrincipalInicioCargaPreview() {
-    PrincipalInicioCarga(Modifier)
+    PrincipalInicioCarga(rememberNavController(), Modifier)
 }

@@ -6,12 +6,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Button
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -31,9 +36,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.example.gestionpisoscompartidos.R
+import com.example.gestionpisoscompartidos.ui.navigation.Route
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 
 @Composable
-fun PrincipalInicio(modifier: Modifier = Modifier) {
+fun PrincipalInicio(navController: NavController,modifier: Modifier = Modifier) {
     Box(
         modifier =
             modifier
@@ -98,9 +106,7 @@ fun PrincipalInicio(modifier: Modifier = Modifier) {
                     ).requiredWidth(width = 330.dp)
                     .requiredHeight(height = 315.dp),
         )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically,
+        Column(
             modifier =
                 Modifier
                     .align(alignment = Alignment.TopStart)
@@ -108,23 +114,24 @@ fun PrincipalInicio(modifier: Modifier = Modifier) {
                         x = 20.dp,
                         y = 630.dp,
                     ).requiredWidth(width = 350.dp)
-                    .requiredHeight(height = 50.dp)
-                    .clip(shape = RoundedCornerShape(15.dp))
-                    .background(color = Color.Black)
-                    .border(
-                        border = BorderStroke(1.dp, Color.Black),
-                        shape = RoundedCornerShape(15.dp),
-                    ).padding(all = 10.dp),
+                    .requiredHeight(height = 50.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Iniciar sesión",
-                color = Color.White,
-                textAlign = TextAlign.Center,
-                style =
-                    TextStyle(
-                        fontSize = 18.sp,
-                    ),
-            )
+            Button(
+                onClick = { navController.navigate(Route.InicioSesion.route) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                shape = RoundedCornerShape(25.dp)
+            ) {
+                Text(
+                    text = "Iniciar sesión",
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
         Text(
             textAlign = TextAlign.Center,
@@ -168,5 +175,5 @@ fun PrincipalInicio(modifier: Modifier = Modifier) {
 @Preview(widthDp = 390, heightDp = 844)
 @Composable
 private fun PrincipalInicioPreview() {
-    PrincipalInicio(Modifier)
+    PrincipalInicio(rememberNavController(),Modifier)
 }
