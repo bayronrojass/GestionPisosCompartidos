@@ -236,7 +236,7 @@ fun PrincipalInicioSesin(modifier: Modifier = Modifier) {
                     .border(border = BorderStroke(1.dp, Color(0xff6c6c6c))),
         )
         Image(
-            painter = painterResource(id = R.drawable.line3),
+            painter = painterResource(id = R.drawable.line4),
             contentDescription = "Line 4",
             modifier =
                 Modifier
@@ -245,26 +245,34 @@ fun PrincipalInicioSesin(modifier: Modifier = Modifier) {
                         x = 20.dp,
                         y = 630.5.dp,
                     ).requiredWidth(width = 160.dp)
-                    .requiredHeight(height = 0.dp)
                     .border(border = BorderStroke(1.dp, Color(0xff6c6c6c))),
         )
-        Image(
-            painter = painterResource(id = R.drawable.facebook),
-            contentDescription = "facebook",
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
             modifier =
                 Modifier
                     .align(alignment = Alignment.TopStart)
                     .offset(
-                        x = 247.dp,
+                        x = 245.dp,
                         y = 670.dp,
                     ).requiredWidth(width = 60.dp)
                     .requiredHeight(height = 50.dp)
                     .clip(shape = RoundedCornerShape(15.dp))
+                    .background(color = Color.White)
                     .border(
                         border = BorderStroke(1.dp, Color(0xff6c6c6c)),
                         shape = RoundedCornerShape(15.dp),
                     ),
-        )
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.facebook),
+                contentDescription = "google",
+                modifier =
+                    Modifier
+                        .requiredSize(size = 28.dp),
+            )
+        }
         Row(
             horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically,
