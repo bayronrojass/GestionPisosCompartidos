@@ -363,41 +363,54 @@ fun TareasScreen(
 
 @Composable
 fun AsignacionMensualComponent() {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    Card(
+        colors =
+            CardDefaults.cardColors(
+                containerColor = Color.White,
+            ),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation = 0.dp, // Sin sombra
+            ),
+        shape = RoundedCornerShape(15.dp),
+        border = BorderStroke(1.dp, Color.LightGray), // Borde gris
         modifier =
             Modifier
                 .fillMaxWidth()
-                .requiredHeight(60.dp)
-                .clip(RoundedCornerShape(15.dp))
-                .background(Color.White)
-                .padding(all = 10.dp)
-                .shadow(4.dp, RoundedCornerShape(15.dp)),
-        horizontalArrangement = Arrangement.SpaceEvenly,
+                .requiredHeight(60.dp),
     ) {
-        // Botón Rotación (seleccionado por defecto)
-        BotonAsignacion(
-            icono = R.drawable.iconorotar,
-            texto = "Rotación",
-            seleccionado = true,
-            onClick = { /* TODO: Implementar lógica */ },
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(all = 10.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            // Botón Rotación (seleccionado por defecto)
+            BotonAsignacion(
+                icono = R.drawable.iconorotar,
+                texto = "Rotación",
+                seleccionado = true,
+                onClick = { /* TODO: Implementar lógica */ },
+            )
 
-        // Botón Aleatorio
-        BotonAsignacion(
-            icono = R.drawable.iconoaleatorio,
-            texto = "Aleatorio",
-            seleccionado = false,
-            onClick = { /* TODO: Implementar lógica */ },
-        )
+            // Botón Aleatorio
+            BotonAsignacion(
+                icono = R.drawable.iconoaleatorio,
+                texto = "Aleatorio",
+                seleccionado = false,
+                onClick = { /* TODO: Implementar lógica */ },
+            )
 
-        // Botón Manual
-        BotonAsignacion(
-            icono = R.drawable.iconomanual,
-            texto = "Manual",
-            seleccionado = false,
-            onClick = { /* TODO: Implementar lógica */ },
-        )
+            // Botón Manual
+            BotonAsignacion(
+                icono = R.drawable.iconomanual,
+                texto = "Manual",
+                seleccionado = false,
+                onClick = { /* TODO: Implementar lógica */ },
+            )
+        }
     }
 }
 
