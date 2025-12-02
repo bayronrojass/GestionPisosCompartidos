@@ -47,6 +47,19 @@ fun TareasScreen(
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
 
+    // Obtener el usuario actual desde el SessionManager
+    val usuarioActual =
+        remember {
+            val userId = sessionManager.fetchCurrentUserId()
+            val userName = sessionManager.fetchUserEmail()
+            // Crear un usuario temporal con la información de sesión
+            if (userId != null && userName != null) {
+                Usuario(id = userId, nombre = userName, correo = "")
+            } else {
+                null
+            }
+        }
+
     // Estados locales para la UI
     var selectedTab by remember { mutableIntStateOf(0) } // 0: Pendientes, 1: Completadas
     var showCreateDialog by remember { mutableStateOf(false) }
@@ -63,8 +76,23 @@ fun TareasScreen(
         }
 
     // Obtener tareas del usuario actual (para MIS TAREAS)
-    val tareasUsuarioActual = tareasFiltradas.filter { it.asignadoA != null }
-    val otrasTareas = tareasFiltradas.filter { it.asignadoA == null }
+    val tareasUsuarioActual =
+        remember(tareasFiltradas, usuarioActual) {
+            tareasFiltradas.filter { tarea ->
+                // Incluir tareas asignadas al usuario actual
+                tarea.asignadoA?.id == usuarioActual?.id
+            }
+        }
+
+    // Obtener otras tareas (para OTRAS)
+    val otrasTareas =
+        remember(tareasFiltradas, usuarioActual) {
+            tareasFiltradas.filter { tarea ->
+                // Incluir tareas que NO están asignadas al usuario actual
+                // Esto incluye: tareas sin asignar y tareas asignadas a otros usuarios
+                tarea.asignadoA?.id != usuarioActual?.id
+            }
+        }
 
     // Cargar datos iniciales
     LaunchedEffect(Unit) {
@@ -111,7 +139,7 @@ fun TareasScreen(
                 modifier =
                     Modifier
                         .align(Alignment.TopStart)
-                        .offset(x = 20.dp, y = 15.dp), // MODIFICADO: de 63.dp a 30.dp
+                        .offset(x = 20.dp, y = 15.dp),
             )
 
             // TABS (Pendientes / Completadas)
@@ -119,7 +147,7 @@ fun TareasScreen(
                 modifier =
                     Modifier
                         .align(Alignment.TopStart)
-                        .offset(x = 65.dp, y = 75.dp) // MODIFICADO: de 143.dp a 90.dp
+                        .offset(x = 65.dp, y = 75.dp)
                         .requiredWidth(width = 260.dp)
                         .requiredHeight(height = 24.dp),
             ) {
@@ -174,7 +202,7 @@ fun TareasScreen(
                 modifier =
                     Modifier
                         .align(Alignment.TopStart)
-                        .offset(y = 115.dp) // MODIFICADO: de 200.dp a 130.dp
+                        .offset(y = 115.dp)
                         .fillMaxSize()
                         .padding(horizontal = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -194,7 +222,7 @@ fun TareasScreen(
                             AsignacionMensualComponent()
                         }
 
-                        // Sección: MIS TAREAS
+                        // Sección: MIS TAREAS (solo las asignadas al usuario actual)
                         if (tareasUsuarioActual.isNotEmpty()) {
                             item {
                                 Spacer(modifier = Modifier.height(20.dp))
@@ -216,7 +244,7 @@ fun TareasScreen(
                             }
                         }
 
-                        // Sección: OTRAS TAREAS
+                        // Sección: OTRAS TAREAS (sin asignar o asignadas a otros)
                         if (otrasTareas.isNotEmpty()) {
                             item {
                                 Spacer(modifier = Modifier.height(20.dp))
@@ -228,11 +256,23 @@ fun TareasScreen(
                                 )
                             }
                             items(otrasTareas) { tarea ->
-                                TaskCardOtra(
-                                    tarea = tarea,
-                                    onEdit = { taskToEdit = tarea },
-                                    modifier = Modifier.fillMaxWidth(),
-                                )
+                                if (tarea.asignadoA != null && tarea.asignadoA?.id != usuarioActual?.id) {
+                                    // Tarea asignada a otro usuario
+                                    TaskCardOtra(
+                                        tarea = tarea,
+                                        onEdit = { taskToEdit = tarea },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                } else {
+                                    // Tarea sin asignar
+                                    TaskCardPendiente(
+                                        tarea = tarea,
+                                        esMia = false,
+                                        onComplete = { viewModel.toggleCompletado(tarea) },
+                                        onEdit = { taskToEdit = tarea },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                }
                             }
                         }
 
@@ -503,14 +543,14 @@ fun TaskCardPendiente(
                     horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // Prioridad - SIN BORDE
+                    // Prioridad
                     when (tarea.prioridad?.lowercase() ?: "media") {
                         "alta" -> BadgePrioridad("Alta", Color(0xffff6490), Color(0xff581327))
                         "media" -> BadgePrioridad("Media", Color(0xffddc1fb), Color(0xff5d427a))
                         "baja" -> BadgePrioridad("Baja", Color(0xFFC8E6C9), Color(0xFF2E7D32))
                     }
 
-                    // Hora - SIN BORDE
+                    // Hora
                     BadgeHora("de 16 a 17h", Color(0xffff6490), Color(0xff5a1428))
                 }
             }
@@ -519,18 +559,6 @@ fun TaskCardPendiente(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                // Botón Completar - SIN BORDE (solo texto con fondo transparente)
-                TextButton(
-                    onClick = onComplete,
-                    colors =
-                        ButtonDefaults.textButtonColors(
-                            contentColor = Color(0xff6c6c6c),
-                        ),
-                    modifier = Modifier.height(40.dp),
-                ) {
-                    Text("Completar", fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                }
-
                 // Enlace "Solicitar cambio" solo para tareas propias
                 if (esMia) {
                     Row(
@@ -554,6 +582,21 @@ fun TaskCardPendiente(
                             modifier = Modifier.size(24.dp),
                         )
                     }
+                }
+
+                // Botón Completar
+                OutlinedButton(
+                    onClick = onComplete,
+                    colors =
+                        ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color(0xff6c6c6c),
+                            containerColor = Color.Transparent,
+                        ),
+                    border = BorderStroke(1.dp, Color(0xff6c6c6c)), // Borde fino gris
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.height(40.dp),
+                ) {
+                    Text("Completar", fontSize = 14.sp, fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -599,7 +642,7 @@ fun TaskCardOtra(
                 )
 
                 Text(
-                    text = "Asignado a ${tarea.asignadoA?.nombre ?: "Daniel"}",
+                    text = "Asignado a ${tarea.asignadoA?.nombre ?: "Sin asignar"}",
                     color = Color(0xff6c6c6c),
                     style = TextStyle(fontSize = 16.sp),
                     modifier = Modifier.fillMaxWidth(),
@@ -649,7 +692,7 @@ fun TaskCardOtra(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Image(
-                        painter = painterResource(id = R.drawable.frame),
+                        painter = painterResource(id = R.drawable.iconocampana),
                         contentDescription = "Recordar",
                         colorFilter = ColorFilter.tint(Color(0xff6c6c6c)),
                         modifier = Modifier.size(24.dp),
