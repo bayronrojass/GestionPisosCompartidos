@@ -15,7 +15,6 @@ import com.example.gestionpisoscompartidos.model.Point
 import com.example.gestionpisoscompartidos.model.dtos.PointDeltaDTO
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -36,9 +35,7 @@ class PizarraView
         private var backgroundBitmap: Bitmap? = null
         private val path = Path()
         private var lastPoint: Point? = null
-        var saveJob: Job? = null
         private val saveScope = CoroutineScope(Dispatchers.Main)
-        private var loadJob: Job? = null
         private val loadScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
         var paint =
@@ -88,14 +85,14 @@ class PizarraView
         }
 
         override fun onTouchEvent(event: MotionEvent): Boolean {
-            var currentmodel = model ?: return false
+            var currentmodel = model
             if (!activatedDraw) {
                 return false
             }
             val x = event.x
             val y = event.y
 
-            loadJob?.cancel()
+            model.loadJob?.cancel()
             val paint = createPaint(currentmodel.color)
 
             when (event.action) {
@@ -158,21 +155,21 @@ class PizarraView
         }
 
         private fun save() {
-            saveJob?.cancel()
+            model.saveJob?.cancel()
 
-            saveJob =
+            model.saveJob =
                 saveScope.launch {
                     delay(1000L)
-                    model?.save()
+                    model.save()
                     load()
                 }
         }
 
         fun load() {
-            val currentModel = model ?: return
-            loadJob?.cancel()
+            val currentModel = model
+            model.loadJob?.cancel()
 
-            loadJob =
+            model.loadJob =
                 loadScope.launch {
                     while (isActive) {
                         try {
@@ -192,10 +189,5 @@ class PizarraView
 
         fun setModel(newModel: PizarraViewModel) {
             model = newModel
-        }
-
-        fun stop() {
-            saveJob?.cancel()
-            loadJob?.cancel()
         }
     }

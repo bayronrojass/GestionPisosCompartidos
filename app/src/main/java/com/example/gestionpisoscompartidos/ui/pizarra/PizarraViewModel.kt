@@ -10,6 +10,7 @@ import com.example.gestionpisoscompartidos.data.repository.APIs.PizarraAPI
 import com.example.gestionpisoscompartidos.model.dtos.PointDeltaDTO
 import com.example.gestionpisoscompartidos.utils.ApiResult
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,6 +28,8 @@ class PizarraViewModel(
     val _bitmapState = MutableStateFlow<Bitmap?>(null)
     val bitmapState: StateFlow<Bitmap?> = _bitmapState.asStateFlow()
     var color: Byte = 1
+    var saveJob: Job? = null
+    var loadJob: Job? = null
 
     var lastLoaded: Instant = Instant.ofEpochMilli(1000000)
 
@@ -136,7 +139,8 @@ class PizarraViewModel(
         }
     }
 
-    fun onColorSelected(c: Byte) {
-        color = c
+    fun stop() {
+        saveJob?.cancel()
+        loadJob?.cancel()
     }
 }

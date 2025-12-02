@@ -1,4 +1,4 @@
-package com.example.gestionpisoscompartidos.ui.pizarra.p2
+package com.example.gestionpisoscompartidos.ui.pizarra.postits
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -10,7 +10,6 @@ class DraggableViewModelFactory(
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(DraggableViewModel::class.java)) {
-            // Pasamos la localización y el repositorio al ViewModel
             return DraggableViewModel(location = location, casaId = casaId) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

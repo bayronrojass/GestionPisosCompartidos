@@ -42,12 +42,13 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.example.gestionpisoscompartidos.R
 import com.example.gestionpisoscompartidos.model.Evento
-import com.example.gestionpisoscompartidos.ui.pizarra.p2.PizarraScreen
+import com.example.gestionpisoscompartidos.ui.pizarra.postits.PizarraScreen
 
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel,
+    casaId: Long,
 ) {
     var showFullCalendar by remember { mutableStateOf(false) }
     val fechaSeleccionada by viewModel.fechaSeleccionada.collectAsState()
@@ -55,7 +56,6 @@ fun HomeScreen(
     val todosLosEventos by viewModel.eventos.collectAsState()
 
     val onEditEvent = { evento: Evento ->
-        // This will be handled in the CalendarioFullView
     }
 
     if (showFullCalendar) {
@@ -255,7 +255,7 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(80.dp))
         }
-        PizarraScreen(location = "Home")
+        PizarraScreen(location = "Home", casaId = casaId)
     }
 }
 

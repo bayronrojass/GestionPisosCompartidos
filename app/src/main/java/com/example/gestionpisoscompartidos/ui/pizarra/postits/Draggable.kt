@@ -1,4 +1,4 @@
-package com.example.gestionpisoscompartidos.ui.pizarra.p2
+package com.example.gestionpisoscompartidos.ui.pizarra.postits
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -57,9 +57,10 @@ fun DraggablePostIt(
 
 @Composable
 fun PizarraScreen(
-    viewModel: DraggableViewModel = viewModel(),
     location: String,
+    casaId: Long,
 ) {
+    val viewModel: DraggableViewModel = viewModel(factory = DraggableViewModelFactory(location, casaId))
     val postIts by viewModel.postIts.collectAsState()
     val expandedPostIt = postIts.find { it.isExpanded }
 
@@ -100,8 +101,10 @@ fun PizarraScreen(
             ) {
                 ExpandedPostIt(
                     onMinimize = { viewModel.toggleExpand(expandedPostIt.id) },
-                    onClose = { viewModel.removePostIt(expandedPostIt.id) },
-                    state = PostItState(lienzoId = 1L),
+                    onClose = {
+                        viewModel.removePostIt(expandedPostIt.id)
+                    },
+                    state = expandedPostIt,
                 )
             }
         }

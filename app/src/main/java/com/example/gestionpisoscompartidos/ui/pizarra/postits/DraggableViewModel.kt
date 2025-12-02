@@ -1,4 +1,4 @@
-package com.example.gestionpisoscompartidos.ui.pizarra.p2
+package com.example.gestionpisoscompartidos.ui.pizarra.postits
 
 import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.ViewModel

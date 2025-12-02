@@ -249,7 +249,7 @@ fun MainScreenWithNavigation(
         Box(modifier = Modifier.padding(padding)) {
             savedStateHandle.SaveableStateProvider(selectedTab) {
                 when (selectedTab) {
-                    0 -> HomeScreen(viewModel = homeViewModel)
+                    0 -> HomeScreen(viewModel = homeViewModel, casaId = casaId)
                     1 -> GastosScreen(viewModel = gastosViewModel)
                     2 -> ListaScreen(listaViewModel, onNavigateToItem)
                     3 -> TareasScreen(tareasViewModel, casaNombre)

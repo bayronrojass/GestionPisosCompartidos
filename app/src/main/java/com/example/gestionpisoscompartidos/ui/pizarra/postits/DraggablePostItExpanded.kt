@@ -1,7 +1,5 @@
-package com.example.gestionpisoscompartidos.ui.pizarra.p2
+package com.example.gestionpisoscompartidos.ui.pizarra.postits
 
-import android.annotation.SuppressLint
-import androidx.activity.result.launch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,12 +35,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gestionpisoscompartidos.R
 import com.example.gestionpisoscompartidos.ui.pizarra.PizarraView
 import com.example.gestionpisoscompartidos.ui.pizarra.PizarraViewModel
+import com.example.gestionpisoscompartidos.ui.pizarra.PizarraViewModelFactory
 import kotlinx.coroutines.launch
 
-@SuppressLint("ViewModelConstructorInComposable")
 @Composable
 fun ExpandedPostIt(
     onMinimize: () -> Unit,
@@ -50,7 +49,11 @@ fun ExpandedPostIt(
     modifier: Modifier = Modifier,
     state: PostItState,
 ) {
-    val lifecycleOwner = LocalLifecycleOwner.current
+    val pizarraViewModel: PizarraViewModel =
+        viewModel(
+            factory = PizarraViewModelFactory(state.lienzoId),
+        )
+
     val chipBackgroundColor = Color(0xffb1395b)
     val chipContentColor = Color(0xFFFFE9EF)
     val chipColors =
@@ -78,7 +81,10 @@ fun ExpandedPostIt(
                 label = { Text("Cerrar") },
                 avatar = { Icon(Icons.Default.Close, "Cerrar") },
                 selected = true,
-                onClick = onClose,
+                onClick = {
+                    pizarraViewModel.stop()
+                    onClose()
+                },
                 colors = chipColors,
                 border = null,
             )
@@ -92,12 +98,29 @@ fun ExpandedPostIt(
                     )
                 },
                 selected = true,
-                onClick = onMinimize,
+                onClick = {
+                    pizarraViewModel.stop()
+                    onMinimize()
+                },
+                colors = chipColors,
+                border = null,
+            )
+            InputChip(
+                label = { Text("Imagen") },
+                avatar = {
+                    Icon(
+                        painter = painterResource(id = R.drawable.home_union),
+                        contentDescription = "Imagen",
+                        modifier = Modifier.requiredSize(24.dp),
+                    )
+                },
+                selected = true,
+                onClick = {
+                },
                 colors = chipColors,
                 border = null,
             )
         }
-
         val stroke =
             Stroke(
                 width = 10.dp.value,
@@ -123,22 +146,21 @@ fun ExpandedPostIt(
                     },
         ) {
             val context = LocalContext.current
+            val lifecycleOwner = LocalLifecycleOwner.current
 
             val pizarraView =
                 remember(state.lienzoId) {
                     PizarraView(context).apply {
                         this.activatedDraw = true
+                        setModel(pizarraViewModel)
                     }
                 }
 
-            val pizarraViewModel = PizarraViewModel(state.lienzoId)
-            pizarraViewModel.lienzoId = state.lienzoId
-            pizarraView.setModel(pizarraViewModel)
-
             LaunchedEffect(pizarraView, lifecycleOwner) {
                 lifecycleOwner.lifecycleScope.launch {
-                    pizarraView.load()
-                    pizarraView.model.bitmapState.collect { bitmap ->
+                    pizarraViewModel.load()
+
+                    pizarraViewModel.bitmapState.collect { bitmap ->
                         bitmap?.let {
                             pizarraView.setBackgroundBitmap(it)
                         }
