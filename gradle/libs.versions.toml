@@ -31,6 +31,7 @@ navigationComposeJvmstubs = "2.9.6"
 runtimeLivedata = "1.9.4"
 fragmentCompose = "1.8.9"
 foundation = "1.9.5"
+uiVersion = "1.9.5"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -66,6 +67,7 @@ androidx-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation
 androidx-runtime-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata", version.ref = "runtimeLivedata" }
 androidx-fragment-compose = { group = "androidx.fragment", name = "fragment-compose", version.ref = "fragmentCompose" }
 androidx-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
+androidx-compose-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "uiVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
