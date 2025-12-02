@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.example.gestionpisoscompartidos.R
 import com.example.gestionpisoscompartidos.model.Evento
+import com.example.gestionpisoscompartidos.ui.pizarra.p2.PizarraScreen
 
 @Composable
 fun HomeScreen(
@@ -238,6 +239,7 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(80.dp))
         }
+        PizarraScreen()
     }
 }
 
