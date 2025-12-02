@@ -1,28 +1,25 @@
 package com.example.gestionpisoscompartidos.ui.tareas
 
+import android.app.DatePickerDialog
 import android.widget.Toast
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -36,7 +33,6 @@ import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.model.Tarea
 import com.example.gestionpisoscompartidos.model.Usuario
 import java.util.Calendar
-import android.app.DatePickerDialog
 
 @Composable
 fun TareasScreen(
@@ -66,12 +62,15 @@ fun TareasScreen(
             }
         }
 
+    // Obtener tareas del usuario actual (para MIS TAREAS)
+    val tareasUsuarioActual = tareasFiltradas.filter { it.asignadoA != null }
+    val otrasTareas = tareasFiltradas.filter { it.asignadoA == null }
+
     // Cargar datos iniciales
     LaunchedEffect(Unit) {
         val token = sessionManager.fetchAuthToken()
         if (token != null) {
             viewModel.cargarMiembros(token)
-            // Asegúrate de que tu ViewModel tenga un método para cargar tareas también si no es automático
         }
     }
 
@@ -85,148 +84,238 @@ fun TareasScreen(
     Scaffold(
         containerColor = Color(0xfff8f8f8),
         floatingActionButton = {
-            // Usamos el diseño del botón flotante original o el del Navbar nuevo
-            FloatingActionButton(
-                onClick = { showCreateDialog = true },
-                containerColor = Color.White,
-                contentColor = Color.Black,
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Añadir")
+            if (selectedTab == 0) {
+                FloatingActionButton(
+                    onClick = { showCreateDialog = true },
+                    containerColor = Color.Black,
+                    contentColor = Color.White,
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Añadir")
+                }
             }
         },
     ) { paddingValues ->
 
-        Column(
+        Box(
             modifier =
                 Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(horizontal = 20.dp),
+                    .background(Color(0xfff8f8f8)),
         ) {
-            Spacer(modifier = Modifier.height(20.dp))
-
             // TITULO
             Text(
                 text = "Tareas",
                 color = Color.Black,
                 style = MaterialTheme.typography.displaySmall,
-                modifier = Modifier.padding(bottom = 20.dp),
+                modifier =
+                    Modifier
+                        .align(Alignment.TopStart)
+                        .offset(x = 20.dp, y = 63.dp),
             )
 
             // TABS (Pendientes / Completadas)
             Box(
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .height(40.dp), // Aumenté un poco la altura para que sea táctil
+                        .align(Alignment.TopStart)
+                        .offset(x = 65.dp, y = 143.dp)
+                        .requiredWidth(width = 260.dp)
+                        .requiredHeight(height = 24.dp),
             ) {
                 // Fondo blanco
                 Box(
                     modifier =
                         Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight()
+                            .fillMaxSize()
                             .clip(RoundedCornerShape(26.dp))
                             .background(Color.White)
-                            .border(BorderStroke(3.dp, Color.White), RoundedCornerShape(26.dp))
                             .shadow(4.dp, RoundedCornerShape(26.dp)),
                 )
 
                 // Fondo morado (Selector)
-                // Calculamos la posición visual del selector
-                val alignment = if (selectedTab == 0) Alignment.CenterStart else Alignment.CenterEnd
                 Box(
                     modifier =
                         Modifier
                             .fillMaxWidth(0.5f)
                             .fillMaxHeight()
-                            .align(alignment)
+                            .align(if (selectedTab == 0) Alignment.CenterStart else Alignment.CenterEnd)
                             .clip(RoundedCornerShape(26.dp))
                             .background(Color(0xffddc1fb)),
                 )
 
-                // Textos clickeables
-                Row(modifier = Modifier.fillMaxSize()) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .clickable { selectedTab = 0 },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = "Pendientes",
-                            color = Color.Black,
-                            style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
-                        )
-                    }
-                    Box(
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .clickable { selectedTab = 1 },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = "Completadas",
-                            color = Color.Black,
-                            style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
-                        )
-                    }
-                }
+                // Textos
+                Text(
+                    text = "Pendientes",
+                    color = Color.Black,
+                    style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
+                    modifier =
+                        Modifier
+                            .align(Alignment.CenterStart)
+                            .offset(x = 22.dp)
+                            .clickable { selectedTab = 0 }
+                            .padding(horizontal = 10.dp, vertical = 2.dp),
+                )
+                Text(
+                    text = "Completadas",
+                    color = Color.Black,
+                    style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
+                    modifier =
+                        Modifier
+                            .align(Alignment.CenterEnd)
+                            .offset(x = (-22).dp)
+                            .clickable { selectedTab = 1 }
+                            .padding(horizontal = 10.dp, vertical = 2.dp),
+                )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // LISTA DE TAREAS (LazyColumn para scroll)
+            // CONTENIDO PRINCIPAL
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(bottom = 80.dp),
+                modifier =
+                    Modifier
+                        .align(Alignment.TopStart)
+                        .offset(y = 200.dp)
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp), // Reducido de 20 a 16
+                contentPadding = PaddingValues(bottom = 100.dp),
             ) {
-                // Sección Asignación Mensual (Solo visible en Pendientes)
-                if (selectedTab == 0) {
-                    item {
-                        Text(
-                            text = "ASIGNACIÓN MENSUAL",
-                            style = TextStyle(fontSize = 16.sp),
-                            modifier = Modifier.padding(bottom = 10.dp),
-                        )
-                        AsignacionMensualComponent()
-                        Spacer(modifier = Modifier.height(20.dp))
-                        Text(
-                            text = "LISTA DE TAREAS",
-                            style = TextStyle(fontSize = 16.sp),
-                            modifier = Modifier.padding(bottom = 10.dp),
-                        )
-                    }
-                }
-
-                if (tareasFiltradas.isEmpty()) {
-                    item {
-                        Text(
-                            text = if (isLoading) "Cargando..." else "No hay tareas en esta sección",
-                            modifier = Modifier.fillMaxWidth().padding(20.dp),
-                            textAlign = TextAlign.Center,
-                            color = Color.Gray,
-                        )
-                    }
-                } else {
-                    items(tareasFiltradas) { tarea ->
-                        if (selectedTab == 0) {
-                            // Tarea Pendiente
-                            TaskCardPending(
-                                tarea = tarea,
-                                onComplete = { viewModel.toggleCompletado(tarea) },
-                                onEdit = { taskToEdit = tarea },
+                when (selectedTab) {
+                    0 -> {
+                        // PESTAÑA PENDIENTES
+                        // Sección: ASIGNACIÓN MENSUAL
+                        item {
+                            Text(
+                                text = "ASIGNACIÓN MENSUAL",
+                                color = Color.Black,
+                                style = TextStyle(fontSize = 16.sp),
+                                modifier = Modifier.padding(bottom = 10.dp),
                             )
-                        } else {
-                            // Tarea Completada
-                            TaskCardCompleted(
-                                tarea = tarea,
-                                onUncomplete = { viewModel.toggleCompletado(tarea) },
+                            AsignacionMensualComponent()
+                        }
+
+                        // Sección: MIS TAREAS
+                        if (tareasUsuarioActual.isNotEmpty()) {
+                            item {
+                                Spacer(modifier = Modifier.height(20.dp))
+                                Text(
+                                    text = "MIS TAREAS",
+                                    color = Color.Black,
+                                    style = TextStyle(fontSize = 16.sp),
+                                    modifier = Modifier.padding(bottom = 10.dp),
+                                )
+                            }
+                            items(tareasUsuarioActual) { tarea ->
+                                TaskCardPendiente(
+                                    tarea = tarea,
+                                    esMia = true,
+                                    onComplete = { viewModel.toggleCompletado(tarea) },
+                                    onEdit = { taskToEdit = tarea },
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                            }
+                        }
+
+                        // Sección: OTRAS TAREAS
+                        if (otrasTareas.isNotEmpty()) {
+                            item {
+                                Spacer(modifier = Modifier.height(20.dp))
+                                Text(
+                                    text = "OTRAS",
+                                    color = Color.Black,
+                                    style = TextStyle(fontSize = 16.sp),
+                                    modifier = Modifier.padding(bottom = 10.dp),
+                                )
+                            }
+                            items(otrasTareas) { tarea ->
+                                TaskCardOtra(
+                                    tarea = tarea,
+                                    onEdit = { taskToEdit = tarea },
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                            }
+                        }
+
+                        if (tareasFiltradas.isEmpty()) {
+                            item {
+                                Text(
+                                    text = "No hay tareas pendientes",
+                                    modifier = Modifier.fillMaxWidth().padding(20.dp),
+                                    textAlign = TextAlign.Center,
+                                    color = Color.Gray,
+                                )
+                            }
+                        }
+                    }
+
+                    1 -> {
+                        // PESTAÑA COMPLETADAS
+                        // Sección: SEMANALES
+                        val tareasSemanales = tareasFiltradas.filter { it.frecuencia == "Diaria" || it.frecuencia == "Semanal" }
+                        if (tareasSemanales.isNotEmpty()) {
+                            item {
+                                Text(
+                                    text = "SEMANALES",
+                                    color = Color.Black,
+                                    style = TextStyle(fontSize = 16.sp),
+                                    modifier = Modifier.padding(bottom = 10.dp),
+                                )
+                            }
+                            items(tareasSemanales) { tarea ->
+                                TaskCardCompletada(
+                                    tarea = tarea,
+                                    onUncomplete = { viewModel.toggleCompletado(tarea) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                            }
+                        }
+
+                        // Sección: MENSUALES
+                        val tareasMensuales = tareasFiltradas.filter { it.frecuencia == "Mensual" }
+                        if (tareasMensuales.isNotEmpty()) {
+                            item {
+                                Spacer(modifier = Modifier.height(20.dp))
+                                Text(
+                                    text = "MENSUALES",
+                                    color = Color.Black,
+                                    style = TextStyle(fontSize = 16.sp),
+                                    modifier = Modifier.padding(bottom = 10.dp),
+                                )
+                            }
+                            items(tareasMensuales) { tarea ->
+                                TaskCardCompletadaSimple(
+                                    tarea = tarea,
+                                    onUncomplete = { viewModel.toggleCompletado(tarea) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                            }
+                        }
+
+                        if (tareasFiltradas.isEmpty()) {
+                            item {
+                                Text(
+                                    text = "No hay tareas completadas",
+                                    modifier = Modifier.fillMaxWidth().padding(20.dp),
+                                    textAlign = TextAlign.Center,
+                                    color = Color.Gray,
+                                )
+                            }
+                        }
+
+                        // Botón "ver más" como en el diseño
+                        item {
+                            Spacer(modifier = Modifier.height(20.dp))
+                            Text(
+                                text = "ver más",
+                                color = Color(0xff6c6c6c),
+                                textDecoration = TextDecoration.Underline,
+                                style = TextStyle(fontSize = 14.sp),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clickable { }
+                                        .padding(vertical = 10.dp),
+                                textAlign = TextAlign.Center,
                             )
                         }
                     }
@@ -235,8 +324,7 @@ fun TareasScreen(
         }
     }
 
-    // --- DIÁLOGOS
-
+    // --- DIÁLOGOS ---
     if (showCreateDialog) {
         CreateTaskDialog(
             miembros = miembros,
@@ -270,246 +358,488 @@ fun TareasScreen(
 }
 
 // ----------------------------------------------------------------
-// COMPONENTES VISUALES ADAPTADOS (Del nuevo diseño)
+// COMPONENTES VISUALES MEJORADOS - SIN BORDES GRISES
 // ----------------------------------------------------------------
 
 @Composable
 fun AsignacionMensualComponent() {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(60.dp)
+                .requiredHeight(60.dp)
                 .clip(RoundedCornerShape(15.dp))
                 .background(Color.White)
-                .padding(10.dp)
+                .padding(all = 10.dp)
                 .shadow(4.dp, RoundedCornerShape(15.dp)),
+        horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
-        // Opción Rotación (Seleccionada visualmente como ejemplo)
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clip(RoundedCornerShape(7.5.dp))
-                    .background(Color.Black),
+        // Botón Rotación (seleccionado por defecto)
+        BotonAsignacion(
+            icono = R.drawable.iconorotar,
+            texto = "Rotación",
+            seleccionado = true,
+            onClick = { /* TODO: Implementar lógica */ },
+        )
+
+        // Botón Aleatorio
+        BotonAsignacion(
+            icono = R.drawable.iconoaleatorio,
+            texto = "Aleatorio",
+            seleccionado = false,
+            onClick = { /* TODO: Implementar lógica */ },
+        )
+
+        // Botón Manual
+        BotonAsignacion(
+            icono = R.drawable.iconomanual,
+            texto = "Manual",
+            seleccionado = false,
+            onClick = { /* TODO: Implementar lógica */ },
+        )
+    }
+}
+
+@Composable
+fun BotonAsignacion(
+    icono: Int,
+    texto: String,
+    seleccionado: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val backgroundColor = if (seleccionado) Color.Black else Color.White
+    val contentColor = if (seleccionado) Color.White else Color.Black
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(7.5.dp))
+                .background(backgroundColor)
+                .clickable(onClick = onClick)
+                .shadow(
+                    elevation = if (seleccionado) 4.dp else 0.dp,
+                    shape = RoundedCornerShape(7.5.dp),
+                ).padding(horizontal = 10.dp, vertical = 7.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                Icon(
-                    painter = painterResource(id = R.drawable.iconorotar),
-                    contentDescription = "Rotación",
-                    tint = Color.White,
-                    modifier = Modifier.size(16.dp),
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Rotación", color = Color.White, fontSize = 12.sp)
-            }
-        }
-        Spacer(modifier = Modifier.width(5.dp))
-        // Opción Aleatorio
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-            Icon(
-                painter = painterResource(id = R.drawable.iconoaleatorio),
-                contentDescription = "Aleatorio",
-                tint = Color.White,
-                modifier = Modifier.size(16.dp),
+            Image(
+                painter = painterResource(id = icono),
+                contentDescription = texto,
+                colorFilter = ColorFilter.tint(contentColor),
+                modifier = Modifier.size(20.dp),
             )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text("Aleatorio", color = Color.White, fontSize = 12.sp)
-        }
-        // Opción Manual
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-            Icon(
-                painter = painterResource(id = R.drawable.iconomanual),
-                contentDescription = "Manual",
-                tint = Color.White,
-                modifier = Modifier.size(16.dp),
+            Text(
+                text = texto,
+                color = contentColor,
+                fontSize = 16.sp,
             )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text("Manual", color = Color.White, fontSize = 12.sp)
         }
     }
 }
 
 @Composable
-fun TaskCardPending(
+fun TaskCardPendiente(
     tarea: Tarea,
+    esMia: Boolean,
     onComplete: () -> Unit,
     onEdit: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    // Adaptación de "Property1tuya"
-    Row(
+    Card(
+        colors =
+            CardDefaults.cardColors(
+                containerColor = Color.White,
+            ),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation = 4.dp,
+            ),
+        shape = RoundedCornerShape(15.dp),
         modifier =
-            Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(15.dp))
-                .background(Color.White)
-                .padding(20.dp)
-                .shadow(4.dp, RoundedCornerShape(15.dp))
-                .clickable { onEdit() },
-        // Al hacer click en la tarjeta, editamos
-        horizontalArrangement = Arrangement.SpaceBetween,
+            modifier
+                .clickable(onClick = onEdit),
+    ) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(all = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.Start),
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.Top),
+                modifier = Modifier.weight(1f),
+            ) {
+                Text(
+                    text = tarea.nombre,
+                    color = Color.Black,
+                    style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Medium),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    // Prioridad - SIN BORDE
+                    when (tarea.prioridad?.lowercase() ?: "media") {
+                        "alta" -> BadgePrioridad("Alta", Color(0xffff6490), Color(0xff581327))
+                        "media" -> BadgePrioridad("Media", Color(0xffddc1fb), Color(0xff5d427a))
+                        "baja" -> BadgePrioridad("Baja", Color(0xFFC8E6C9), Color(0xFF2E7D32))
+                    }
+
+                    // Hora - SIN BORDE
+                    BadgeHora("de 16 a 17h", Color(0xffff6490), Color(0xff5a1428))
+                }
+            }
+
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                // Botón Completar - SIN BORDE (solo texto con fondo transparente)
+                TextButton(
+                    onClick = onComplete,
+                    colors =
+                        ButtonDefaults.textButtonColors(
+                            contentColor = Color(0xff6c6c6c),
+                        ),
+                    modifier = Modifier.height(40.dp),
+                ) {
+                    Text("Completar", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                }
+
+                // Enlace "Solicitar cambio" solo para tareas propias
+                if (esMia) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier =
+                            Modifier
+                                .clickable { /* TODO: Lógica cambio */ }
+                                .padding(vertical = 4.dp),
+                    ) {
+                        Text(
+                            text = "Solicitar cambio",
+                            color = Color(0xff6c6c6c),
+                            textDecoration = TextDecoration.Underline,
+                            style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Image(
+                            painter = painterResource(id = R.drawable.iconocambio),
+                            contentDescription = "Cambio",
+                            colorFilter = ColorFilter.tint(Color(0xff6c6c6c)),
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TaskCardOtra(
+    tarea: Tarea,
+    onEdit: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        colors =
+            CardDefaults.cardColors(
+                containerColor = Color.White,
+            ),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation = 4.dp,
+            ),
+        shape = RoundedCornerShape(15.dp),
+        modifier =
+            modifier
+                .clickable(onClick = onEdit),
+    ) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(all = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.Start),
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.Top),
+                modifier = Modifier.weight(1f),
+            ) {
+                Text(
+                    text = tarea.nombre,
+                    color = Color.Black,
+                    style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Medium),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Text(
+                    text = "Asignado a ${tarea.asignadoA?.nombre ?: "Daniel"}",
+                    color = Color(0xff6c6c6c),
+                    style = TextStyle(fontSize = 16.sp),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                // Fecha, Prioridad y Hora en fila
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.Start),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "14 Nov",
+                        color = Color.Black,
+                        style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
+                        textAlign = TextAlign.Center,
+                    )
+
+                    // Prioridad
+                    when (tarea.prioridad?.lowercase() ?: "media") {
+                        "alta" -> BadgePrioridad("Alta", Color(0xffff6490), Color(0xff581327))
+                        "media" -> BadgePrioridad("Media", Color(0xffddc1fb), Color(0xff5d427a))
+                        "baja" -> BadgePrioridad("Baja", Color(0xFFC8E6C9), Color(0xFF2E7D32))
+                    }
+
+                    // Hora
+                    BadgeHora("de 16 a 17h", Color(0xffddc1fb), Color(0xff5d427a))
+                }
+
+                // Enlace "Recordar"
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier =
+                        Modifier
+                            .clickable { /* TODO: Lógica recordatorio */ }
+                            .padding(vertical = 4.dp),
+                ) {
+                    Text(
+                        text = "Recordar",
+                        color = Color(0xff6c6c6c),
+                        textDecoration = TextDecoration.Underline,
+                        style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Image(
+                        painter = painterResource(id = R.drawable.frame),
+                        contentDescription = "Recordar",
+                        colorFilter = ColorFilter.tint(Color(0xff6c6c6c)),
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TaskCardCompletada(
+    tarea: Tarea,
+    onUncomplete: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        colors =
+            CardDefaults.cardColors(
+                containerColor = Color.White,
+            ),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation = 4.dp,
+            ),
+        shape = RoundedCornerShape(15.dp),
+        modifier = modifier,
     ) {
         Column(
-            modifier = Modifier.weight(0.6f),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 20.dp, end = 20.dp, top = 17.dp, bottom = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.Top),
+            horizontalAlignment = Alignment.End,
         ) {
             Text(
                 text = tarea.nombre,
                 color = Color.Black,
-                style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Medium),
+                style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Medium),
+                modifier = Modifier.fillMaxWidth(),
             )
 
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                // Badge de Frecuencia o Prioridad
-                if (!tarea.frecuencia.isNullOrBlank()) {
-                    Badge(text = tarea.frecuencia, colorBg = Color(0xffddc1fb), colorTxt = Color(0xff5d427a))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(32.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.Bottom,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                // Información de quién lo hizo
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.Start),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier =
+                        Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Color.White)
+                            .border(1.dp, Color(0xff939393), RoundedCornerShape(20.dp)) // Solo este mantiene el borde sutil
+                            .padding(start = 2.dp, end = 14.dp, top = 2.dp, bottom = 2.dp),
+                ) {
+                    // Avatar del usuario
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_user),
+                        contentDescription = "Avatar",
+                        contentScale = ContentScale.Crop,
+                        modifier =
+                            Modifier
+                                .size(34.dp)
+                                .clip(CircleShape),
+                    )
+                    Text(
+                        text = "Hecho por ${tarea.asignadoA?.nombre ?: "Alguien"}",
+                        color = Color(0xff6c6c6c),
+                        style = TextStyle(fontSize = 16.sp),
+                        textAlign = TextAlign.End,
+                    )
                 }
 
-                // Badge de Hora o Asignado
-                tarea.asignadoA?.let {
-                    Badge(text = it.nombre, colorBg = Color(0xffff6490), colorTxt = Color(0xff5a1428))
-                } ?: Badge(text = "Sin asignar", colorBg = Color.LightGray, colorTxt = Color.Black)
-            }
-        }
-
-        // Sección de completar
-        Column(
-            modifier = Modifier.weight(0.4f),
-            horizontalAlignment = Alignment.End,
-        ) {
-            // Simulamos el TextField "Completar" como un botón
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(40.dp) // Altura similar a un textfield
-                        .clip(RoundedCornerShape(8.dp))
-                        .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
-                        .clickable { onComplete() },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("Completar", color = Color.Gray, fontSize = 14.sp)
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable { /* Lógica cambio */ },
-            ) {
-                Text(
-                    text = "Cambiar",
-                    color = Color(0xff6c6c6c),
-                    textDecoration = TextDecoration.Underline,
-                    fontSize = 12.sp,
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Icon(
-                    painter = painterResource(id = R.drawable.iconocambio), // Asegúrate de tener este icono
-                    contentDescription = "Cambio",
-                    tint = Color(0xff6c6c6c),
-                    modifier = Modifier.size(16.dp),
-                )
+                // Fecha con icono
+                Row(
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_check),
+                        contentDescription = "Fecha",
+                        colorFilter = ColorFilter.tint(Color.Black),
+                        modifier = Modifier.size(24.dp),
+                    )
+                    Text(
+                        text = "09 Nov",
+                        color = Color.Black,
+                        style = TextStyle(fontSize = 16.sp),
+                        textAlign = TextAlign.Center,
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-fun TaskCardCompleted(
+fun TaskCardCompletadaSimple(
     tarea: Tarea,
     onUncomplete: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    // Adaptación de "TareaHecha"
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(15.dp))
-                .background(Color.White)
-                .padding(20.dp)
-                .shadow(4.dp, RoundedCornerShape(15.dp)),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+    Card(
+        colors =
+            CardDefaults.cardColors(
+                containerColor = Color.White,
+            ),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation = 4.dp,
+            ),
+        shape = RoundedCornerShape(15.dp),
+        modifier = modifier,
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 20.dp, end = 10.dp, top = 18.dp, bottom = 18.dp),
         ) {
             Text(
                 text = tarea.nombre,
-                color = Color.Gray,
-                style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Medium, textDecoration = TextDecoration.LineThrough),
+                color = Color.Black,
+                style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Medium),
+                modifier = Modifier.weight(1f),
             )
-            // Botón para deshacer completado
-            Icon(
-                imageVector = Icons.Default.Add, // Icono temporal, usa un check o undo
-                contentDescription = "Deshacer",
-                modifier =
-                    Modifier
-                        .rotate(45f) // Convertir + en x
-                        .clickable { onUncomplete() },
-            )
-        }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // Quién lo hizo
+            // Fecha con icono
             Row(
+                horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
-                modifier =
-                    Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .border(1.dp, Color(0xff939393), RoundedCornerShape(20.dp))
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
             ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp)) // Placeholder imagen usuario
-                Spacer(modifier = Modifier.width(4.dp))
+                Image(
+                    painter = painterResource(id = R.drawable.ic_check),
+                    contentDescription = "Fecha",
+                    colorFilter = ColorFilter.tint(Color.Black),
+                    modifier = Modifier.size(24.dp),
+                )
                 Text(
-                    text = "Hecho por ${tarea.asignadoA?.nombre ?: "Alguien"}",
-                    color = Color(0xff6c6c6c),
-                    fontSize = 12.sp,
+                    text = "5 Oct",
+                    color = Color.Black,
+                    style = TextStyle(fontSize = 16.sp),
+                    textAlign = TextAlign.End,
                 )
             }
-
-            // Fecha (Simulada, deberías formatear tarea.fechaFin)
-            Text(text = "Hoy", fontSize = 14.sp)
         }
     }
 }
 
+// Badge de Prioridad
 @Composable
-fun Badge(
+fun BadgePrioridad(
     text: String,
-    colorBg: Color,
-    colorTxt: Color,
+    backgroundColor: Color,
+    textColor: Color,
+    modifier: Modifier = Modifier,
 ) {
     Box(
+        contentAlignment = Alignment.Center,
         modifier =
-            Modifier
+            modifier
                 .clip(RoundedCornerShape(17.dp))
-                .background(colorBg)
-                .padding(horizontal = 10.dp, vertical = 4.dp),
+                .background(backgroundColor)
+                .padding(horizontal = 10.dp, vertical = 2.dp),
     ) {
         Text(
             text = text,
-            color = colorTxt,
-            style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium),
+            color = textColor,
+            style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+// Badge de Hora
+@Composable
+fun BadgeHora(
+    text: String,
+    backgroundColor: Color,
+    textColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(25.dp))
+                .background(backgroundColor)
+                .padding(horizontal = 15.dp, vertical = 6.dp),
+    ) {
+        Text(
+            text = text,
+            color = textColor,
+            style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
             textAlign = TextAlign.Center,
         )
     }
 }
 
 // ----------------------------------------------------------------
-// DIÁLOGOS DE CREACIÓN / EDICIÓN (Copiados y adaptados de tu código antiguo)
+// DIÁLOGOS (SE MANTIENEN IGUAL)
 // ----------------------------------------------------------------
 
 @Composable
@@ -541,9 +871,20 @@ fun CreateTaskDialog(
                     label = { Text("Descripción") },
                     modifier = Modifier.fillMaxWidth(),
                 )
-                // Aquí deberías re-implementar tus selectores de Usuario y Fecha
-                // He simplificado para que compile, pero usa tus UserSelectionDropdown originales
-                Text("Asignar a: (Implementar selector)")
+                UserSelectionDropdown(
+                    miembros = miembros,
+                    selectedUserId = asignadoAId,
+                    onUserSelected = { asignadoAId = it },
+                )
+                DatePickerField(
+                    label = "Fecha Límite",
+                    selectedDate = fechaFin,
+                    onDateSelected = { fechaFin = it },
+                )
+                FrequencySelector(
+                    selectedFrequency = frecuencia,
+                    onFrequencySelected = { frecuencia = it },
+                )
             }
         },
         confirmButton = {

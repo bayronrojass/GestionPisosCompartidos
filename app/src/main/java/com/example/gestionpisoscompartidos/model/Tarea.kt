@@ -13,4 +13,5 @@ data class Tarea(
     val frecuencia: String?,
     val periodica: Boolean,
     val asignadoA: Usuario?,
+    val prioridad: String?,
 ) : Parcelable
