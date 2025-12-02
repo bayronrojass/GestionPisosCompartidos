@@ -10,6 +10,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.model.Casa
+import com.example.gestionpisoscompartidos.ui.home.PrincipalInicio
+import com.example.gestionpisoscompartidos.ui.home.PrincipalInicioCarga
+import com.example.gestionpisoscompartidos.ui.home.PrincipalInicioSesin
 import com.example.gestionpisoscompartidos.ui.invitaciones.InvitacionesScreen
 import com.example.gestionpisoscompartidos.ui.item.ItemScreen
 import com.example.gestionpisoscompartidos.ui.login.LoginDestination
@@ -26,7 +29,7 @@ fun rememberSessionManager(): SessionManager {
 @Composable
 fun AppNavigation(
     sessionManager: SessionManager,
-    startDestination: String = Route.Login.route,
+    startDestination: String = Route.InicioCarga.route,
 ) {
     val navController = rememberNavController()
 
@@ -34,6 +37,20 @@ fun AppNavigation(
         navController = navController,
         startDestination = startDestination,
     ) {
+        // 1. PANTALLA DE CARGA
+        composable(Route.InicioCarga.route) {
+            PrincipalInicioCarga(navController)
+        }
+
+        // 2. PANTALLA PRINCIPAL (LANDING)
+        composable(Route.InicioPrincipal.route) {
+            PrincipalInicio(navController)
+        }
+
+        // 3. PANTALLA DE INICIO DE SESIÓN
+        composable(Route.InicioSesion.route) {
+            PrincipalInicioSesin(navController, sessionManager)
+        }
         // LOGIN
         composable(Route.Login.route) {
             LoginDestination(
@@ -99,8 +116,6 @@ fun AppNavigation(
                 },
                 onLogout = {
                     navController.navigate(Route.Login.route) {
-                        // Esto limpia toda la pila de navegación hasta el inicio (0)
-                        // Evita que el usuario pueda volver atrás con el botón del móvil
                         popUpTo(0) { inclusive = true }
                     }
                 },

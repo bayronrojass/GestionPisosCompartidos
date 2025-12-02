@@ -24,7 +24,7 @@ class MainActivity : FragmentActivity() {
         setContent {
             AppNavigation(
                 sessionManager = sessionManager,
-                startDestination = Route.Login.route,
+                startDestination = Route.InicioCarga.route,
             )
         }
     }

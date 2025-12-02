@@ -201,7 +201,7 @@ fun MainScreenWithNavigation(
     casaId: Long,
     casaNombre: String,
     onNavigateToItem: (Long, String) -> Unit,
-    onLogout: () -> Unit,
+    onLogout: (String) -> Unit,
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val savedStateHandle = rememberSaveableStateHolder()
