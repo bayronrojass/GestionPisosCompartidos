@@ -31,7 +31,7 @@ class PizarraView
     ) : View(context, attrs, defStyleAttr) {
         private var currentBitmap: Bitmap? = null
         private lateinit var canvasBitmap: Canvas
-        private lateinit var model: PizarraViewModel
+        internal lateinit var model: PizarraViewModel
         var activatedDraw: Boolean = false
         private var backgroundBitmap: Bitmap? = null
         private val path = Path()
@@ -88,6 +88,7 @@ class PizarraView
         }
 
         override fun onTouchEvent(event: MotionEvent): Boolean {
+            var currentmodel = model ?: return false
             if (!activatedDraw) {
                 return false
             }
@@ -95,13 +96,13 @@ class PizarraView
             val y = event.y
 
             loadJob?.cancel()
-            val paint = createPaint(model.color)
+            val paint = createPaint(currentmodel.color)
 
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     path.moveTo(x, y)
                     lastPoint = Point(x, y)
-                    model.add(PointDeltaDTO(x, y, 10f, model.color))
+                    currentmodel.add(PointDeltaDTO(x, y, 10f, currentmodel.color))
                     performClick()
                     return true
                 }
@@ -114,13 +115,13 @@ class PizarraView
                     )
                     canvasBitmap.drawPath(path, paint)
                     lastPoint = Point(x, y)
-                    model.add(PointDeltaDTO(x, y, 10f, model.color))
+                    currentmodel.add(PointDeltaDTO(x, y, 10f, currentmodel.color))
                     invalidate()
                     return true
                 }
                 MotionEvent.ACTION_UP -> {
                     canvasBitmap.drawPath(path, paint)
-                    model.add(PointDeltaDTO(x, y, 0f, model.color))
+                    currentmodel.add(PointDeltaDTO(x, y, 0f, currentmodel.color))
                     lastPoint = null
                     path.reset()
                     save()
@@ -162,20 +163,21 @@ class PizarraView
             saveJob =
                 saveScope.launch {
                     delay(1000L)
-                    model.save()
+                    model?.save()
                     load()
                 }
         }
 
         fun load() {
+            val currentModel = model ?: return
             loadJob?.cancel()
 
             loadJob =
                 loadScope.launch {
                     while (isActive) {
                         try {
-                            Log.d("Load", "Cargando ${model.lienzoId}...")
-                            model.load()
+                            Log.d("Load", "Cargando ${currentModel.lienzoId}...")
+                            currentModel.load()
                             delay(5000L)
                         } catch (e: CancellationException) {
                             Log.e("Load", "Error en carga: ${e.message}")
