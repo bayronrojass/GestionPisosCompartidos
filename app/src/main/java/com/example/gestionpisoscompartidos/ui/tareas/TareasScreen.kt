@@ -107,7 +107,7 @@ fun TareasScreen(
                 modifier =
                     Modifier
                         .align(Alignment.TopStart)
-                        .offset(x = 20.dp, y = 63.dp),
+                        .offset(x = 20.dp, y = 15.dp), // MODIFICADO: de 63.dp a 30.dp
             )
 
             // TABS (Pendientes / Completadas)
@@ -115,7 +115,7 @@ fun TareasScreen(
                 modifier =
                     Modifier
                         .align(Alignment.TopStart)
-                        .offset(x = 65.dp, y = 143.dp)
+                        .offset(x = 65.dp, y = 75.dp) // MODIFICADO: de 143.dp a 90.dp
                         .requiredWidth(width = 260.dp)
                         .requiredHeight(height = 24.dp),
             ) {
@@ -170,11 +170,11 @@ fun TareasScreen(
                 modifier =
                     Modifier
                         .align(Alignment.TopStart)
-                        .offset(y = 200.dp)
+                        .offset(y = 115.dp) // MODIFICADO: de 200.dp a 130.dp
                         .fillMaxSize()
                         .padding(horizontal = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp), // Reducido de 20 a 16
-                contentPadding = PaddingValues(bottom = 100.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(bottom = 150.dp),
             ) {
                 when (selectedTab) {
                     0 -> {
@@ -389,6 +389,9 @@ fun TareasScreen(
 
 @Composable
 fun AsignacionMensualComponent() {
+    // Estado para controlar qué opción está seleccionada
+    var opcionSeleccionada by remember { mutableStateOf("Rotación") }
+
     Card(
         colors =
             CardDefaults.cardColors(
@@ -413,28 +416,28 @@ fun AsignacionMensualComponent() {
                     .padding(all = 10.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
-            // Botón Rotación (seleccionado por defecto)
+            // Botón Rotación
             BotonAsignacion(
                 icono = R.drawable.iconorotar,
                 texto = "Rotación",
-                seleccionado = true,
-                onClick = { /* TODO: Implementar lógica */ },
+                seleccionado = opcionSeleccionada == "Rotación",
+                onClick = { opcionSeleccionada = "Rotación" },
             )
 
             // Botón Aleatorio
             BotonAsignacion(
                 icono = R.drawable.iconoaleatorio,
                 texto = "Aleatorio",
-                seleccionado = false,
-                onClick = { /* TODO: Implementar lógica */ },
+                seleccionado = opcionSeleccionada == "Aleatorio",
+                onClick = { opcionSeleccionada = "Aleatorio" },
             )
 
             // Botón Manual
             BotonAsignacion(
                 icono = R.drawable.iconomanual,
                 texto = "Manual",
-                seleccionado = false,
-                onClick = { /* TODO: Implementar lógica */ },
+                seleccionado = opcionSeleccionada == "Manual",
+                onClick = { opcionSeleccionada = "Manual" },
             )
         }
     }
