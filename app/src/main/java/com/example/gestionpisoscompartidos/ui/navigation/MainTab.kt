@@ -250,9 +250,9 @@ fun MainScreenWithNavigation(
             savedStateHandle.SaveableStateProvider(selectedTab) {
                 when (selectedTab) {
                     0 -> HomeScreen(viewModel = homeViewModel, casaId = casaId)
-                    1 -> GastosScreen(viewModel = gastosViewModel)
-                    2 -> ListaScreen(listaViewModel, onNavigateToItem)
-                    3 -> TareasScreen(tareasViewModel, casaNombre)
+                    1 -> GastosScreen(viewModel = gastosViewModel, casaId = casaId)
+                    2 -> ListaScreen(listaViewModel, onNavigateToItem, casaId = casaId)
+                    3 -> TareasScreen(tareasViewModel, casaNombre, casaId = casaId)
                     4 -> PerfilScreen(sessionManager, onLogout)
                 }
             }

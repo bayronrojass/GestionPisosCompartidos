@@ -44,7 +44,6 @@ fun Tareas(modifier: Modifier = Modifier) {
         modifier =
             modifier
                 .fillMaxSize()
-                // .requiredHeight(height = 1248.dp)
                 .background(color = Color(0xfff8f8f8)),
     ) {
         Box(
@@ -55,7 +54,6 @@ fun Tareas(modifier: Modifier = Modifier) {
                         x = 27.dp,
                         y = 4.dp,
                     ).fillMaxSize(),
-            // .requiredHeight(height = 40.dp),
         ) {
         }
         Text(

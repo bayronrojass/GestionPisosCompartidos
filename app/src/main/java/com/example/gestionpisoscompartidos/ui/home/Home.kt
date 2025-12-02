@@ -19,6 +19,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.NoteAdd
+import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,9 +43,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gestionpisoscompartidos.R
 import com.example.gestionpisoscompartidos.model.Evento
+import com.example.gestionpisoscompartidos.ui.pizarra.postits.DraggableViewModel
+import com.example.gestionpisoscompartidos.ui.pizarra.postits.DraggableViewModelFactory
 import com.example.gestionpisoscompartidos.ui.pizarra.postits.PizarraScreen
+import com.example.gestionpisoscompartidos.ui.utils.FabActionItem
+import com.example.gestionpisoscompartidos.ui.utils.FabActionType
 
 @Composable
 fun HomeScreen(
@@ -255,7 +263,28 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(80.dp))
         }
-        PizarraScreen(location = "Home", casaId = casaId)
+        val pizarraFabActions =
+            listOf(
+                FabActionItem(
+                    icon = Icons.Default.NoteAdd,
+                    label = "Crear Post-it",
+                    action = FabActionType.POST_IT,
+                ),
+            )
+        val model = viewModel<DraggableViewModel>(key = "Home", factory = DraggableViewModelFactory("Home", casaId))
+
+        PizarraScreen(
+            model,
+            fabActions = pizarraFabActions,
+            onFabActionSelected = { action ->
+                when (action.action) {
+                    FabActionType.POST_IT -> {
+                        model.addNewPostIt()
+                    }
+                    else -> {}
+                }
+            },
+        )
     }
 }
 
