@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
 import com.example.gestionpisoscompartidos.model.Gasto
-import com.example.gestionpisoscompartidos.model.GastoRequest
+import com.example.gestionpisoscompartidos.model.requests.GastoRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

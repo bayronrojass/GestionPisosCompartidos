@@ -1,5 +1,6 @@
-package com.example.gestionpisoscompartidos.model
+package com.example.gestionpisoscompartidos.model.responses
 
+import com.example.gestionpisoscompartidos.model.Usuario
 import com.google.gson.annotations.SerializedName
 
 /**

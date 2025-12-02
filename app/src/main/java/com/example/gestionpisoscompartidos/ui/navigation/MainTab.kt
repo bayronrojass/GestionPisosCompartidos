@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddComment
 import androidx.compose.material.icons.filled.AssignmentInd
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Home
@@ -60,7 +59,6 @@ import com.example.gestionpisoscompartidos.ui.listas.ListaScreen
 import com.example.gestionpisoscompartidos.ui.listas.ListasViewModel
 import com.example.gestionpisoscompartidos.ui.listas.ListasViewModelFactory
 import com.example.gestionpisoscompartidos.ui.perfil.PerfilScreen
-import com.example.gestionpisoscompartidos.ui.pizarra.PizarraScreen
 import com.example.gestionpisoscompartidos.ui.tareas.TareasScreen
 import com.example.gestionpisoscompartidos.ui.tareas.TareasViewModel
 import com.example.gestionpisoscompartidos.ui.tareas.TareasViewModelFactory
@@ -134,14 +132,6 @@ fun NavigationBar(
                 isSelected = selectedTab == 4,
                 onClick = { onTabSelected(4) },
                 padding = 12.dp,
-            )
-
-            // Botón 7 - Pizarra
-            NavigationItem(
-                icon = Icons.Default.AddComment,
-                isSelected = selectedTab == 5,
-                onClick = { onTabSelected(5) },
-                padding = 19.dp,
             )
         }
     }
@@ -264,7 +254,6 @@ fun MainScreenWithNavigation(
                     2 -> ListaScreen(listaViewModel, onNavigateToItem)
                     3 -> TareasScreen(tareasViewModel, casaNombre)
                     4 -> PerfilScreen(sessionManager, onLogout)
-                    5 -> PizarraScreen(casaId)
                 }
             }
         }

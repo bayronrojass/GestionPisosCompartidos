@@ -1,7 +1,7 @@
 package com.example.gestionpisoscompartidos.data.repository.APIs
 
 import com.example.gestionpisoscompartidos.model.Lista
-import com.example.gestionpisoscompartidos.model.ListaRequest
+import com.example.gestionpisoscompartidos.model.requests.ListaRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE

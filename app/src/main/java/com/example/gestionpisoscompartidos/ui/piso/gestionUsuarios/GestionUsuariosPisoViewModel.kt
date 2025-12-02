@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryInvitacion
-import com.example.gestionpisoscompartidos.model.InvitacionRequest
+import com.example.gestionpisoscompartidos.model.requests.InvitacionRequest
 // ¡Importa el DTO de respuesta que tu backend envía!
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

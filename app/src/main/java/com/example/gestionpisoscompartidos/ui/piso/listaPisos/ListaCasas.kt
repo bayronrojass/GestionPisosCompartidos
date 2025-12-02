@@ -18,7 +18,7 @@ import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
 import com.example.gestionpisoscompartidos.databinding.FragmentListaCasasBinding
-import com.example.gestionpisoscompartidos.model.JoinCasaRequest
+import com.example.gestionpisoscompartidos.model.requests.JoinCasaRequest
 import com.google.zxing.integration.android.IntentIntegrator
 import kotlinx.coroutines.launch
 import org.json.JSONObject

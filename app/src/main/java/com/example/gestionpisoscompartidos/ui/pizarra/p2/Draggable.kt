@@ -56,7 +56,10 @@ fun DraggablePostIt(
 }
 
 @Composable
-fun PizarraScreen(viewModel: DraggableViewModel = viewModel()) {
+fun PizarraScreen(
+    viewModel: DraggableViewModel = viewModel(),
+    location: String,
+) {
     val postIts by viewModel.postIts.collectAsState()
     val expandedPostIt = postIts.find { it.isExpanded }
 
@@ -74,7 +77,7 @@ fun PizarraScreen(viewModel: DraggableViewModel = viewModel()) {
             }
 
         FloatingActionButton(
-            onClick = { viewModel.addPostIt() },
+            onClick = { viewModel.addNewPostIt() },
             modifier =
                 Modifier
                     .align(Alignment.BottomEnd)
@@ -124,21 +127,4 @@ fun ExpandedPostItPreview() {
         onClose = {},
         state = PostItState(),
     )
-}
-
-@Preview(showSystemUi = true, name = "Pizarra Completa con Post-it Expandido")
-@Composable
-fun PizarraScreenWithExpandedItemPreview() {
-    val previewViewModel = viewModel<DraggableViewModel>()
-    previewViewModel.addPostIt()
-    previewViewModel.addPostIt()
-    previewViewModel.toggleExpand(
-        previewViewModel.postIts
-            .collectAsState()
-            .value
-            .last()
-            .id,
-    )
-
-    PizarraScreen(viewModel = previewViewModel)
 }

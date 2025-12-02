@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryItem
 import com.example.gestionpisoscompartidos.model.Elemento
-import com.example.gestionpisoscompartidos.model.ElementoRequest
+import com.example.gestionpisoscompartidos.model.requests.ElementoRequest
 import kotlinx.coroutines.launch
 
 class ItemViewModel(

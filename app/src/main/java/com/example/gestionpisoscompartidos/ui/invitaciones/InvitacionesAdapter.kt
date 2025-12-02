@@ -6,7 +6,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionpisoscompartidos.databinding.ItemInvitacionBinding // 1. Importa el ViewBinding de tu item
-import com.example.gestionpisoscompartidos.model.InvitacionResponse
+import com.example.gestionpisoscompartidos.model.responses.InvitacionResponse
 
 class InvitacionesAdapter(
     private val onAcceptClick: (InvitacionResponse) -> Unit,

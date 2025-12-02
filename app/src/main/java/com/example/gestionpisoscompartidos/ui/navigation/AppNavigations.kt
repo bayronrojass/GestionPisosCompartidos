@@ -122,7 +122,6 @@ fun AppNavigation(
             )
         }
 
-        // PANTALLA DE ITEMS (ELEMENTOS DE UNA LISTA)
         composable(
             route = Route.Item.route,
             arguments =

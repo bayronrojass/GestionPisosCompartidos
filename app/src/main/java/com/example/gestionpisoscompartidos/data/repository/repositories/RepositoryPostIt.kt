@@ -10,8 +10,11 @@ import com.example.gestionpisoscompartidos.utils.ApiResult
 class RepositoryPostIt {
     private val repository = RemoteRepository(NetworkModule.retrofit.create(PostItAPI::class.java))
 
-    suspend fun createPostIt(casaId: Long): PostItDTO? {
-        val request = repository.request { crearPostIt(casaId) }
+    suspend fun createPostIt(
+        casaId: Long,
+        details: PostItDTO,
+    ): PostItDTO? {
+        val request = repository.request { crearPostIt(casaId, details) }
         when (request) {
             is ApiResult.Error -> {
                 Log.e("Postit", "Error creando postit " + request.message)
@@ -27,8 +30,11 @@ class RepositoryPostIt {
         }
     }
 
-    suspend fun getPostIts(casaId: Long): List<Long>? {
-        val request = repository.request { getPostIts(casaId) }
+    suspend fun getPostIts(
+        casaId: Long,
+        location: String,
+    ): List<Long>? {
+        val request = repository.request { getPostIts(casaId, location) }
         when (request) {
             is ApiResult.Error -> {
                 Log.e("Postit", "Error recuperando postits " + request.message)

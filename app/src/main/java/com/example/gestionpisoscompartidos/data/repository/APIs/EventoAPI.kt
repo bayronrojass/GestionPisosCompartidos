@@ -1,8 +1,8 @@
 package com.example.gestionpisoscompartidos.data.repository.APIs
 
 import com.example.gestionpisoscompartidos.model.Elemento
-import com.example.gestionpisoscompartidos.model.eventRequest
-import com.example.gestionpisoscompartidos.model.eventoResponse
+import com.example.gestionpisoscompartidos.model.requests.eventRequest
+import com.example.gestionpisoscompartidos.model.responses.eventoResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE

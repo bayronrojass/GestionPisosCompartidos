@@ -7,5 +7,5 @@ class ImagenDTO(
     posicionY: Float,
     width: Int,
     height: Int,
-    plegado: Boolean,
-) : PostItDTO(id, lienzoId, posicionX, posicionY, width, height, plegado)
+    localizacion: String,
+) : PostItDTO(id, lienzoId, posicionX, posicionY, width, height, localizacion)

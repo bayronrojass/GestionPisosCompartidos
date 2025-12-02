@@ -1,8 +1,8 @@
 package com.example.gestionpisoscompartidos.data.repository.repositories
 
 import com.example.gestionpisoscompartidos.data.repository.APIs.LoginAPI
-import com.example.gestionpisoscompartidos.model.LoginRequest
-import com.example.gestionpisoscompartidos.model.LoginResponse
+import com.example.gestionpisoscompartidos.model.requests.LoginRequest
+import com.example.gestionpisoscompartidos.model.responses.LoginResponse
 
 class RepositoryLogin(
     private val apiService: LoginAPI,

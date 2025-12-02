@@ -1,4 +1,4 @@
-package com.example.gestionpisoscompartidos.model
+package com.example.gestionpisoscompartidos.model.requests
 
 import com.google.gson.annotations.SerializedName
 

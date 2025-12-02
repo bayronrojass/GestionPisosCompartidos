@@ -1,4 +1,4 @@
-package com.example.gestionpisoscompartidos.model
+package com.example.gestionpisoscompartidos.model.responses
 
 data class InvitacionResponse(
     val id: Long,

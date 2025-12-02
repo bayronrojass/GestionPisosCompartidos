@@ -2,8 +2,8 @@ package com.example.gestionpisoscompartidos.data.repository.repositories
 
 import android.content.ContentResolver
 import com.example.gestionpisoscompartidos.data.repository.APIs.EventoAPI
-import com.example.gestionpisoscompartidos.model.eventRequest
-import com.example.gestionpisoscompartidos.model.eventoResponse
+import com.example.gestionpisoscompartidos.model.requests.eventRequest
+import com.example.gestionpisoscompartidos.model.responses.eventoResponse
 import com.google.gson.Gson
 
 class RepositoryEvento(

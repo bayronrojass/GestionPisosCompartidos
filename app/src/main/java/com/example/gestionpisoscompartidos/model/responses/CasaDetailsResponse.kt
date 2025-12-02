@@ -1,4 +1,6 @@
-package com.example.gestionpisoscompartidos.model
+package com.example.gestionpisoscompartidos.model.responses
+
+import com.example.gestionpisoscompartidos.model.Usuario
 
 data class CasaDetailsResponse(
     val id: Long,

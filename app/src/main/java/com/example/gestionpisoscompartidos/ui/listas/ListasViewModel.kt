@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryLista
 import com.example.gestionpisoscompartidos.model.Lista
-import com.example.gestionpisoscompartidos.model.ListaRequest
+import com.example.gestionpisoscompartidos.model.requests.ListaRequest
 import kotlinx.coroutines.launch
 
 class ListasViewModel(

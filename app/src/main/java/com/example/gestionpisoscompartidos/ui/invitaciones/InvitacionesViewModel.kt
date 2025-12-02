@@ -5,8 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryInvitacion
-import com.example.gestionpisoscompartidos.model.AccionInvitacionRequest
-import com.example.gestionpisoscompartidos.model.InvitacionResponse
+import com.example.gestionpisoscompartidos.model.requests.AccionInvitacionRequest
+import com.example.gestionpisoscompartidos.model.responses.InvitacionResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

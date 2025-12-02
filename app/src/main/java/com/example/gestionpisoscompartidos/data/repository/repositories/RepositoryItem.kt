@@ -2,7 +2,7 @@ package com.example.gestionpisoscompartidos.data.repository.repositories
 
 import com.example.gestionpisoscompartidos.data.repository.APIs.ItemAPI
 import com.example.gestionpisoscompartidos.model.Elemento
-import com.example.gestionpisoscompartidos.model.ElementoRequest
+import com.example.gestionpisoscompartidos.model.requests.ElementoRequest
 
 class RepositoryItem(
     private val apiService: ItemAPI,

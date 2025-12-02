@@ -2,7 +2,7 @@ package com.example.gestionpisoscompartidos.data.repository.repositories
 
 import com.example.gestionpisoscompartidos.data.repository.APIs.ListaAPI
 import com.example.gestionpisoscompartidos.model.Lista
-import com.example.gestionpisoscompartidos.model.ListaRequest
+import com.example.gestionpisoscompartidos.model.requests.ListaRequest
 
 class RepositoryLista(
     private val apiService: ListaAPI,

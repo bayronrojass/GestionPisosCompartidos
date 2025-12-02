@@ -7,5 +7,5 @@ open class PostItDTO(
     val posicionY: Float,
     val width: Int,
     val height: Int,
-    val plegado: Boolean,
+    val localizacion: String,
 )

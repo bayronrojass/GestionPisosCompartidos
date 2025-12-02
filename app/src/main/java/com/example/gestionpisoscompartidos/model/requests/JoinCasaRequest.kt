@@ -1,4 +1,4 @@
-package com.example.gestionpisoscompartidos.model
+package com.example.gestionpisoscompartidos.model.requests
 
 /**
  * DTO (Data Transfer Object) que se envía al backend

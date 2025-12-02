@@ -65,7 +65,7 @@ import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryLogin
 import com.example.gestionpisoscompartidos.model.Casa
-import com.example.gestionpisoscompartidos.model.LoginResponse
+import com.example.gestionpisoscompartidos.model.responses.LoginResponse
 import com.example.gestionpisoscompartidos.ui.login.LoginViewModel
 import com.example.gestionpisoscompartidos.ui.login.LoginViewModelFactory
 import kotlinx.serialization.ExperimentalSerializationApi

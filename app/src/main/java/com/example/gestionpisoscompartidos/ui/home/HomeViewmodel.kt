@@ -9,7 +9,7 @@ import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryEvento
 import com.example.gestionpisoscompartidos.model.Evento
-import com.example.gestionpisoscompartidos.model.eventRequest
+import com.example.gestionpisoscompartidos.model.requests.eventRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

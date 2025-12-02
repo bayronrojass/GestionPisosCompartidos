@@ -12,11 +12,13 @@ interface PostItAPI {
     @POST("casas/{id}/postIt")
     suspend fun crearPostIt(
         @Path("id") id: Long,
+        @Body postItDTO: PostItDTO,
     ): Response<PostItDTO>
 
-    @GET("casas/{id}/postIt")
+    @GET("casas/{id}/{location}/postIt")
     suspend fun getPostIts(
         @Path("id") id: Long,
+        @Path("location") location: String,
     ): Response<List<Long>>
 
     @GET("postits/{id}")

@@ -3,7 +3,7 @@ package com.example.gestionpisoscompartidos.data.repository.repositories
 import android.util.Log
 import com.example.gestionpisoscompartidos.data.repository.APIs.TareaAPI
 import com.example.gestionpisoscompartidos.model.Tarea
-import com.example.gestionpisoscompartidos.model.TareaRequest
+import com.example.gestionpisoscompartidos.model.requests.TareaRequest
 
 class RepositoryTarea(
     private val apiService: TareaAPI,
