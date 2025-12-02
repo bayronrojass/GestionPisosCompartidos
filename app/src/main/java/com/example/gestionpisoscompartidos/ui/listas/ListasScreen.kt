@@ -20,10 +20,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,11 +50,17 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gestionpisoscompartidos.model.Lista
+import com.example.gestionpisoscompartidos.ui.pizarra.postits.DraggableViewModel
+import com.example.gestionpisoscompartidos.ui.pizarra.postits.DraggableViewModelFactory
+import com.example.gestionpisoscompartidos.ui.pizarra.postits.PizarraScreen
+import com.example.gestionpisoscompartidos.ui.utils.FabActionItem
+import com.example.gestionpisoscompartidos.ui.utils.FabActionType
 
 @Composable
 fun ListaScreen(
     viewModel: ListasViewModel,
     onNavigateToItem: (Long, String) -> Unit = { _, _ -> },
+    casaId: Long,
 ) {
     // Estados del ViewModel
     val listas by viewModel.listas.observeAsState()
@@ -69,12 +75,10 @@ fun ListaScreen(
 
     val context = LocalContext.current
 
-    // Cargar listas al iniciar
     LaunchedEffect(Unit) {
         viewModel.cargarListas()
     }
 
-    // Mostrar errores
     LaunchedEffect(error) {
         error?.let {
             android.widget.Toast
@@ -83,15 +87,7 @@ fun ListaScreen(
         }
     }
 
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showCreateDialog = true },
-            ) {
-                Icon(Icons.Default.Add, "Crear lista")
-            }
-        },
-    ) { paddingValues ->
+    Scaffold { paddingValues ->
         Column(
             modifier =
                 Modifier
@@ -135,7 +131,6 @@ fun ListaScreen(
                     }
                 }
                 else -> {
-                    // List Items
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(20.dp),
                     ) {
@@ -160,6 +155,37 @@ fun ListaScreen(
             }
         }
     }
+
+    val pizarraFabActions =
+        listOf(
+            FabActionItem(
+                icon = Icons.Default.NoteAdd,
+                label = "Crear Post-it",
+                action = FabActionType.POST_IT,
+            ),
+            FabActionItem(
+                icon = Icons.Default.Add,
+                label = "Crear Lista",
+                action = FabActionType.CREAR_LISTA,
+            ),
+        )
+    val model = viewModel<DraggableViewModel>(key = "Lista", factory = DraggableViewModelFactory("Lista", casaId))
+
+    PizarraScreen(
+        model,
+        fabActions = pizarraFabActions,
+        onFabActionSelected = { action ->
+            when (action.action) {
+                FabActionType.POST_IT -> {
+                    model.addNewPostIt()
+                }
+                FabActionType.CREAR_LISTA -> {
+                    showCreateDialog = true
+                }
+                else -> {}
+            }
+        },
+    )
 
     // Diálogo de creación de lista
     if (showCreateDialog) {
@@ -442,5 +468,5 @@ private fun ParticipantAvatars(count: Int) {
 @Preview(widthDp = 390, heightDp = 1165)
 @Composable
 private fun ShoppingListScreenPreview() {
-    ListaScreen(viewModel(), { _, _ -> })
+    ListaScreen(viewModel(), { _, _ -> }, 0)
 }

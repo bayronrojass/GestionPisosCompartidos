@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material.icons.filled.SentimentSatisfiedAlt
 import androidx.compose.material3.*
@@ -36,9 +37,14 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gestionpisoscompartidos.model.Gasto
+import com.example.gestionpisoscompartidos.ui.pizarra.postits.DraggableViewModel
+import com.example.gestionpisoscompartidos.ui.pizarra.postits.DraggableViewModelFactory
+import com.example.gestionpisoscompartidos.ui.pizarra.postits.PizarraScreen
+import com.example.gestionpisoscompartidos.ui.utils.FabActionItem
+import com.example.gestionpisoscompartidos.ui.utils.FabActionType
 
-// Colores
 val ColorFondo = Color(0xFFF8F8F8)
 val ColorLila = Color(0xFFDDC1FB)
 val ColorLilaClaroTarjeta = Color(0xFFE8D5FC)
@@ -49,7 +55,10 @@ val ColorTextoGris = Color(0xFF6C6C6C)
 val ColorMoradoOscuro = Color(0xFF58337F)
 
 @Composable
-fun GastosScreen(viewModel: GastosViewModel) {
+fun GastosScreen(
+    viewModel: GastosViewModel,
+    casaId: Long,
+) {
     val gastos by viewModel.gastos.collectAsState()
     val stats by viewModel.stats.collectAsState()
     val saldos by viewModel.saldos.collectAsState()
@@ -64,21 +73,6 @@ fun GastosScreen(viewModel: GastosViewModel) {
 
     Scaffold(
         containerColor = ColorFondo,
-        floatingActionButton = {
-            if (!mostrarEstadisticas && gastoSeleccionado == null && tabSeleccionado == 0) {
-                FloatingActionButton(
-                    onClick = {
-                        isEditing = false
-                        showDialog = true
-                    },
-                    containerColor = Color.Black,
-                    contentColor = Color.White,
-                    shape = CircleShape,
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Añadir Gasto")
-                }
-            }
-        },
     ) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             if (mostrarEstadisticas) {
@@ -198,6 +192,40 @@ fun GastosScreen(viewModel: GastosViewModel) {
             }
         }
     }
+
+    val pizarraFabActions =
+        listOf(
+            FabActionItem(
+                icon = Icons.Default.NoteAdd,
+                label = "Crear Post-it",
+                action = FabActionType.POST_IT,
+            ),
+            FabActionItem(
+                icon = Icons.Default.Add,
+                label = "Crear Gasto",
+                action = FabActionType.CREAR_GASTO,
+            ),
+        )
+    val model = viewModel<DraggableViewModel>(key = "Gastos", factory = DraggableViewModelFactory("Gastos", casaId))
+
+    PizarraScreen(
+        model,
+        fabActions = pizarraFabActions,
+        onFabActionSelected = { action ->
+            when (action.action) {
+                FabActionType.POST_IT -> {
+                    model.addNewPostIt()
+                }
+                FabActionType.CREAR_GASTO -> {
+                    if (!mostrarEstadisticas && gastoSeleccionado == null && tabSeleccionado == 0) {
+                        isEditing = false
+                        showDialog = true
+                    }
+                }
+                else -> {}
+            }
+        },
+    )
 }
 
 @Composable

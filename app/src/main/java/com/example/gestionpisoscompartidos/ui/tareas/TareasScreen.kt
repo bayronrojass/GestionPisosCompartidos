@@ -28,16 +28,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gestionpisoscompartidos.R
 import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.model.Tarea
 import com.example.gestionpisoscompartidos.model.Usuario
+import com.example.gestionpisoscompartidos.ui.pizarra.postits.DraggableViewModel
+import com.example.gestionpisoscompartidos.ui.pizarra.postits.DraggableViewModelFactory
+import com.example.gestionpisoscompartidos.ui.pizarra.postits.PizarraScreen
+import com.example.gestionpisoscompartidos.ui.utils.FabActionItem
+import com.example.gestionpisoscompartidos.ui.utils.FabActionType
 import java.util.Calendar
 
 @Composable
 fun TareasScreen(
     viewModel: TareasViewModel,
     casaNombre: String,
+    casaId: Long,
 ) {
     val tareas by viewModel.tareas.observeAsState(emptyList())
     val isLoading by viewModel.isLoading.observeAsState(false)
@@ -111,17 +118,6 @@ fun TareasScreen(
 
     Scaffold(
         containerColor = Color(0xfff8f8f8),
-        floatingActionButton = {
-            if (selectedTab == 0) {
-                FloatingActionButton(
-                    onClick = { showCreateDialog = true },
-                    containerColor = Color.Black,
-                    contentColor = Color.White,
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Añadir")
-                }
-            }
-        },
     ) { paddingValues ->
 
         Box(
@@ -363,6 +359,36 @@ fun TareasScreen(
             }
         }
     }
+    val pizarraFabActions =
+        listOf(
+            FabActionItem(
+                icon = Icons.Default.NoteAdd,
+                label = "Crear Post-it",
+                action = FabActionType.POST_IT,
+            ),
+            FabActionItem(
+                icon = Icons.Default.Add,
+                label = "Crear Tarea",
+                action = FabActionType.CREAR_TAREA,
+            ),
+        )
+    val model = viewModel<DraggableViewModel>(key = "Tareas", factory = DraggableViewModelFactory("Tareas", casaId))
+
+    PizarraScreen(
+        model,
+        fabActions = pizarraFabActions,
+        onFabActionSelected = { action ->
+            when (action.action) {
+                FabActionType.POST_IT -> {
+                    model.addNewPostIt()
+                }
+                FabActionType.CREAR_TAREA -> {
+                    showCreateDialog = true
+                }
+                else -> {}
+            }
+        },
+    )
 
     // --- DIÁLOGOS ---
     if (showCreateDialog) {

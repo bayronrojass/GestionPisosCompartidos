@@ -1,10 +1,12 @@
 package com.example.gestionpisoscompartidos.ui.pizarra.postits
 
+import android.util.Log
 import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryPostIt
 import com.example.gestionpisoscompartidos.model.dtos.PostItDTO
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,55 +22,60 @@ class DraggableViewModel(
     val postIts: StateFlow<List<PostItState>> = _postIts.asStateFlow()
 
     init {
-        loadPostIts()
+        startPeriodicSync()
     }
 
-    private fun loadPostIts() {
+    private fun startPeriodicSync() {
         viewModelScope.launch {
-            try {
-                val postits = postItRepository.getPostIts(casaId, location)
-                if (postits.isNullOrEmpty()) {
-                    return@launch
-                }
-                for (post in postits) {
-                    addExistingPostIt(post)
-                }
-            } catch (e: Exception) {
-                println("Error al cargar los Post-its: ${e.message}")
+            while (true) {
+                Log.d("SYNC_POSTITS", "Sincronizando Post-its para la ubicación: $location")
+                syncPostIts()
+                delay(10000L)
             }
         }
     }
 
-    suspend fun addExistingPostIt(postItId: Long) {
-        val details = postItRepository.getPostItDetails(postItId)
+    private suspend fun syncPostIts() {
+        try {
+            val postitsFromApi = postItRepository.getPostIts(casaId, location) ?: emptyList()
+            val localPostIts = _postIts.value
 
-        val newState =
-            PostItState(
-                details!!.id,
-                Offset(details.posicionX, details.posicionY),
-                details.localizacion,
-                details.lienzoId,
-                false,
-            )
-        _postIts.update { currentList -> currentList + newState }
+            val apiMap = postitsFromApi.associateBy { it }
+            val localMap = localPostIts.associateBy { it.id }
+
+            val toAdd = apiMap.filterKeys { it !in localMap.keys }
+            val toRemove = localMap.filterKeys { it !in apiMap.keys }
+
+            _postIts.update { currentList ->
+                val listAfterRemoval = currentList.filterNot { it.id in toRemove.keys }
+
+                val newPostItStates =
+                    toAdd.values.map { id ->
+                        val newPostItDTO = postItRepository.getPostItDetails(id)
+                        PostItState(
+                            id = newPostItDTO!!.id,
+                            offset = Offset(newPostItDTO.posicionX, newPostItDTO.posicionY),
+                            location = newPostItDTO.localizacion,
+                            lienzoId = newPostItDTO.lienzoId,
+                            isExpanded = false,
+                        )
+                    }
+
+                // Devolvemos la lista combinada
+                listAfterRemoval + newPostItStates
+            }
+        } catch (e: Exception) {
+            println("Error al sincronizar los Post-its: ${e.message}")
+        }
     }
 
     fun addNewPostIt() {
         viewModelScope.launch {
             try {
                 val details = PostItDTO(0, 0, 0f, 0f, 0, 0, location)
-                val newPostItFromApi = postItRepository.createPostIt(casaId = casaId, details)
+                postItRepository.createPostIt(casaId = casaId, details)
 
-                val newState =
-                    PostItState(
-                        newPostItFromApi!!.id,
-                        Offset(newPostItFromApi.posicionX, newPostItFromApi.posicionY),
-                        newPostItFromApi.localizacion,
-                        newPostItFromApi.lienzoId,
-                        false,
-                    )
-
-                _postIts.update { currentList -> currentList + newState }
+                syncPostIts()
             } catch (e: Exception) {
                 println("Error al crear el Post-it: ${e.message}")
             }
@@ -92,11 +99,8 @@ class DraggableViewModel(
     fun toggleExpand(id: Long) {
         _postIts.update { currentList ->
             currentList.map { postIt ->
-                if (postIt.id == id) {
-                    postIt.copy(isExpanded = !postIt.isExpanded)
-                } else {
-                    postIt
-                }
+                val newExpandedState = if (postIt.id == id) !postIt.isExpanded else false
+                postIt.copy(isExpanded = newExpandedState)
             }
         }
     }
