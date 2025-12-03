@@ -4,7 +4,6 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.webkit.MimeTypeMap
 import com.example.gestionpisoscompartidos.data.repository.APIs.CasaAPI
-import com.example.gestionpisoscompartidos.model.responses.CasaDetailsResponse
 import com.example.gestionpisoscompartidos.model.requests.CasaRequest
 import com.example.gestionpisoscompartidos.model.responses.CasaResponse
 import com.example.gestionpisoscompartidos.model.requests.JoinCasaRequest
@@ -12,6 +11,7 @@ import com.example.gestionpisoscompartidos.model.Usuario
 import com.example.gestionpisoscompartidos.model.Evento
 import com.example.gestionpisoscompartidos.model.Gasto
 import com.example.gestionpisoscompartidos.model.requests.GastoRequest
+import com.example.gestionpisoscompartidos.model.responses.CasaDetailsResponseDTO
 import com.google.gson.Gson
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -63,7 +63,7 @@ class RepositoryCasa(
     suspend fun getPisoDetails(
         token: String,
         pisoId: Long,
-    ): Response<CasaDetailsResponse> = apiService.getPisoDetails(token, pisoId)
+    ): Response<CasaDetailsResponseDTO> = apiService.getPisoDetails(token, pisoId)
 
     suspend fun getPisoMiembros(
         token: String,

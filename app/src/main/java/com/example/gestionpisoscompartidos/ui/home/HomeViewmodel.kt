@@ -8,11 +8,16 @@ import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryEvento
+import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryUsuario
 import com.example.gestionpisoscompartidos.model.Evento
+import com.example.gestionpisoscompartidos.model.Usuario
 import com.example.gestionpisoscompartidos.model.requests.eventRequest
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.DayOfWeek
@@ -46,8 +51,84 @@ class HomeViewModel(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private val _isLoadingUser = MutableStateFlow(false)
+    val isLoadingUser: StateFlow<Boolean> = _isLoadingUser.asStateFlow()
+
+    private val _isLoadingHome = MutableStateFlow(false)
+    val isLoadingHome: StateFlow<Boolean> = _isLoadingHome.asStateFlow()
+
+    private val _currentUser = MutableStateFlow<Usuario?>(null)
+    val currentUser: StateFlow<Usuario?> = _currentUser.asStateFlow()
+
+    val userRepo = RepositoryUsuario(NetworkModule.usuarioApiService)
+
+    val userID = sessionManager.fetchCurrentUserId()
+
+    private val _currentHouse = MutableStateFlow<String?>(null)
+    val currentHouse: StateFlow<String?> = _currentHouse.asStateFlow()
+
+    val casaRepo = RepositoryCasa(NetworkModule.casaApiService)
+
     init {
         cargarEventos()
+        cargarUsuario()
+    }
+
+    fun cargarUsuario() {
+        viewModelScope.launch {
+            _isLoadingUser.value = true
+            try {
+                _currentUser.value = userRepo.getUsuario(userID)
+                Log.d("HomeViewModel", "User loaded: ${_currentUser.value?.nombre}")
+            } catch (e: Exception) {
+                _error.value = "Error al cargar usuario: ${e.message}"
+                Log.e("HomeViewModel", "Error loading user", e)
+            } finally {
+                _isLoadingUser.value = false
+            }
+        }
+    }
+
+    fun cargarCasa() {
+        val token = sessionManager.fetchAuthToken()
+
+        if (token == null) {
+            _error.value = "Token no disponible"
+            Log.e("HomeViewModel", "Token is null")
+            return
+        }
+
+        if (casaId <= 0) {
+            _error.value = "ID de casa inválido"
+            Log.e("HomeViewModel", "Invalid casaId: $casaId")
+            return
+        }
+
+        viewModelScope.launch {
+            _isLoadingHome.value = true
+            try {
+                Log.d("HomeViewModel", "Loading house with casaId: $casaId")
+
+                val response = casaRepo.getPisoDetails(token, casaId)
+
+                if (response.isSuccessful) {
+                    val casaDetails = response.body()
+                    _currentHouse.value = casaDetails?.nombre
+                    Log.d("HomeViewModel", "House loaded successfully: ${casaDetails?.nombre}")
+                } else {
+                    val errorBody = response.errorBody()?.string() ?: "No error body"
+                    _error.value = "Error al cargar casa: ${response.code()}"
+                    Log.e("HomeViewModel", "API error: ${response.code()} - $errorBody")
+                    _currentHouse.value = null
+                }
+            } catch (e: Exception) {
+                _error.value = "Excepción al cargar casa: ${e.message}"
+                Log.e("HomeViewModel", "Exception loading house", e)
+                _currentHouse.value = null
+            } finally {
+                _isLoadingHome.value = false
+            }
+        }
     }
 
     fun cargarEventos() {
@@ -226,5 +307,29 @@ class HomeViewModel(
 
     fun clearError() {
         _error.value = null
+    }
+
+    val userName: StateFlow<String> =
+        _currentUser
+            .map { user ->
+                user?.nombre ?: "Usuario"
+            }.stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                "Usuario",
+            )
+
+    fun next7days(): List<LocalDateTime> {
+        var ldt = LocalDateTime.now()
+        val list = mutableListOf<LocalDateTime>()
+
+        list.add(ldt)
+
+        for (i in 1..6) {
+            ldt = ldt.plusDays(1)
+            list.add(ldt)
+        }
+
+        return list
     }
 }

@@ -17,12 +17,6 @@ import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AssignmentInd
-import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LibraryAddCheck
-import androidx.compose.material.icons.filled.Mail
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Scaffold
@@ -41,6 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -62,6 +57,7 @@ import com.example.gestionpisoscompartidos.ui.perfil.PerfilScreen
 import com.example.gestionpisoscompartidos.ui.tareas.TareasScreen
 import com.example.gestionpisoscompartidos.ui.tareas.TareasViewModel
 import com.example.gestionpisoscompartidos.ui.tareas.TareasViewModelFactory
+import com.example.gestionpisoscompartidos.R
 
 @Composable
 fun NavigationBar(
@@ -95,40 +91,41 @@ fun NavigationBar(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // Boton 1: Pagos
             NavigationItem(
-                icon = Icons.Default.Home,
+                icon = ImageVector.vectorResource(id = R.drawable.property_1_tarjetaa),
                 isSelected = selectedTab == 0,
                 onClick = { onTabSelected(0) },
                 padding = 12.dp,
             )
 
-            // Botón 2 - Gastos
+            // Botón 2: Tareas
             NavigationItem(
-                icon = Icons.Default.AttachMoney,
+                icon = ImageVector.vectorResource(id = R.drawable.tareas_icon),
                 isSelected = selectedTab == 1,
                 onClick = { onTabSelected(1) },
                 padding = 12.dp,
             )
 
-            // Botón 3 - Listas
+            // Botón 3: Home
             NavigationItem(
-                icon = Icons.Default.LibraryAddCheck,
+                icon = ImageVector.vectorResource(id = R.drawable.casita),
                 isSelected = selectedTab == 2,
                 onClick = { onTabSelected(2) },
                 padding = 12.dp,
             )
 
-            // Botón 4 - Tareas
+            // Botón 4: Listas
             NavigationItem(
-                icon = Icons.Default.Mail,
+                icon = ImageVector.vectorResource(id = R.drawable.exclude),
                 isSelected = selectedTab == 3,
                 onClick = { onTabSelected(3) },
                 padding = 12.dp,
             )
 
-            // Botón 5 - Perfil
+            // Botón 5: Usuario
             NavigationItem(
-                icon = Icons.Default.AssignmentInd, // Cambia por tu icono real
+                icon = ImageVector.vectorResource(id = R.drawable.icono_user),
                 isSelected = selectedTab == 4,
                 onClick = { onTabSelected(4) },
                 padding = 12.dp,
@@ -193,7 +190,7 @@ fun MainScreenWithNavigation(
     onNavigateToItem: (Long, String) -> Unit,
     onLogout: (String) -> Unit,
 ) {
-    var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedTab by remember { mutableIntStateOf(2) }
     val savedStateHandle = rememberSaveableStateHolder()
     val context = LocalContext.current.applicationContext
 
@@ -249,10 +246,10 @@ fun MainScreenWithNavigation(
         Box(modifier = Modifier.padding(padding)) {
             savedStateHandle.SaveableStateProvider(selectedTab) {
                 when (selectedTab) {
-                    0 -> HomeScreen(viewModel = homeViewModel, casaId = casaId)
-                    1 -> GastosScreen(viewModel = gastosViewModel, casaId = casaId)
-                    2 -> ListaScreen(listaViewModel, onNavigateToItem, casaId = casaId)
-                    3 -> TareasScreen(tareasViewModel, casaNombre, casaId = casaId)
+                    0 -> GastosScreen(viewModel = gastosViewModel, casaId = casaId)
+                    1 -> TareasScreen(tareasViewModel, casaNombre, casaId = casaId)
+                    2 -> HomeScreen(viewModel = homeViewModel)
+                    3 -> ListaScreen(listaViewModel, onNavigateToItem, casaId = casaId)
                     4 -> PerfilScreen(sessionManager, onLogout)
                 }
             }
