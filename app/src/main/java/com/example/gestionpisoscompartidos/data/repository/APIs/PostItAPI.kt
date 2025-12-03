@@ -9,10 +9,10 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface PostItAPI {
-    @POST("casas/{id}/postIt")
+    @POST("casas/{id}/{location}/postIt")
     suspend fun crearPostIt(
         @Path("id") id: Long,
-        @Body postItDTO: PostItDTO,
+        @Path("location") location: String,
     ): Response<PostItDTO>
 
     @GET("casas/{id}/{location}/postIt")

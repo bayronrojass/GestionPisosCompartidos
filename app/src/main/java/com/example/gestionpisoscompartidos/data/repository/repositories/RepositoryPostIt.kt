@@ -12,12 +12,12 @@ class RepositoryPostIt {
 
     suspend fun createPostIt(
         casaId: Long,
-        details: PostItDTO,
+        location: String,
     ): PostItDTO? {
-        val request = repository.request { crearPostIt(casaId, details) }
+        val request = repository.request { crearPostIt(casaId, location) }
         when (request) {
             is ApiResult.Error -> {
-                Log.e("Postit", "Error creando postit " + request.message)
+                Log.e("Postit", "Error creando postit " + request.message + " " + request.code)
                 return null
             }
             is ApiResult.Success<PostItDTO> -> {
