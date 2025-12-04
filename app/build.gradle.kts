@@ -93,6 +93,7 @@ dependencies {
     implementation(libs.androidx.fragment.compose)
     implementation(libs.androidx.foundation)
     implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.material3)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

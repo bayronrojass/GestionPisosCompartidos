@@ -61,7 +61,7 @@ fun TareasScreen(
             val userName = sessionManager.fetchUserEmail()
             // Crear un usuario temporal con la información de sesión
             if (userId != null && userName != null) {
-                Usuario(id = userId, nombre = userName, correo = "")
+                Usuario(id = userId, nombre = userName, correo = userName)
             } else {
                 null
             }
@@ -392,7 +392,7 @@ fun TareasScreen(
 
     // --- DIÁLOGOS ---
     if (showCreateDialog) {
-        CreateTaskDialog(
+        NewCreateTaskDialog(
             miembros = miembros,
             onDismiss = { showCreateDialog = false },
             onCreate = { nombre, descripcion, asignadoId, fechaFin, frecuencia ->
@@ -533,6 +533,15 @@ fun TaskCardPendiente(
     onEdit: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Determinar colores según prioridad para la hora
+    val (colorFondoHora, colorTextoHora) =
+        when (tarea.prioridad?.lowercase() ?: "media") {
+            "alta" -> Pair(Color(0xffff6490), Color(0xff581327))
+            "media" -> Pair(Color(0xffddc1fb), Color(0xff5d427a))
+            "baja" -> Pair(Color(0xFFC8E6C9), Color(0xFF2E7D32))
+            else -> Pair(Color(0xffddc1fb), Color(0xff5d427a))
+        }
+
     Card(
         colors =
             CardDefaults.cardColors(
@@ -576,8 +585,8 @@ fun TaskCardPendiente(
                         "baja" -> BadgePrioridad("Baja", Color(0xFFC8E6C9), Color(0xFF2E7D32))
                     }
 
-                    // Hora
-                    BadgeHora("de 16 a 17h", Color(0xffff6490), Color(0xff5a1428))
+                    // Hora - CON EL MISMO COLOR QUE LA PRIORIDAD
+                    BadgeHora("de 16 a 17h", colorFondoHora, colorTextoHora)
                 }
             }
 
@@ -635,6 +644,15 @@ fun TaskCardOtra(
     onEdit: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Determinar colores según prioridad para la hora
+    val (colorFondoHora, colorTextoHora) =
+        when (tarea.prioridad?.lowercase() ?: "media") {
+            "alta" -> Pair(Color(0xffff6490), Color(0xff581327))
+            "media" -> Pair(Color(0xffddc1fb), Color(0xff5d427a))
+            "baja" -> Pair(Color(0xFFC8E6C9), Color(0xFF2E7D32))
+            else -> Pair(Color(0xffddc1fb), Color(0xff5d427a))
+        }
+
     Card(
         colors =
             CardDefaults.cardColors(
@@ -698,8 +716,8 @@ fun TaskCardOtra(
                         "baja" -> BadgePrioridad("Baja", Color(0xFFC8E6C9), Color(0xFF2E7D32))
                     }
 
-                    // Hora
-                    BadgeHora("de 16 a 17h", Color(0xffddc1fb), Color(0xff5d427a))
+                    // Hora - CON EL MISMO COLOR QUE LA PRIORIDAD
+                    BadgeHora("de 16 a 17h", colorFondoHora, colorTextoHora)
                 }
 
                 // Enlace "Recordar"
@@ -924,66 +942,399 @@ fun BadgeHora(
 }
 
 // ----------------------------------------------------------------
-// DIÁLOGOS (SE MANTIENEN IGUAL)
+// NUEVO DIÁLOGO DE CREAR TAREA (diseño de la imagen)
 // ----------------------------------------------------------------
 
 @Composable
-fun CreateTaskDialog(
+fun NewCreateTaskDialog(
     miembros: List<Usuario>,
     onDismiss: () -> Unit,
     onCreate: (String, String?, Long?, String?, String?) -> Unit,
 ) {
     var nombre by remember { mutableStateOf("") }
-    var descripcion by remember { mutableStateOf("") }
     var asignadoAId by remember { mutableStateOf<Long?>(null) }
     var fechaFin by remember { mutableStateOf<String?>(null) }
-    var frecuencia by remember { mutableStateOf<String?>(null) }
+    var prioridad by remember { mutableStateOf<String?>(null) }
+    var compartirCon by remember { mutableStateOf<List<Long>>(emptyList()) }
+    var mostrarCampoNombre by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+
+    val datePickerDialog =
+        DatePickerDialog(
+            context,
+            { _, year, month, dayOfMonth ->
+                val formattedMonth = (month + 1).toString().padStart(2, '0')
+                val formattedDay = dayOfMonth.toString().padStart(2, '0')
+                val isoDate = "$year-$formattedMonth-${formattedDay}T00:00:00"
+                fechaFin = isoDate
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH),
+        )
+
+    // Convertir fecha al formato español
+    val fechaDisplay =
+        remember(fechaFin) {
+            fechaFin?.let {
+                val partes = it.split("-")
+                if (partes.size >= 3) {
+                    val dia = partes[2].take(2).toInt()
+                    val mes =
+                        when (partes[1]) {
+                            "01" -> "enero"
+                            "02" -> "febrero"
+                            "03" -> "marzo"
+                            "04" -> "abril"
+                            "05" -> "mayo"
+                            "06" -> "junio"
+                            "07" -> "julio"
+                            "08" -> "agosto"
+                            "09" -> "septiembre"
+                            "10" -> "octubre"
+                            "11" -> "noviembre"
+                            "12" -> "diciembre"
+                            else -> partes[1]
+                        }
+                    "$dia de $mes"
+                } else {
+                    ""
+                }
+            } ?: ""
+        }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nueva Tarea") },
+        title = {},
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = nombre,
-                    onValueChange = { nombre = it },
-                    label = { Text("Nombre de la tarea") },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = descripcion,
-                    onValueChange = { descripcion = it },
-                    label = { Text("Descripción") },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                UserSelectionDropdown(
-                    miembros = miembros,
-                    selectedUserId = asignadoAId,
-                    onUserSelected = { asignadoAId = it },
-                )
-                DatePickerField(
-                    label = "Fecha Límite",
-                    selectedDate = fechaFin,
-                    onDateSelected = { fechaFin = it },
-                )
-                FrequencySelector(
-                    selectedFrequency = frecuencia,
-                    onFrequencySelected = { frecuencia = it },
-                )
+            Box(
+                modifier =
+                    Modifier
+                        .requiredWidth(width = 250.dp)
+                        .wrapContentHeight(),
+            ) {
+                // Botón cerrar (X)
+                IconButton(
+                    onClick = onDismiss,
+                    modifier =
+                        Modifier
+                            .align(alignment = Alignment.TopEnd)
+                            .offset(x = (-10).dp, y = (-10).dp),
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.iconocerrar),
+                        contentDescription = "Cerrar",
+                        colorFilter = ColorFilter.tint(Color(0xff6c6c6c)),
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    // Nombre de la tarea
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.Start),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            if (mostrarCampoNombre || nombre.isNotBlank()) {
+                                OutlinedTextField(
+                                    value = nombre,
+                                    onValueChange = { nombre = it },
+                                    label = { Text("Nombre de la tarea") },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true,
+                                    colors =
+                                        OutlinedTextFieldDefaults.colors(
+                                            focusedBorderColor = Color(0xff6c6c6c),
+                                            unfocusedBorderColor = Color(0xff6c6c6c),
+                                        ),
+                                )
+                            } else {
+                                Text(
+                                    text = "Nombre tarea",
+                                    color = Color(0xff6c6c6c),
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                            }
+                        }
+                        IconButton(
+                            onClick = { mostrarCampoNombre = true },
+                            modifier = Modifier.size(24.dp),
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.iconolapiz),
+                                contentDescription = "Editar",
+                                colorFilter = ColorFilter.tint(Color(0xff6c6c6c)),
+                            )
+                        }
+                    }
+
+                    // Fecha de la tarea
+                    Text(
+                        text = "Fecha tarea:",
+                        color = Color.Black,
+                        style =
+                            TextStyle(
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                            ),
+                    )
+
+                    // InputChip para seleccionar fecha
+                    InputChip(
+                        label = {
+                            Text(
+                                text = if (fechaDisplay.isBlank()) "Seleccionar fecha" else fechaDisplay,
+                                color = Color(0xff6c6c6c),
+                                style = TextStyle(fontSize = 14.sp),
+                            )
+                        },
+                        avatar = {
+                            Image(
+                                painter = painterResource(id = R.drawable.iconocalendario),
+                                contentDescription = "Calendario",
+                                colorFilter = ColorFilter.tint(Color(0xff6c6c6c)),
+                                modifier = Modifier.size(24.dp),
+                            )
+                        },
+                        shape = RoundedCornerShape(10.dp),
+                        colors =
+                            FilterChipDefaults.filterChipColors(
+                                containerColor = Color(0xfffbfafa),
+                            ),
+                        selected = fechaFin != null,
+                        onClick = { datePickerDialog.show() },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    // Prioridad de la tarea
+                    Text(
+                        text = "Prioridad de la tarea:",
+                        color = Color.Black,
+                        style =
+                            TextStyle(
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                            ),
+                    )
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        // Botón Alta
+                        PrioridadChip(
+                            texto = "Alta",
+                            colorFondo = Color(0xffff6490),
+                            colorTexto = Color(0xff581327),
+                            seleccionado = prioridad == "alta",
+                            onClick = { prioridad = "alta" },
+                        )
+
+                        // Botón Media
+                        PrioridadChip(
+                            texto = "Media",
+                            colorFondo = Color(0xffddc1fb),
+                            colorTexto = Color(0xff5d427a),
+                            seleccionado = prioridad == "media",
+                            onClick = { prioridad = "media" },
+                        )
+
+                        // Botón Baja
+                        PrioridadChip(
+                            texto = "Baja",
+                            colorFondo = Color(0xffa9e6a8),
+                            colorTexto = Color(0xff2d5c2c),
+                            seleccionado = prioridad == "baja",
+                            onClick = { prioridad = "baja" },
+                        )
+                    }
+
+                    // Asignar a (persona responsable)
+                    Text(
+                        text = "Asignar a:",
+                        color = Color.Black,
+                        style =
+                            TextStyle(
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                            ),
+                    )
+
+                    UserSelectionChips(
+                        miembros = miembros,
+                        selectedUserId = asignadoAId,
+                        onUserSelected = { asignadoAId = it },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    // Botones Aceptar/Cancelar
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        // Botón Cancelar
+                        OutlinedButton(
+                            onClick = onDismiss,
+                            border = BorderStroke(1.dp, Color(0xff6c6c6c)),
+                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text("Cancelar", color = Color(0xff6c6c6c))
+                        }
+
+                        // Botón Aceptar
+                        Button(
+                            onClick = {
+                                if (nombre.isBlank()) {
+                                    Toast.makeText(context, "El nombre es obligatorio", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    onCreate(nombre, null, asignadoAId, fechaFin, prioridad)
+                                }
+                            },
+                            shape = RoundedCornerShape(20.dp),
+                            colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xff6c6c6c),
+                                    contentColor = Color.White,
+                                ),
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text("Aceptar")
+                        }
+                    }
+                }
             }
         },
-        confirmButton = {
-            Button(onClick = { onCreate(nombre, descripcion.ifBlank { null }, asignadoAId, fechaFin, frecuencia) }) {
-                Text("Crear")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
-        },
+        confirmButton = {},
+        dismissButton = {},
+        modifier = Modifier.padding(horizontal = 16.dp),
     )
 }
 
-// Diálogo de editar tarea
+@Composable
+fun PrioridadChip(
+    texto: String,
+    colorFondo: Color,
+    colorTexto: Color,
+    seleccionado: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val backgroundColor = if (seleccionado) colorFondo else Color(0xfffbfafa)
+    val textColor = if (seleccionado) colorTexto else Color(0xff6c6c6c)
+    val borderColor = if (seleccionado) colorFondo else Color(0xff6c6c6c)
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(17.dp))
+                .background(backgroundColor)
+                .border(
+                    width = 1.dp,
+                    color = borderColor,
+                    shape = RoundedCornerShape(17.dp),
+                ).clickable(onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 6.dp),
+    ) {
+        Text(
+            text = texto,
+            color = textColor,
+            style =
+                TextStyle(
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                ),
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+fun UsuarioChip(
+    nombre: String,
+    seleccionado: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val backgroundColor = if (seleccionado) Color(0xffddc1fb) else Color(0xfffbfafa)
+    val borderColor = if (seleccionado) Color(0xffddc1fb) else Color(0xff6c6c6c)
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(7.dp, Alignment.Start),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier =
+            modifier
+                .clip(shape = RoundedCornerShape(25.dp))
+                .background(backgroundColor)
+                .border(
+                    border = BorderStroke(1.dp, borderColor),
+                    shape = RoundedCornerShape(25.dp),
+                ).clickable(onClick = onClick)
+                .padding(start = 8.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.compartirnotaiconos),
+            contentDescription = "Usuario",
+            colorFilter = ColorFilter.tint(if (seleccionado) Color.White else Color(0xff6c6c6c)),
+            modifier = Modifier.size(16.dp),
+        )
+        Text(
+            text = nombre,
+            color = if (seleccionado) Color.White else Color(0xff6c6c6c),
+            style = TextStyle(fontSize = 14.sp),
+        )
+    }
+}
+
+@Composable
+fun UserSelectionChips(
+    miembros: List<Usuario>,
+    selectedUserId: Long?,
+    onUserSelected: (Long?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        // Opción "Sin asignar"
+        UsuarioChip(
+            nombre = "Sin asignar",
+            seleccionado = selectedUserId == null,
+            onClick = { onUserSelected(null) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        // Lista de miembros
+        miembros.forEach { miembro ->
+            UsuarioChip(
+                nombre = miembro.nombre,
+                seleccionado = selectedUserId == miembro.id,
+                onClick = { onUserSelected(miembro.id) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+// ----------------------------------------------------------------
+// DIÁLOGOS ANTIGUOS (para editar tareas)
+// ----------------------------------------------------------------
+
 @Composable
 fun EditTaskDialog(
     tarea: Tarea,
