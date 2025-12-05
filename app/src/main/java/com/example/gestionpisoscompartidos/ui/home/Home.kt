@@ -20,6 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Composable
@@ -31,6 +35,8 @@ fun HomeScreen(
     val isLoading by viewModel.isLoadingUser.collectAsStateWithLifecycle()
 
     val houseName by viewModel.currentHouse.collectAsStateWithLifecycle()
+
+    val selectedDate by viewModel.fechaSeleccionada.collectAsStateWithLifecycle()
 
     val next7days = viewModel.next7days()
 
@@ -57,15 +63,21 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        CalendarSection(next7days)
-
+        CalendarSection(
+            list = next7days,
+            selectedDate = selectedDate,
+            onDateSelected = { date -> viewModel.seleccionarFecha(date) },
+            viewModel = viewModel,
+        )
         Spacer(modifier = Modifier.height(16.dp))
 
-        TodayEventsSection()
+        // TodayEventsSection()
 
-        Spacer(modifier = Modifier.height(16.dp))
+        // Spacer(modifier = Modifier.height(16.dp))
 
-        SaturdayEventsSection()
+        // SaturdayEventsSection()
+
+        weeklyEvents(viewModel)
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -153,7 +165,12 @@ fun HeaderSection(
 }
 
 @Composable
-fun CalendarSection(list: List<LocalDateTime>) {
+fun CalendarSection(
+    list: List<LocalDateTime>,
+    selectedDate: LocalDate? = null,
+    onDateSelected: (LocalDate) -> Unit,
+    viewModel: HomeViewModel,
+) {
     Column(
         modifier =
             Modifier
@@ -200,19 +217,13 @@ fun CalendarSection(list: List<LocalDateTime>) {
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             list.forEachIndexed { index, ldt ->
+                val isSelected = selectedDate?.let { it == ldt.toLocalDate() } ?: false
                 DayItem(
                     day = ldt.dayOfMonth.toString(),
-                    dayName =
-                        when (ldt.dayOfWeek.toString()) {
-                            "MONDAY" -> "Lun"
-                            "TUESDAY" -> "Mar"
-                            "WEDNESDAY" -> "Mié"
-                            "THURSDAY" -> "Jue"
-                            "FRIDAY" -> "Vie"
-                            "SATURDAY" -> "Sáb"
-                            else -> "Dom"
-                        },
+                    dayName = viewModel.diasTraducidos(ldt.dayOfWeek),
                     isToday = index == 0,
+                    isSelected = isSelected,
+                    onClick = { onDateSelected(ldt.toLocalDate()) },
                 )
             }
         }
@@ -224,6 +235,8 @@ fun DayItem(
     day: String,
     dayName: String,
     isToday: Boolean = false,
+    isSelected: Boolean = false,
+    onClick: () -> Unit,
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -234,9 +247,10 @@ fun DayItem(
             shape = MaterialTheme.shapes.medium,
             colors =
                 CardDefaults.cardColors(
-                    containerColor = if (isToday) Color(0xfffeee91) else Color.White,
+                    containerColor = if (isSelected) Color(0xfffeee91) else Color.White,
                 ),
             border = CardDefaults.outlinedCardBorder(),
+            onClick = onClick,
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -271,63 +285,43 @@ fun DayItem(
 }
 
 @Composable
-fun TodayEventsSection() {
+fun weeklyEvents(viewModel: HomeViewModel) {
+    val eventosDelDia by viewModel.eventosDelDia.collectAsStateWithLifecycle()
+    val sortedList = viewModel.sortEvents(eventosDelDia)
+
     Column(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
     ) {
-        Text(
-            text = "Hoy",
-            color = Color.Black,
-            style =
-                TextStyle(
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Medium,
-                ),
-        )
+        if (!sortedList.isEmpty()) {
+            for (i in 0..<sortedList.size) {
+                var prev = if (i == 0) null else sortedList.get(i - 1)
+                var day = sortedList.get(i)
+                if (i == 0 || !viewModel.areSameDay(prev!!.fechaInicio, day.fechaInicio)) {
+                    Text(
+                        text = viewModel.diasTraducidos(viewModel.parseFechaSegura(day.fechaInicio).dayOfWeek),
+                        color = Color.Black,
+                        style =
+                            TextStyle(
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Medium,
+                            ),
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
 
-        Spacer(modifier = Modifier.height(12.dp))
+                EventItem(
+                    title = day.nombre,
+                    color = Color(0xfffff8cf),
+                    creadoPor = day.creadoPor,
+                    viewModel = viewModel,
+                )
 
-        EventItem(
-            title = "Cenan en casa María y Belén",
-            color = Color(0xfffff8cf),
-        )
-    }
-}
-
-@Composable
-fun SaturdayEventsSection() {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp),
-    ) {
-        Text(
-            text = "Sábado",
-            color = Color.Black,
-            style =
-                TextStyle(
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Medium,
-                ),
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        EventItem(
-            title = "Viene el casero a arreglar la nevera",
-            color = Color.White,
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        EventItem(
-            title = "Previa con los bros en casa :p",
-            color = Color.White,
-        )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+        }
     }
 }
 
@@ -335,7 +329,20 @@ fun SaturdayEventsSection() {
 fun EventItem(
     title: String,
     color: Color,
+    creadoPor: Long,
+    viewModel: HomeViewModel,
 ) {
+    var creadorName by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(creadoPor) {
+        creadorName =
+            try {
+                viewModel.getUserNameById(creadoPor)
+            } catch (e: Exception) {
+                null
+            }
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.small,
@@ -359,6 +366,12 @@ fun EventItem(
             Text(
                 text = title,
                 style = TextStyle(fontSize = 15.sp),
+                modifier = Modifier.weight(1f),
+            )
+
+            Text(
+                text = "Creado por: ${creadorName ?: "Cargando..."}",
+                style = TextStyle(fontSize = 12.sp),
                 modifier = Modifier.weight(1f),
             )
         }
@@ -532,7 +545,6 @@ fun PendingTaskItem(
                         ),
                 )
 
-                // Change request
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {

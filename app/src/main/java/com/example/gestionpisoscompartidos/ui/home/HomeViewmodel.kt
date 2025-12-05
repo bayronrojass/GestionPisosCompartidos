@@ -20,9 +20,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.time.DayOfWeek
 import java.time.LocalDateTime
-import java.time.temporal.TemporalAdjusters
 
 class HomeViewModel(
     private val repository: RepositoryCasa,
@@ -164,19 +162,19 @@ class HomeViewModel(
     }
 
     private fun filtrarEventosPorFecha(fecha: LocalDate) {
-        val finDeSemana = fecha.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
+        val limit = fecha.plusDays(6)
 
         val listaFiltrada =
             _eventos.value
                 .filter { evento ->
                     val fechaEvento = parseFechaSegura(evento.fechaInicio)
-                    !fechaEvento.isBefore(fecha) && !fechaEvento.isAfter(finDeSemana)
+                    !fechaEvento.isBefore(fecha) && !fechaEvento.isAfter(limit)
                 }.sortedBy { it.fechaInicio }
 
         _eventosDelDia.value = listaFiltrada
     }
 
-    private fun parseFechaSegura(fechaString: String): LocalDate =
+    fun parseFechaSegura(fechaString: String): LocalDate =
         try {
             if (fechaString.length >= 10) {
                 LocalDate.parse(fechaString.substring(0, 10))
@@ -332,4 +330,33 @@ class HomeViewModel(
 
         return list
     }
+
+    fun sortEvents(list: List<Evento>): List<Evento> {
+        var sortedList = list.sortedBy { parseFechaSegura(it.fechaInicio) }
+        return sortedList
+    }
+
+    fun diasTraducidos(day: java.time.DayOfWeek): String {
+        when (day.toString()) {
+            "MONDAY" -> return "Lun"
+            "TUESDAY" -> return "Mar"
+            "WEDNESDAY" -> return "Mié"
+            "THURSDAY" -> return "Jue"
+            "FRIDAY" -> return "Vie"
+            "SATURDAY" -> return "Sáb"
+            else -> return "Dom"
+        }
+    }
+
+    fun areSameDay(
+        date1: String,
+        date2: String,
+    ): Boolean = parseFechaSegura(date1) == parseFechaSegura(date2)
+
+    suspend fun getUserNameById(id: Long): String =
+        try {
+            userRepo.getUsuario(id)?.nombre ?: "Usuario"
+        } catch (e: Exception) {
+            "Usuario desconocido"
+        }
 }
