@@ -398,9 +398,9 @@ fun TareasScreen(
         NewCreateTaskDialog(
             miembros = miembros,
             onDismiss = { showCreateDialog = false },
-            onCreate = { nombre, descripcion, asignadoId, fechaFin, frecuencia ->
+            onCreate = { nombre, descripcion, asignadoId, fechaFin, frecuencia, prioridad ->
                 if (nombre.isNotBlank()) {
-                    viewModel.crearTarea(nombre, descripcion, asignadoId, fechaFin, frecuencia)
+                    viewModel.crearTarea(nombre, descripcion, asignadoId, fechaFin, frecuencia, prioridad)
                     showCreateDialog = false
                 } else {
                     Toast.makeText(context, "El nombre es obligatorio", Toast.LENGTH_SHORT).show()
@@ -414,9 +414,9 @@ fun TareasScreen(
             tarea = tarea,
             miembros = miembros,
             onDismiss = { taskToEdit = null },
-            onSave = { nombre, descripcion, asignadoId, fechaFin, frecuencia ->
+            onSave = { nombre, descripcion, asignadoId, fechaFin, frecuencia, prioridad ->
                 if (nombre.isNotBlank()) {
-                    viewModel.editarTarea(tarea, nombre, descripcion, asignadoId, fechaFin, frecuencia)
+                    viewModel.editarTarea(tarea, nombre, descripcion, asignadoId, fechaFin, frecuencia, prioridad)
                     taskToEdit = null
                 } else {
                     Toast.makeText(context, "El nombre es obligatorio", Toast.LENGTH_SHORT).show()
@@ -427,7 +427,7 @@ fun TareasScreen(
 }
 
 // ----------------------------------------------------------------
-// COMPONENTES VISUALES MEJORADOS - SIN BORDES GRISES
+// COMPONENTES VISUALES
 // ----------------------------------------------------------------
 
 @Composable
@@ -1042,15 +1042,14 @@ fun BadgeHora(
 fun NewCreateTaskDialog(
     miembros: List<Usuario>,
     onDismiss: () -> Unit,
-    onCreate: (String, String?, Long?, String?, String?) -> Unit,
+    onCreate: (String, String?, Long?, String?, String?, String?) -> Unit,
 ) {
     var nombre by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
     var asignadoAId by remember { mutableStateOf<Long?>(null) }
     var fechaFin by remember { mutableStateOf<String?>(null) }
-    var prioridad by remember { mutableStateOf<String?>(null) }
+    var prioridad by remember { mutableStateOf<String?>("Media") }
     var frecuencia by remember { mutableStateOf<String?>(null) }
-    var compartirCon by remember { mutableStateOf<List<Long>>(emptyList()) }
     var mostrarCampoNombre by remember { mutableStateOf(false) }
 
     // Estado para controlar el dropdown de frecuencia
@@ -1337,6 +1336,7 @@ fun NewCreateTaskDialog(
                                         asignadoAId,
                                         fechaFin,
                                         frecuencia,
+                                        prioridad,
                                     )
                                 }
                             },
@@ -1536,13 +1536,14 @@ fun EditTaskDialog(
     tarea: Tarea,
     miembros: List<Usuario>,
     onDismiss: () -> Unit,
-    onSave: (String, String?, Long?, String?, String?) -> Unit,
+    onSave: (String, String?, Long?, String?, String?, String?) -> Unit,
 ) {
     var nombre by remember { mutableStateOf(tarea.nombre) }
     var descripcion by remember { mutableStateOf(tarea.descripcion ?: "") }
     var asignadoAId by remember { mutableStateOf(tarea.asignadoA?.id) }
     var fechaFin by remember { mutableStateOf(tarea.fechaFin) }
     var frecuencia by remember { mutableStateOf(tarea.frecuencia) }
+    var prioridad by remember { mutableStateOf(tarea.prioridad ?: "Media") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1579,11 +1580,35 @@ fun EditTaskDialog(
                     selectedFrequency = frecuencia,
                     onFrequencySelected = { frecuencia = it },
                 )
+                Text("Prioridad:")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PrioridadChip(
+                        texto = "Alta",
+                        colorFondo = Color(0xffff6490),
+                        colorTexto = Color(0xff581327),
+                        seleccionado = prioridad.equals("Alta", ignoreCase = true),
+                        onClick = { prioridad = "Alta" },
+                    )
+                    PrioridadChip(
+                        texto = "Media",
+                        colorFondo = Color(0xffddc1fb),
+                        colorTexto = Color(0xff5d427a),
+                        seleccionado = prioridad.equals("Media", ignoreCase = true),
+                        onClick = { prioridad = "Media" },
+                    )
+                    PrioridadChip(
+                        texto = "Baja",
+                        colorFondo = Color(0xFFC8E6C9),
+                        colorTexto = Color(0xFF2E7D32),
+                        seleccionado = prioridad.equals("Baja", ignoreCase = true),
+                        onClick = { prioridad = "Baja" },
+                    )
+                }
             }
         },
         confirmButton = {
             Button(onClick = {
-                onSave(nombre, descripcion.ifBlank { null }, asignadoAId, fechaFin, frecuencia)
+                onSave(nombre, descripcion.ifBlank { null }, asignadoAId, fechaFin, frecuencia, prioridad)
             }) {
                 Text("Guardar")
             }

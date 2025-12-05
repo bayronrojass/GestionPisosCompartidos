@@ -57,12 +57,13 @@ class TareasViewModel(
         asignadoAId: Long?,
         fechaFin: String?,
         frecuencia: String?,
+        prioridad: String?,
     ) {
         _isLoading.value = true
         viewModelScope.launch {
             try {
                 val esPeriodica = !frecuencia.isNullOrBlank()
-                val request = TareaRequest(nombre, descripcion, false, fechaFin, frecuencia, esPeriodica, asignadoAId)
+                val request = TareaRequest(nombre, descripcion, false, fechaFin, frecuencia, esPeriodica, asignadoAId, prioridad)
                 repository.crearTarea(casaId, request)
                 cargarTareas()
             } catch (e: Exception) {
@@ -75,7 +76,17 @@ class TareasViewModel(
 
     fun toggleCompletado(tarea: Tarea) {
         viewModelScope.launch {
-            val request = TareaRequest(tarea.nombre, tarea.descripcion, !tarea.completado, null, null, null, null)
+            val request =
+                TareaRequest(
+                    tarea.nombre,
+                    tarea.descripcion,
+                    !tarea.completado,
+                    tarea.fechaFin,
+                    tarea.frecuencia,
+                    tarea.periodica,
+                    tarea.asignadoA?.id,
+                    tarea.prioridad,
+                )
             try {
                 repository.actualizarTarea(tarea.id, request)
                 cargarTareas()
@@ -105,12 +116,14 @@ class TareasViewModel(
         asignadoAId: Long?,
         nuevaFechaFin: String?,
         nuevaFrecuencia: String?,
+        nuevaPrioridad: String?,
     ) {
         viewModelScope.launch {
             // Si asignadoAId es null, enviamos -1L, de lo contrario enviamos el ID real
             val idParaEnviar = asignadoAId ?: -1L
             val esPeriodica = !nuevaFrecuencia.isNullOrBlank()
-            val request = TareaRequest(nuevoNombre, nuevaDesc, null, nuevaFechaFin, nuevaFrecuencia, esPeriodica, idParaEnviar)
+            val request =
+                TareaRequest(nuevoNombre, nuevaDesc, null, nuevaFechaFin, nuevaFrecuencia, esPeriodica, idParaEnviar, nuevaPrioridad)
             try {
                 repository.actualizarTarea(tarea.id, request)
                 cargarTareas()
