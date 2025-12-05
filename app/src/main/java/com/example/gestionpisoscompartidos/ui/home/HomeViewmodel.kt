@@ -9,7 +9,9 @@ import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryEvento
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryUsuario
+import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryTarea
 import com.example.gestionpisoscompartidos.model.Evento
+import com.example.gestionpisoscompartidos.model.Tarea
 import com.example.gestionpisoscompartidos.model.Usuario
 import com.example.gestionpisoscompartidos.model.requests.eventRequest
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -65,11 +67,16 @@ class HomeViewModel(
     private val _currentHouse = MutableStateFlow<String?>(null)
     val currentHouse: StateFlow<String?> = _currentHouse.asStateFlow()
 
+    private val _tareasDelUsuario = MutableStateFlow<List<Tarea>>(emptyList())
+    val tareasDelUsuario: StateFlow<List<Tarea>> = _tareasDelUsuario
+
     val casaRepo = RepositoryCasa(NetworkModule.casaApiService)
+    val tareaRepo = RepositoryTarea(NetworkModule.tareaApiService)
 
     init {
         cargarEventos()
         cargarUsuario()
+        cargarTareas()
     }
 
     fun cargarUsuario() {
@@ -359,4 +366,12 @@ class HomeViewModel(
         } catch (e: Exception) {
             "Usuario desconocido"
         }
+
+    fun cargarTareas() {
+        viewModelScope.launch {
+            val res = tareaRepo.getTareasByCasaId(casaId)
+            val tareasDelUsuario = res.filter { it.asignadoA?.id == userID }
+            _tareasDelUsuario.value = tareasDelUsuario
+        }
+    }
 }

@@ -85,7 +85,7 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        PendingTasksSection()
+        PendingTasksSection(viewModel)
 
         Spacer(modifier = Modifier.height(40.dp))
 
@@ -94,10 +94,10 @@ fun HomeScreen(
             color = Color(0xff6c6c6c),
             textDecoration = TextDecoration.Underline,
             style = TextStyle(fontSize = 14.sp),
-            modifier = Modifier.align(alignment = androidx.compose.ui.Alignment.CenterHorizontally),
+            modifier = Modifier.align(alignment = Alignment.CenterHorizontally),
         )
 
-        Spacer(modifier = Modifier.height(80.dp)) // Space for navbar
+        Spacer(modifier = Modifier.height(80.dp))
     }
 }
 
@@ -288,7 +288,6 @@ fun DayItem(
 fun weeklyEvents(viewModel: HomeViewModel) {
     val eventosDelDia by viewModel.eventosDelDia.collectAsStateWithLifecycle()
     val sortedList = viewModel.sortEvents(eventosDelDia)
-
     Column(
         modifier =
             Modifier
@@ -447,7 +446,8 @@ fun NotificationItem(
 }
 
 @Composable
-fun PendingTasksSection() {
+fun PendingTasksSection(viewModel: HomeViewModel) {
+    val tareasPendientes = viewModel.tareasDelUsuario.collectAsStateWithLifecycle()
     Column(
         modifier =
             Modifier
@@ -462,21 +462,32 @@ fun PendingTasksSection() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        PendingTaskItem(
-            title = "Tirar basura",
-            priority = "Media",
-            priorityColor = Color(0xffddc1fb),
-            textColor = Color(0xff5d427a),
-        )
+        for (tarea in tareasPendientes.value) {
+            val color: Color
+            val textColor: Color
+            if (tarea.prioridad == "Alta") {
+                color = Color(0xFFFF6490)
+                textColor = Color(0xFF581327)
+            } else if (tarea.prioridad == "Media") {
+                color = Color(0xFFDDC1FB)
+                textColor = Color(0xFF5D427A)
+            } else {
+                color = Color(0xFFA9E6A8)
+                textColor = Color(0xFF2D5C2C)
+            }
 
-        Spacer(modifier = Modifier.height(12.dp))
+            val date = viewModel.parseFechaSegura(tarea.fechaFin!!)
+            val taskDate = viewModel.diasTraducidos(date.dayOfWeek) + ". " + date.dayOfMonth
 
-        PendingTaskItem(
-            title = "Limpiar baño",
-            priority = "Alta",
-            priorityColor = Color(0xffff6490),
-            textColor = Color(0xff581327),
-        )
+            PendingTaskItem(
+                title = tarea.nombre,
+                priority = tarea.prioridad!!,
+                priorityColor = color,
+                textColor = textColor,
+                taskDate,
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
     }
 }
 
@@ -486,6 +497,7 @@ fun PendingTaskItem(
     priority: String,
     priorityColor: Color,
     textColor: Color,
+    taskDate: String?,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -510,7 +522,6 @@ fun PendingTaskItem(
                     modifier = Modifier.weight(1f),
                 )
 
-                // Priority tag
                 Text(
                     text = priority,
                     color = textColor,
@@ -533,15 +544,13 @@ fun PendingTaskItem(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                OutlinedTextField(
-                    value = "",
-                    onValueChange = {},
-                    placeholder = { Text("14 Nov") },
-                    modifier = Modifier.weight(1f),
-                    colors =
-                        TextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
+                Text(
+                    text = taskDate ?: "nil",
+                    color = textColor,
+                    style =
+                        TextStyle(
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
                         ),
                 )
 
