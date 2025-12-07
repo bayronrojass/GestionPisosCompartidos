@@ -13,14 +13,14 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.Strictness
 import com.google.gson.TypeAdapter
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
 import retrofit2.Retrofit
 import retrofit2.Retrofit.Builder
 import retrofit2.converter.gson.GsonConverterFactory
+import java.io.IOException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import com.google.gson.stream.JsonReader
-import com.google.gson.stream.JsonWriter
-import java.io.IOException
 
 /**
  * Objeto Singleton que gestiona la configuración de Retrofit

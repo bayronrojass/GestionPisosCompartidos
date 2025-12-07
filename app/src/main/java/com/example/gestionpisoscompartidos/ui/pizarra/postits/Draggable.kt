@@ -21,7 +21,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gestionpisoscompartidos.R
 import com.example.gestionpisoscompartidos.ui.utils.DynamicFloatingActionButton
 import com.example.gestionpisoscompartidos.ui.utils.FabActionItem
@@ -35,7 +34,7 @@ fun DraggablePostIt(
     modifier: Modifier = Modifier,
 ) {
     Image(
-        painter = painterResource(id = R.drawable.home_union),
+        painter = painterResource(id = R.drawable.postitplegado),
         contentDescription = "Post-it minimizado",
         modifier =
             modifier

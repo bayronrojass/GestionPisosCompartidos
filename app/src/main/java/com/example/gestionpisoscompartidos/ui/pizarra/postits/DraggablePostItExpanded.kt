@@ -92,7 +92,7 @@ fun ExpandedPostIt(
                 label = { Text("Minimizar") },
                 avatar = {
                     Icon(
-                        painter = painterResource(id = R.drawable.home_union),
+                        painter = painterResource(id = R.drawable.icono_minimizar),
                         contentDescription = "Minimizar",
                         modifier = Modifier.requiredSize(24.dp),
                     )
@@ -109,7 +109,7 @@ fun ExpandedPostIt(
                 label = { Text("Imagen") },
                 avatar = {
                     Icon(
-                        painter = painterResource(id = R.drawable.home_union),
+                        painter = painterResource(id = R.drawable.icono_minimizar),
                         contentDescription = "Imagen",
                         modifier = Modifier.requiredSize(24.dp),
                     )

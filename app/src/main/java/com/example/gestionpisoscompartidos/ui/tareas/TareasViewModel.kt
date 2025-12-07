@@ -9,8 +9,8 @@ import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryTarea
 import com.example.gestionpisoscompartidos.model.Tarea
-import com.example.gestionpisoscompartidos.model.requests.TareaRequest
 import com.example.gestionpisoscompartidos.model.Usuario
+import com.example.gestionpisoscompartidos.model.requests.TareaRequest
 import kotlinx.coroutines.launch
 
 class TareasViewModel(

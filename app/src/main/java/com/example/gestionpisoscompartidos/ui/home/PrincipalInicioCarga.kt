@@ -24,11 +24,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import com.example.gestionpisoscompartidos.R
-import kotlinx.coroutines.delay
-import com.example.gestionpisoscompartidos.ui.navigation.Route
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.gestionpisoscompartidos.R
+import com.example.gestionpisoscompartidos.ui.navigation.Route
+import kotlinx.coroutines.delay
 
 @Composable
 fun PrincipalInicioCarga(
