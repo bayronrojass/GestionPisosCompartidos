@@ -40,6 +40,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.gestionpisoscompartidos.R
 import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
@@ -57,7 +58,6 @@ import com.example.gestionpisoscompartidos.ui.perfil.PerfilScreen
 import com.example.gestionpisoscompartidos.ui.tareas.TareasScreen
 import com.example.gestionpisoscompartidos.ui.tareas.TareasViewModel
 import com.example.gestionpisoscompartidos.ui.tareas.TareasViewModelFactory
-import com.example.gestionpisoscompartidos.R
 
 @Composable
 fun NavigationBar(

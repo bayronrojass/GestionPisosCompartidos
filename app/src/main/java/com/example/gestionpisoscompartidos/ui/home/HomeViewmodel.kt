@@ -8,8 +8,8 @@ import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryCasa
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryEvento
-import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryUsuario
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryTarea
+import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryUsuario
 import com.example.gestionpisoscompartidos.model.Evento
 import com.example.gestionpisoscompartidos.model.Tarea
 import com.example.gestionpisoscompartidos.model.Usuario
@@ -21,9 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.time.DayOfWeek
 import java.time.LocalDate
-
 import java.time.LocalDateTime
 
 class HomeViewModel(
