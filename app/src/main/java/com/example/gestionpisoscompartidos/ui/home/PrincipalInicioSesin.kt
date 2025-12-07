@@ -333,7 +333,7 @@ fun LoginScreenUI(
         )
 
         Text(
-            text = "o",
+            text = "o ",
             color = Color(0xff6c6c6c),
             textAlign = TextAlign.Center,
             style =

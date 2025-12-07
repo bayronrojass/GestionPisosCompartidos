@@ -1,5 +1,8 @@
 package com.example.gestionpisoscompartidos.data.repository.APIs
 
+import com.example.gestionpisoscompartidos.model.responses.CasaResponse
+import com.example.gestionpisoscompartidos.model.requests.JoinCasaRequest
+import com.example.gestionpisoscompartidos.model.Usuario
 import com.example.gestionpisoscompartidos.model.Evento
 import com.example.gestionpisoscompartidos.model.Gasto
 import com.example.gestionpisoscompartidos.model.Usuario
@@ -7,6 +10,7 @@ import com.example.gestionpisoscompartidos.model.requests.GastoRequest
 import com.example.gestionpisoscompartidos.model.requests.JoinCasaRequest
 import com.example.gestionpisoscompartidos.model.responses.CasaDetailsResponse
 import com.example.gestionpisoscompartidos.model.responses.CasaResponse
+import com.example.gestionpisoscompartidos.model.responses.CasaDetailsResponseDTO
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
@@ -36,7 +40,7 @@ interface CasaAPI {
     suspend fun getPisoDetails(
         @Header("Authorization") token: String,
         @Path("id") pisoId: Long,
-    ): Response<CasaDetailsResponse> // Devuelve el DTO con los miembros
+    ): Response<CasaDetailsResponseDTO>
 
     @DELETE("casas/{casaId}/miembros/{usuarioId}")
     suspend fun removeMiembro(

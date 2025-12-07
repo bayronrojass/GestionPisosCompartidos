@@ -5,7 +5,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryPostIt
-import com.example.gestionpisoscompartidos.model.dtos.PostItDTO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -53,10 +52,10 @@ class DraggableViewModel(
                     toAdd.values.map { id ->
                         val newPostItDTO = postItRepository.getPostItDetails(id)
                         PostItState(
-                            id = newPostItDTO!!.id,
+                            id = newPostItDTO?.id!!,
                             offset = Offset(newPostItDTO.posicionX, newPostItDTO.posicionY),
                             location = newPostItDTO.localizacion,
-                            lienzoId = newPostItDTO.lienzoId,
+                            lienzoId = newPostItDTO.lienzoId!!,
                             isExpanded = false,
                         )
                     }
@@ -72,8 +71,7 @@ class DraggableViewModel(
     fun addNewPostIt() {
         viewModelScope.launch {
             try {
-                val details = PostItDTO(0, 0, 0f, 0f, 0, 0, location)
-                postItRepository.createPostIt(casaId = casaId, details)
+                postItRepository.createPostIt(casaId = casaId, location)
 
                 syncPostIts()
             } catch (e: Exception) {

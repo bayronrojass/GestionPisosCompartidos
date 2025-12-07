@@ -32,6 +32,8 @@ runtimeLivedata = "1.9.4"
 fragmentCompose = "1.8.9"
 foundation = "1.9.5"
 uiVersion = "1.9.5"
+composeMaterial3 = "1.5.5"
+animation = "1.9.5"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -68,6 +70,8 @@ androidx-runtime-livedata = { group = "androidx.compose.runtime", name = "runtim
 androidx-fragment-compose = { group = "androidx.fragment", name = "fragment-compose", version.ref = "fragmentCompose" }
 androidx-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "uiVersion" }
+androidx-compose-material3 = { group = "androidx.wear.compose", name = "compose-material3", version.ref = "composeMaterial3" }
+androidx-compose-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "animation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
