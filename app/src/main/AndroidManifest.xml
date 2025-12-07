@@ -35,12 +35,6 @@
         </activity>
 
         <activity
-                android:name=".ui.activities.TestPizarra"
-                android:exported="true"
-                android:theme="@style/Theme.GestionPisosCompartidos">
-        </activity>
-
-        <activity
                 android:name=".ui.activities.TestPiso"
                 android:exported="true">
         </activity>
