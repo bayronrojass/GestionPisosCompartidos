@@ -12,6 +12,9 @@ import com.example.gestionpisoscompartidos.model.Tarea
 import com.example.gestionpisoscompartidos.model.Usuario
 import com.example.gestionpisoscompartidos.model.requests.TareaRequest
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class TareasViewModel(
     private val casaId: Long,
@@ -76,12 +79,19 @@ class TareasViewModel(
 
     fun toggleCompletado(tarea: Tarea) {
         viewModelScope.launch {
+            val nuevaFechaFin =
+                if (!tarea.completado) {
+                    val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+                    sdf.format(Date())
+                } else {
+                    tarea.fechaFin
+                }
             val request =
                 TareaRequest(
                     tarea.nombre,
                     tarea.descripcion,
                     !tarea.completado,
-                    tarea.fechaFin,
+                    nuevaFechaFin,
                     tarea.frecuencia,
                     tarea.periodica,
                     tarea.asignadoA?.id,

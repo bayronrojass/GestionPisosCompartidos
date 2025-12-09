@@ -6,47 +6,16 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.*
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.NoteAdd
-import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.InputChip
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -73,6 +42,10 @@ import com.example.gestionpisoscompartidos.ui.pizarra.postits.PizarraScreen
 import com.example.gestionpisoscompartidos.ui.utils.FabActionItem
 import com.example.gestionpisoscompartidos.ui.utils.FabActionType
 import java.util.Calendar
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 @Composable
 fun TareasScreen(
@@ -132,6 +105,35 @@ fun TareasScreen(
                 // Incluir tareas que NO están asignadas al usuario actual
                 // Esto incluye: tareas sin asignar y tareas asignadas a otros usuarios
                 tarea.asignadoA?.id != usuarioActual?.id
+            }
+        }
+
+    fun daysDifference(dateString: String?): Long {
+        if (dateString == null) return Long.MAX_VALUE
+        return try {
+            val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+            val date = sdf.parse(dateString) ?: return Long.MAX_VALUE
+            val now = Date()
+            val diff = now.time - date.time
+            TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS)
+        } catch (e: Exception) {
+            Long.MAX_VALUE
+        }
+    }
+
+    val tareasPendientes = remember(tareas) { tareas.filter { !it.completado } }
+    val tareasCompletadas = remember(tareas) { tareas.filter { it.completado } }
+
+    val tareasSemanales =
+        remember(tareasCompletadas) {
+            tareasCompletadas.filter { daysDifference(it.fechaFin) <= 7 }
+        }
+
+    val tareasMensuales =
+        remember(tareasCompletadas) {
+            tareasCompletadas.filter {
+                val days = daysDifference(it.fechaFin)
+                days > 7 && days <= 30
             }
         }
 
@@ -252,7 +254,7 @@ fun TareasScreen(
                             AsignacionMensualComponent()
                         }
 
-                        // Sección: MIS TAREAS (solo las asignadas al usuario actual)
+                        // Sección: MIS TAREAS
                         if (tareasUsuarioActual.isNotEmpty()) {
                             item {
                                 Spacer(modifier = Modifier.height(20.dp))
@@ -274,7 +276,7 @@ fun TareasScreen(
                             }
                         }
 
-                        // Sección: OTRAS TAREAS (sin asignar o asignadas a otros)
+                        // Sección: OTRAS TAREAS
                         if (otrasTareas.isNotEmpty()) {
                             item {
                                 Spacer(modifier = Modifier.height(20.dp))
@@ -306,7 +308,7 @@ fun TareasScreen(
                             }
                         }
 
-                        if (tareasFiltradas.isEmpty()) {
+                        if (tareasPendientes.isEmpty()) {
                             item {
                                 Text(
                                     text = "No hay tareas pendientes",
@@ -320,8 +322,8 @@ fun TareasScreen(
 
                     1 -> {
                         // PESTAÑA COMPLETADAS
-                        // Sección: SEMANALES
-                        val tareasSemanales = tareasFiltradas.filter { it.frecuencia == "Diaria" || it.frecuencia == "Semanal" }
+
+                        // Sección: SEMANALES (Últimos 7 días)
                         if (tareasSemanales.isNotEmpty()) {
                             item {
                                 Text(
@@ -340,8 +342,7 @@ fun TareasScreen(
                             }
                         }
 
-                        // Sección: MENSUALES
-                        val tareasMensuales = tareasFiltradas.filter { it.frecuencia == "Mensual" }
+                        // Sección: MENSUALES (Entre 7 y 30 días atrás)
                         if (tareasMensuales.isNotEmpty()) {
                             item {
                                 Spacer(modifier = Modifier.height(20.dp))
@@ -361,7 +362,7 @@ fun TareasScreen(
                             }
                         }
 
-                        if (tareasFiltradas.isEmpty()) {
+                        if (tareasCompletadas.isEmpty()) {
                             item {
                                 Text(
                                     text = "No hay tareas completadas",
@@ -372,7 +373,7 @@ fun TareasScreen(
                             }
                         }
 
-                        // Botón "ver más" como en el diseño
+                        // Botón "ver más"
                         item {
                             Spacer(modifier = Modifier.height(20.dp))
                             Text(
@@ -458,7 +459,7 @@ fun TareasScreen(
 }
 
 // ----------------------------------------------------------------
-// COMPONENTES VISUALES
+// COMPONENTES VISUALES MEJORADOS - SIN BORDES GRISES
 // ----------------------------------------------------------------
 
 @Composable
@@ -877,6 +878,37 @@ fun TaskCardCompletada(
     onUncomplete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // ---- NUEVO: Lógica de formato de fecha añadida ----
+    val fechaFinDisplay =
+        remember(tarea.fechaFin) {
+            tarea.fechaFin?.let {
+                val partes = it.split("-", "T")
+                if (partes.size >= 3) {
+                    val dia = partes[2].take(2).toInt()
+                    val mes =
+                        when (partes[1]) {
+                            "01" -> "Ene"
+                            "02" -> "Feb"
+                            "03" -> "Mar"
+                            "04" -> "Abr"
+                            "05" -> "May"
+                            "06" -> "Jun"
+                            "07" -> "Jul"
+                            "08" -> "Ago"
+                            "09" -> "Sep"
+                            "10" -> "Oct"
+                            "11" -> "Nov"
+                            "12" -> "Dic"
+                            else -> partes[1]
+                        }
+                    "$dia $mes"
+                } else {
+                    ""
+                }
+            } ?: ""
+        }
+    // ---------------------------------------------------
+
     Card(
         colors =
             CardDefaults.cardColors(
@@ -947,10 +979,10 @@ fun TaskCardCompletada(
                         painter = painterResource(id = R.drawable.ic_check),
                         contentDescription = "Fecha",
                         colorFilter = ColorFilter.tint(Color.Black),
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(24.dp).clickable { onUncomplete() },
                     )
                     Text(
-                        text = "09 Nov",
+                        text = if (fechaFinDisplay.isNotBlank()) fechaFinDisplay else "Sin fecha", // ---- USO DE LA FECHA REAL ----
                         color = Color.Black,
                         style = TextStyle(fontSize = 16.sp),
                         textAlign = TextAlign.Center,
@@ -967,6 +999,37 @@ fun TaskCardCompletadaSimple(
     onUncomplete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // ---- NUEVO: Lógica de formato de fecha añadida ----
+    val fechaFinDisplay =
+        remember(tarea.fechaFin) {
+            tarea.fechaFin?.let {
+                val partes = it.split("-", "T")
+                if (partes.size >= 3) {
+                    val dia = partes[2].take(2).toInt()
+                    val mes =
+                        when (partes[1]) {
+                            "01" -> "Ene"
+                            "02" -> "Feb"
+                            "03" -> "Mar"
+                            "04" -> "Abr"
+                            "05" -> "May"
+                            "06" -> "Jun"
+                            "07" -> "Jul"
+                            "08" -> "Ago"
+                            "09" -> "Sep"
+                            "10" -> "Oct"
+                            "11" -> "Nov"
+                            "12" -> "Dic"
+                            else -> partes[1]
+                        }
+                    "$dia $mes"
+                } else {
+                    ""
+                }
+            } ?: ""
+        }
+    // ---------------------------------------------------
+
     Card(
         colors =
             CardDefaults.cardColors(
@@ -1002,10 +1065,10 @@ fun TaskCardCompletadaSimple(
                     painter = painterResource(id = R.drawable.ic_check),
                     contentDescription = "Fecha",
                     colorFilter = ColorFilter.tint(Color.Black),
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(24.dp).clickable { onUncomplete() },
                 )
                 Text(
-                    text = "5 Oct",
+                    text = if (fechaFinDisplay.isNotBlank()) fechaFinDisplay else "Sin fecha", // ---- USO DE LA FECHA REAL ----
                     color = Color.Black,
                     style = TextStyle(fontSize = 16.sp),
                     textAlign = TextAlign.End,
@@ -1079,8 +1142,9 @@ fun NewCreateTaskDialog(
     var descripcion by remember { mutableStateOf("") }
     var asignadoAId by remember { mutableStateOf<Long?>(null) }
     var fechaFin by remember { mutableStateOf<String?>(null) }
-    var prioridad by remember { mutableStateOf<String?>("Media") }
+    var prioridad by remember { mutableStateOf<String?>(null) }
     var frecuencia by remember { mutableStateOf<String?>(null) }
+    var compartirCon by remember { mutableStateOf<List<Long>>(emptyList()) }
     var mostrarCampoNombre by remember { mutableStateOf(false) }
 
     // Estado para controlar el dropdown de frecuencia
@@ -1611,30 +1675,6 @@ fun EditTaskDialog(
                     selectedFrequency = frecuencia,
                     onFrequencySelected = { frecuencia = it },
                 )
-                Text("Prioridad:")
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PrioridadChip(
-                        texto = "Alta",
-                        colorFondo = Color(0xffff6490),
-                        colorTexto = Color(0xff581327),
-                        seleccionado = prioridad.equals("Alta", ignoreCase = true),
-                        onClick = { prioridad = "Alta" },
-                    )
-                    PrioridadChip(
-                        texto = "Media",
-                        colorFondo = Color(0xffddc1fb),
-                        colorTexto = Color(0xff5d427a),
-                        seleccionado = prioridad.equals("Media", ignoreCase = true),
-                        onClick = { prioridad = "Media" },
-                    )
-                    PrioridadChip(
-                        texto = "Baja",
-                        colorFondo = Color(0xFFC8E6C9),
-                        colorTexto = Color(0xFF2E7D32),
-                        seleccionado = prioridad.equals("Baja", ignoreCase = true),
-                        onClick = { prioridad = "Baja" },
-                    )
-                }
             }
         },
         confirmButton = {
@@ -1929,7 +1969,7 @@ fun UserSelectionExpandable(
                         }
 
                         // Separador
-                        Divider(color = Color(0xffe0e0e0))
+                        HorizontalDivider(color = Color(0xffe0e0e0))
 
                         // Lista de miembros (con scroll si es necesario)
                         LazyColumn(
