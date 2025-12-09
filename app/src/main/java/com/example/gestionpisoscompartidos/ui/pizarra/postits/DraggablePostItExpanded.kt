@@ -105,21 +105,6 @@ fun ExpandedPostIt(
                 colors = chipColors,
                 border = null,
             )
-            InputChip(
-                label = { Text("Imagen") },
-                avatar = {
-                    Icon(
-                        painter = painterResource(id = R.drawable.icono_minimizar),
-                        contentDescription = "Imagen",
-                        modifier = Modifier.requiredSize(24.dp),
-                    )
-                },
-                selected = true,
-                onClick = {
-                },
-                colors = chipColors,
-                border = null,
-            )
         }
         val stroke =
             Stroke(

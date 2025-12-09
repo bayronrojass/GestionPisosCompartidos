@@ -38,16 +38,6 @@ class PizarraView
         private val saveScope = CoroutineScope(Dispatchers.Main)
         private val loadScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
-        var paint =
-            Paint().apply {
-                color = Color.BLACK
-                style = Paint.Style.STROKE
-                isAntiAlias = true
-                strokeWidth = 10f
-                strokeCap = Paint.Cap.ROUND
-                strokeJoin = Paint.Join.ROUND
-            }
-
         override fun onSizeChanged(
             w: Int,
             h: Int,

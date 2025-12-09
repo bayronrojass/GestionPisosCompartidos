@@ -223,39 +223,39 @@ fun GastosScreen(
         }
     }
 
-    val pizarraFabActions =
-        listOf(
-            FabActionItem(
-                icon = Icons.Default.NoteAdd,
-                label = "Crear Post-it",
-                action = FabActionType.POST_IT,
-            ),
-            FabActionItem(
-                icon = Icons.Default.Add,
-                label = "Crear Gasto",
-                action = FabActionType.CREAR_GASTO,
-            ),
-        )
-    val model = viewModel<DraggableViewModel>(key = "Gastos", factory = DraggableViewModelFactory("Gastos", casaId))
+    if (!mostrarEstadisticas && gastoSeleccionado == null && tabSeleccionado == 0) {
+        val pizarraFabActions =
+            listOf(
+                FabActionItem(
+                    icon = Icons.Default.NoteAdd,
+                    label = "Crear Post-it",
+                    action = FabActionType.POST_IT,
+                ),
+                FabActionItem(
+                    icon = Icons.Default.Add,
+                    label = "Crear Gasto",
+                    action = FabActionType.CREAR_GASTO,
+                ),
+            )
+        val model = viewModel<DraggableViewModel>(key = "Gastos", factory = DraggableViewModelFactory("Gastos", casaId))
 
-    PizarraScreen(
-        model,
-        fabActions = pizarraFabActions,
-        onFabActionSelected = { action ->
-            when (action.action) {
-                FabActionType.POST_IT -> {
-                    model.addNewPostIt()
-                }
-                FabActionType.CREAR_GASTO -> {
-                    if (!mostrarEstadisticas && gastoSeleccionado == null && tabSeleccionado == 0) {
+        PizarraScreen(
+            model,
+            fabActions = pizarraFabActions,
+            onFabActionSelected = { action ->
+                when (action.action) {
+                    FabActionType.POST_IT -> {
+                        model.addNewPostIt()
+                    }
+                    FabActionType.CREAR_GASTO -> {
                         isEditing = false
                         showDialog = true
                     }
+                    else -> {}
                 }
-                else -> {}
-            }
-        },
-    )
+            },
+        )
+    }
 }
 
 @Composable
