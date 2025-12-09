@@ -222,8 +222,7 @@ fun GastosScreen(
             }
         }
     }
-
-    if (!mostrarEstadisticas && gastoSeleccionado == null && tabSeleccionado == 0) {
+    if (gastoSeleccionado == null) {
         val pizarraFabActions =
             listOf(
                 FabActionItem(
@@ -237,7 +236,27 @@ fun GastosScreen(
                     action = FabActionType.CREAR_GASTO,
                 ),
             )
-        val model = viewModel<DraggableViewModel>(key = "Gastos", factory = DraggableViewModelFactory("Gastos", casaId))
+
+        var model: DraggableViewModel
+        if (mostrarEstadisticas) {
+            model =
+                viewModel<DraggableViewModel>(
+                    key = "Gastos Estadisticas",
+                    factory = DraggableViewModelFactory("Gastos Estadisticas", casaId),
+                )
+        } else if (tabSeleccionado == 0) {
+            model =
+                viewModel<DraggableViewModel>(
+                    key = "Gastos",
+                    factory = DraggableViewModelFactory("Gastos", casaId),
+                )
+        } else {
+            model =
+                viewModel<DraggableViewModel>(
+                    key = "Gastos Saldo",
+                    factory = DraggableViewModelFactory("Gastos Saldo", casaId),
+                )
+        }
 
         PizarraScreen(
             model,
@@ -247,10 +266,12 @@ fun GastosScreen(
                     FabActionType.POST_IT -> {
                         model.addNewPostIt()
                     }
+
                     FabActionType.CREAR_GASTO -> {
                         isEditing = false
                         showDialog = true
                     }
+
                     else -> {}
                 }
             },

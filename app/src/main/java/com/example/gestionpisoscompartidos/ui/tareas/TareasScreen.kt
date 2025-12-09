@@ -394,6 +394,7 @@ fun TareasScreen(
             }
         }
     }
+
     val pizarraFabActions =
         listOf(
             FabActionItem(
@@ -407,7 +408,19 @@ fun TareasScreen(
                 action = FabActionType.CREAR_TAREA,
             ),
         )
-    val model = viewModel<DraggableViewModel>(key = "Tareas", factory = DraggableViewModelFactory("Tareas", casaId))
+
+    val model: DraggableViewModel =
+        if (selectedTab == 0) {
+            viewModel<DraggableViewModel>(
+                key = "Tareas",
+                factory = DraggableViewModelFactory("Tareas", casaId),
+            )
+        } else {
+            viewModel<DraggableViewModel>(
+                key = "TareasCompletadas",
+                factory = DraggableViewModelFactory("TareasCompletadas", casaId),
+            )
+        }
 
     PizarraScreen(
         model,

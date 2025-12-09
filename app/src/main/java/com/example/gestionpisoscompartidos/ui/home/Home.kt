@@ -20,6 +20,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -56,11 +57,8 @@ fun HomeScreen(
 ) {
     val userName by viewModel.userName.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoadingUser.collectAsStateWithLifecycle()
-
     val houseName by viewModel.currentHouse.collectAsStateWithLifecycle()
-
     val selectedDate by viewModel.fechaSeleccionada.collectAsStateWithLifecycle()
-
     val next7days = viewModel.next7days()
 
     LaunchedEffect(Unit) {
@@ -75,52 +73,54 @@ fun HomeScreen(
         }
     }
 
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .background(color = Color(0xfff8f8f8))
-                .verticalScroll(rememberScrollState()),
-    ) {
-        HeaderSection(userName = userName, houseName)
+    Scaffold {
+        Column(
+            modifier =
+                modifier
+                    .fillMaxSize()
+                    .background(color = Color(0xfff8f8f8))
+                    .verticalScroll(rememberScrollState()),
+        ) {
+            HeaderSection(userName = userName, houseName)
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        CalendarSection(
-            list = next7days,
-            selectedDate = selectedDate,
-            onDateSelected = { date -> viewModel.seleccionarFecha(date) },
-            viewModel = viewModel,
-        )
-        Spacer(modifier = Modifier.height(16.dp))
+            CalendarSection(
+                list = next7days,
+                selectedDate = selectedDate,
+                onDateSelected = { date -> viewModel.seleccionarFecha(date) },
+                viewModel = viewModel,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // TodayEventsSection()
+            // TodayEventsSection()
 
-        // Spacer(modifier = Modifier.height(16.dp))
+            // Spacer(modifier = Modifier.height(16.dp))
 
-        // SaturdayEventsSection()
+            // SaturdayEventsSection()
 
-        weeklyEvents(viewModel)
+            weeklyEvents(viewModel)
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        NotificationsSection()
+            NotificationsSection()
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        PendingTasksSection(viewModel)
+            PendingTasksSection(viewModel)
 
-        Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(40.dp))
 
-        Text(
-            text = "ver más",
-            color = Color(0xff6c6c6c),
-            textDecoration = TextDecoration.Underline,
-            style = TextStyle(fontSize = 14.sp),
-            modifier = Modifier.align(alignment = Alignment.CenterHorizontally),
-        )
+            Text(
+                text = "ver más",
+                color = Color(0xff6c6c6c),
+                textDecoration = TextDecoration.Underline,
+                style = TextStyle(fontSize = 14.sp),
+                modifier = Modifier.align(alignment = Alignment.CenterHorizontally),
+            )
 
-        Spacer(modifier = Modifier.height(80.dp))
+            Spacer(modifier = Modifier.height(80.dp))
+        }
 
         val pizarraFabActions =
             listOf(

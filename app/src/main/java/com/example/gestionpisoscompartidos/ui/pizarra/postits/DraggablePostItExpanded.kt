@@ -76,7 +76,7 @@ fun ExpandedPostIt(
                 .background(color = Color(0xffffcddb))
                 .padding(all = 20.dp),
     ) {
-        Row {
+        Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
             InputChip(
                 label = { Text("Cerrar") },
                 avatar = { Icon(Icons.Default.Close, "Cerrar") },

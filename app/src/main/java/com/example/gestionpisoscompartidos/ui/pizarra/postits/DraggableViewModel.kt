@@ -29,7 +29,7 @@ class DraggableViewModel(
             while (true) {
                 Log.d("SYNC_POSTITS", "Sincronizando Post-its para la ubicación: $location")
                 syncPostIts()
-                delay(10000L)
+                delay(60000L)
             }
         }
     }
