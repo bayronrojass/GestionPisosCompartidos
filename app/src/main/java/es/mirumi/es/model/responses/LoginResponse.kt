@@ -1,7 +1,7 @@
 package es.mirumi.es.model.responses
 
-import es.mirumi.es.model.Usuario
 import com.google.gson.annotations.SerializedName
+import es.mirumi.es.model.Usuario
 
 /**
  * Modelo de datos para recibir la respuesta del endpoint /login.

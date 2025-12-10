@@ -21,13 +21,15 @@ class TareasAdapter(
     private val onDeleteClick: (Tarea) -> Unit,
     private val onEditClick: (Tarea) -> Unit,
 ) : RecyclerView.Adapter<TareasAdapter.TareaViewHolder>() {
-    override fun getItemViewType(position: Int): Int = if (tareas[position].completado) VIEW_TYPE_COMPLETED else VIEW_TYPE_PENDING
+    override fun getItemViewType(position: Int): Int =
+        if (tareas[position].completado) VIEW_TYPE_COMPLETED else VIEW_TYPE_PENDING
 
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int,
     ): TareaViewHolder {
-        val binding = ItemTaskPendingBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding =
+            ItemTaskPendingBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return TareaViewHolder(binding)
     }
 
@@ -56,14 +58,23 @@ class TareasAdapter(
             val context = binding.root.context
             if (tarea.completado) {
                 binding.root.setBackgroundResource(R.drawable.bg_task_completed)
-                binding.taskTitle.paintFlags = binding.taskTitle.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
-                binding.taskTitle.setTextColor(ContextCompat.getColor(context, R.color.black_alpha_60))
+                binding.taskTitle.paintFlags =
+                    binding.taskTitle.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
+                binding.taskTitle.setTextColor(
+                    ContextCompat.getColor(
+                        context,
+                        R.color.black_alpha_60
+                    )
+                )
 
                 val asignado = tarea.asignadoA?.nombre ?: "Alguien"
                 var fechaFormateada = ""
 
                 try {
-                    val fechaCompletada = LocalDateTime.parse(LocalDateTime.now().toString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                    val fechaCompletada = LocalDateTime.parse(
+                        LocalDateTime.now().toString(),
+                        DateTimeFormatter.ISO_LOCAL_DATE_TIME
+                    )
 
                     val formatter =
                         DateTimeFormatter
@@ -75,25 +86,61 @@ class TareasAdapter(
                     Log.e("TareasAdapter", "No se pudo parsear fechaFin: ${tarea.fechaFin}", e)
                 }
                 binding.taskAssignee.text = "Completada por $asignado$fechaFormateada"
-                binding.taskAssignee.setTextColor(ContextCompat.getColor(context, R.color.black_alpha_60))
+                binding.taskAssignee.setTextColor(
+                    ContextCompat.getColor(
+                        context,
+                        R.color.black_alpha_60
+                    )
+                )
                 // ------------------------------------------
 
                 binding.taskStatusIcon.setImageResource(R.drawable.ic_check_circle)
-                binding.taskStatusIcon.setColorFilter(ContextCompat.getColor(context, R.color.black_alpha_60))
-                binding.taskDeleteButton.setColorFilter(ContextCompat.getColor(context, R.color.black_alpha_60))
-                binding.taskEditButton.setColorFilter(ContextCompat.getColor(context, R.color.black_alpha_60))
+                binding.taskStatusIcon.setColorFilter(
+                    ContextCompat.getColor(
+                        context,
+                        R.color.black_alpha_60
+                    )
+                )
+                binding.taskDeleteButton.setColorFilter(
+                    ContextCompat.getColor(
+                        context,
+                        R.color.black_alpha_60
+                    )
+                )
+                binding.taskEditButton.setColorFilter(
+                    ContextCompat.getColor(
+                        context,
+                        R.color.black_alpha_60
+                    )
+                )
             } else {
                 binding.root.setBackgroundResource(R.drawable.bg_task_pending)
-                binding.taskTitle.paintFlags = binding.taskTitle.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
+                binding.taskTitle.paintFlags =
+                    binding.taskTitle.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
                 binding.taskTitle.setTextColor(ContextCompat.getColor(context, R.color.white))
 
                 binding.taskAssignee.text = tarea.asignadoA?.nombre ?: "Sin asignar"
                 binding.taskAssignee.setTextColor(ContextCompat.getColor(context, R.color.white))
 
                 binding.taskStatusIcon.setImageResource(R.drawable.ic_circle_outline)
-                binding.taskStatusIcon.setColorFilter(ContextCompat.getColor(context, R.color.white))
-                binding.taskDeleteButton.setColorFilter(ContextCompat.getColor(context, R.color.white))
-                binding.taskEditButton.setColorFilter(ContextCompat.getColor(context, R.color.white))
+                binding.taskStatusIcon.setColorFilter(
+                    ContextCompat.getColor(
+                        context,
+                        R.color.white
+                    )
+                )
+                binding.taskDeleteButton.setColorFilter(
+                    ContextCompat.getColor(
+                        context,
+                        R.color.white
+                    )
+                )
+                binding.taskEditButton.setColorFilter(
+                    ContextCompat.getColor(
+                        context,
+                        R.color.white
+                    )
+                )
             }
 
             // Listeners

@@ -130,6 +130,7 @@ fun MainScreenWithNavigation(
                             viewModel = homeViewModel,
                             onNavigateToMonthlyView = onNavigateToMonthlyView, // Pass it here
                         )
+
                     3 -> ListaScreen(listaViewModel, onNavigateToItem, casaId = casaId)
                     4 -> PerfilScreen(sessionManager, onLogout)
                 }

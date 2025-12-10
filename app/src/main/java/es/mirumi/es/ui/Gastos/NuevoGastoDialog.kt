@@ -71,10 +71,19 @@ fun NuevoGastoDialog(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(nombreGasto, fontSize = 22.sp, color = ColorTextoGris)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Icon(Icons.Default.Edit, contentDescription = "Editar", tint = ColorTextoGris, modifier = Modifier.size(20.dp))
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Editar",
+                            tint = ColorTextoGris,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = ColorTextoGris)
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Cerrar",
+                            tint = ColorTextoGris
+                        )
                     }
                 }
 
@@ -113,7 +122,11 @@ fun NuevoGastoDialog(
                         shape = RoundedCornerShape(8.dp),
                         contentPadding = PaddingValues(horizontal = 12.dp),
                     ) {
-                        Icon(Icons.Default.DateRange, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(
+                            Icons.Default.DateRange,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("18 de noviembre", color = ColorTextoGris)
                     }
@@ -138,8 +151,14 @@ fun NuevoGastoDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     // Chips de personas simulados
-                    AssistChip(onClick = {}, label = { Text("Daniel") }, leadingIcon = { Icon(Icons.Default.Check, null) })
-                    AssistChip(onClick = {}, label = { Text("Raquel") }, leadingIcon = { Icon(Icons.Default.Add, null) })
+                    AssistChip(
+                        onClick = {},
+                        label = { Text("Daniel") },
+                        leadingIcon = { Icon(Icons.Default.Check, null) })
+                    AssistChip(
+                        onClick = {},
+                        label = { Text("Raquel") },
+                        leadingIcon = { Icon(Icons.Default.Add, null) })
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))

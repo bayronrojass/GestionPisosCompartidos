@@ -1,5 +1,11 @@
 package es.mirumi.es.data.remote
 
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.Strictness
+import com.google.gson.TypeAdapter
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
 import es.mirumi.es.data.repository.APIs.CasaAPI
 import es.mirumi.es.data.repository.APIs.DatabaseAPI
 import es.mirumi.es.data.repository.APIs.EventoAPI
@@ -9,12 +15,6 @@ import es.mirumi.es.data.repository.APIs.ListaAPI
 import es.mirumi.es.data.repository.APIs.LoginAPI
 import es.mirumi.es.data.repository.APIs.TareaAPI
 import es.mirumi.es.data.repository.APIs.UsuarioAPI
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.google.gson.Strictness
-import com.google.gson.TypeAdapter
-import com.google.gson.stream.JsonReader
-import com.google.gson.stream.JsonWriter
 import retrofit2.Retrofit
 import retrofit2.Retrofit.Builder
 import retrofit2.converter.gson.GsonConverterFactory

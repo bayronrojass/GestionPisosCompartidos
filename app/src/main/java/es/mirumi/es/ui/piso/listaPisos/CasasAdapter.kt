@@ -42,7 +42,8 @@ class CasasAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(casa: Casa) {
             binding.tvNombreCasa.text = casa.nombre
-            binding.tvDescripcionCasa.text = casa.descripcion ?: "Sin descripción" // Muestra descripción o texto alternativo
+            binding.tvDescripcionCasa.text =
+                casa.descripcion ?: "Sin descripción" // Muestra descripción o texto alternativo
 
             try {
                 // Intenta parsear la fecha/hora

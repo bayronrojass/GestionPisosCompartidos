@@ -21,7 +21,8 @@ class ItemsAdapter(
         parent: ViewGroup,
         viewType: Int,
     ): ItemViewHolder {
-        val binding = ItemElementoBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding =
+            ItemElementoBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return ItemViewHolder(binding)
     }
 
@@ -50,18 +51,45 @@ class ItemsAdapter(
             val context = binding.root.context
             if (elemento.completado) {
                 binding.root.setBackgroundResource(R.drawable.bg_task_completed) // Fondo gris
-                binding.tvNombreElemento.paintFlags = binding.tvNombreElemento.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG // Tachar texto
-                binding.tvNombreElemento.setTextColor(ContextCompat.getColor(context, R.color.black_alpha_60))
+                binding.tvNombreElemento.paintFlags =
+                    binding.tvNombreElemento.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG // Tachar texto
+                binding.tvNombreElemento.setTextColor(
+                    ContextCompat.getColor(
+                        context,
+                        R.color.black_alpha_60
+                    )
+                )
                 binding.btnCompletado.setImageResource(R.drawable.ic_check_circle) // Icono check
-                binding.btnCompletado.setColorFilter(ContextCompat.getColor(context, R.color.black_alpha_60))
-                binding.btnBorrarElemento.setColorFilter(ContextCompat.getColor(context, R.color.black_alpha_60))
+                binding.btnCompletado.setColorFilter(
+                    ContextCompat.getColor(
+                        context,
+                        R.color.black_alpha_60
+                    )
+                )
+                binding.btnBorrarElemento.setColorFilter(
+                    ContextCompat.getColor(
+                        context,
+                        R.color.black_alpha_60
+                    )
+                )
             } else {
                 binding.root.setBackgroundResource(R.drawable.bg_task_pending) // Fondo morado
-                binding.tvNombreElemento.paintFlags = binding.tvNombreElemento.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv() // Quitar tachado
-                binding.tvNombreElemento.setTextColor(ContextCompat.getColor(context, R.color.white))
+                binding.tvNombreElemento.paintFlags =
+                    binding.tvNombreElemento.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv() // Quitar tachado
+                binding.tvNombreElemento.setTextColor(
+                    ContextCompat.getColor(
+                        context,
+                        R.color.white
+                    )
+                )
                 binding.btnCompletado.setImageResource(R.drawable.ic_circle_outline) // Icono círculo
                 binding.btnCompletado.setColorFilter(ContextCompat.getColor(context, R.color.white))
-                binding.btnBorrarElemento.setColorFilter(ContextCompat.getColor(context, R.color.white))
+                binding.btnBorrarElemento.setColorFilter(
+                    ContextCompat.getColor(
+                        context,
+                        R.color.white
+                    )
+                )
             }
 
             // Listeners

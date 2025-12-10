@@ -14,12 +14,12 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.zxing.integration.android.IntentIntegrator
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.data.remote.NetworkModule
 import es.mirumi.es.data.repository.repositories.RepositoryCasa
 import es.mirumi.es.databinding.FragmentListaCasasBinding
 import es.mirumi.es.model.requests.JoinCasaRequest
-import com.google.zxing.integration.android.IntentIntegrator
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -77,8 +77,15 @@ class ListaCasas : Fragment() {
         casasAdapter =
             CasasAdapter(emptyList()) { casaSeleccionada ->
                 // Acción al hacer clic en una casa
-                Toast.makeText(context, "Has seleccionado: ${casaSeleccionada.nombre}", Toast.LENGTH_SHORT).show()
-                Log.d("ListaCasasFragment", "Navegando a DashBoard de casaId: ${casaSeleccionada.id}")
+                Toast.makeText(
+                    context,
+                    "Has seleccionado: ${casaSeleccionada.nombre}",
+                    Toast.LENGTH_SHORT
+                ).show()
+                Log.d(
+                    "ListaCasasFragment",
+                    "Navegando a DashBoard de casaId: ${casaSeleccionada.id}"
+                )
                 val action =
                     ListaCasasDirections.actionListaCasasFragmentToCasaDashboardFragment(
                         casaSeleccionada.id,
@@ -95,7 +102,10 @@ class ListaCasas : Fragment() {
 
         viewModel.casas.observe(viewLifecycleOwner) { listaCasas ->
             casasAdapter.updateData(listaCasas)
-            Log.d("ListaCasasFragment", "Lista de casas actualizada en el adaptador: ${listaCasas.size} elementos")
+            Log.d(
+                "ListaCasasFragment",
+                "Lista de casas actualizada en el adaptador: ${listaCasas.size} elementos"
+            )
         }
 
         viewModel.mostrarMensajeVacio.observe(viewLifecycleOwner) { mostrar ->
@@ -147,7 +157,11 @@ class ListaCasas : Fragment() {
 
                 val miId = sessionManager.fetchCurrentUserId()
                 if (miId == -1L) {
-                    Toast.makeText(context, "Error: Inicia sesión antes de unirte", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        context,
+                        "Error: Inicia sesión antes de unirte",
+                        Toast.LENGTH_LONG
+                    ).show()
                     return
                 }
 
@@ -160,13 +174,19 @@ class ListaCasas : Fragment() {
                         val response = repositoryCasa.joinCasa(token, casaId, request)
 
                         if (response.isSuccessful) {
-                            Toast.makeText(context, "¡Te has unido al piso!", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, "¡Te has unido al piso!", Toast.LENGTH_LONG)
+                                .show()
                             // TODO: Recargar la lista de pisos
                         } else {
-                            Toast.makeText(context, "Error al unirse: ${response.errorBody()?.string()}", Toast.LENGTH_LONG).show()
+                            Toast.makeText(
+                                context,
+                                "Error al unirse: ${response.errorBody()?.string()}",
+                                Toast.LENGTH_LONG
+                            ).show()
                         }
                     } catch (e: Exception) {
-                        Toast.makeText(context, "Error de red: ${e.message}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, "Error de red: ${e.message}", Toast.LENGTH_LONG)
+                            .show()
                     }
                 }
             } else {

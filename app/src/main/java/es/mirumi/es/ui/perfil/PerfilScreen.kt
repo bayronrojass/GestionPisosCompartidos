@@ -143,7 +143,10 @@ fun PerfilScreen(
                                 .size(100.dp)
                                 .clip(shape = CircleShape)
                                 .background(Color(0xFF8061A2))
-                                .border(border = BorderStroke(2.dp, Color(0xfff8f8f8)), shape = CircleShape),
+                                .border(
+                                    border = BorderStroke(2.dp, Color(0xfff8f8f8)),
+                                    shape = CircleShape
+                                ),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
@@ -336,7 +339,10 @@ fun PerfilScreen(
             )
 
             // Espacio extra al final para el scroll
-            Spacer(modifier = Modifier.height(100.dp).align(Alignment.TopCenter).offset(y = 780.dp))
+            Spacer(modifier = Modifier
+                .height(100.dp)
+                .align(Alignment.TopCenter)
+                .offset(y = 780.dp))
         }
     }
 

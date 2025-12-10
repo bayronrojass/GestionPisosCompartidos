@@ -43,7 +43,10 @@ import kotlinx.coroutines.launch
 fun InvitacionesScreen(sessionManager: SessionManager) {
     val viewModel: InvitacionesViewModel =
         viewModel(
-            factory = InvitacionesViewModelFactory(RepositoryInvitacion(NetworkModule.invitacionApiService), sessionManager),
+            factory = InvitacionesViewModelFactory(
+                RepositoryInvitacion(NetworkModule.invitacionApiService),
+                sessionManager
+            ),
         )
 
     val invitaciones by viewModel.invitaciones.collectAsState()
@@ -95,6 +98,7 @@ fun InvitacionesScreen(sessionManager: SessionManager) {
                         Text("Cargando invitaciones...")
                     }
                 }
+
                 invitaciones.isEmpty() -> {
                     // Estado vacío
                     Column(
@@ -110,6 +114,7 @@ fun InvitacionesScreen(sessionManager: SessionManager) {
                         )
                     }
                 }
+
                 else -> {
                     // Lista de invitaciones
                     LazyColumn(

@@ -45,7 +45,10 @@ class InvitacionesViewModel(
                 if (response.isSuccessful) {
                     _invitaciones.value = response.body() ?: emptyList()
                 } else {
-                    val errorMsg = "Error al cargar invitaciones: ${response.code()} - ${response.message()} - ${response.errorBody()?.string()}"
+                    val errorMsg =
+                        "Error al cargar invitaciones: ${response.code()} - ${response.message()} - ${
+                            response.errorBody()?.string()
+                        }"
                     Log.e(TAG, errorMsg)
 
                     throw Exception(errorMsg)
@@ -78,7 +81,8 @@ class InvitacionesViewModel(
                     fetchMisInvitaciones()
                 } else {
                     // También puedes añadir un Log.e aquí
-                    val errorMsg = "Error al aceptar: ${response.code()} - ${response.errorBody()?.string()}"
+                    val errorMsg =
+                        "Error al aceptar: ${response.code()} - ${response.errorBody()?.string()}"
                     Log.e(TAG, errorMsg)
                     throw Exception(errorMsg)
                 }
@@ -108,7 +112,8 @@ class InvitacionesViewModel(
                 if (response.isSuccessful) {
                     fetchMisInvitaciones()
                 } else {
-                    val errorMsg = "Error al rechazar: ${response.code()} - ${response.errorBody()?.string()}"
+                    val errorMsg =
+                        "Error al rechazar: ${response.code()} - ${response.errorBody()?.string()}"
                     Log.e(TAG, errorMsg)
                     throw Exception(errorMsg)
                 }

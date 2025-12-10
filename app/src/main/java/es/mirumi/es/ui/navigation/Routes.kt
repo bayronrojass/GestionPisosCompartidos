@@ -30,15 +30,18 @@ sealed class Route(
         ) = "listas?casaId=$casaId&casaNombre=${URLEncoder.encode(casaNombre, "UTF-8")}"
     }
 
-    object Item : Route("item?listaId={listaId}&listaNombre={listaNombre}&casaNombre={casaNombre}") {
+    object Item :
+        Route("item?listaId={listaId}&listaNombre={listaNombre}&casaNombre={casaNombre}") {
         fun createRoute(
             listaId: Long,
             listaNombre: String,
             casaNombre: String,
-        ) = "item?listaId=$listaId&listaNombre=${URLEncoder.encode(
-            listaNombre,
-            "UTF-8",
-        )}&casaNombre=${URLEncoder.encode(casaNombre, "UTF-8")}"
+        ) = "item?listaId=$listaId&listaNombre=${
+            URLEncoder.encode(
+                listaNombre,
+                "UTF-8",
+            )
+        }&casaNombre=${URLEncoder.encode(casaNombre, "UTF-8")}"
     }
 
     object Tareas : Route("tareas?casaId={casaId}&casaNombre={casaNombre}") {

@@ -14,12 +14,17 @@ class RepositoryLienzo {
 
         when (lienzoResponse) {
             is ApiResult.Error -> {
-                Log.e("Pizarra", "Error when loading lienzo " + lienzoResponse.message + lienzoResponse.code)
+                Log.e(
+                    "Pizarra",
+                    "Error when loading lienzo " + lienzoResponse.message + lienzoResponse.code
+                )
                 return null
             }
+
             is ApiResult.Success<Long> -> {
                 return lienzoResponse.data
             }
+
             is ApiResult.Throws -> {
                 Log.e("Pizarra", "Throws when loading lienzo " + lienzoResponse.exception.message)
                 return null

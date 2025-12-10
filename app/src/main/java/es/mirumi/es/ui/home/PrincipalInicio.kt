@@ -54,7 +54,8 @@ fun PrincipalInicio(
                     .offset(
                         x = 27.dp,
                         y = 4.dp,
-                    ).requiredWidth(width = 343.dp)
+                    )
+                    .requiredWidth(width = 343.dp)
                     .requiredHeight(height = 40.dp),
         ) {
         }
@@ -72,7 +73,8 @@ fun PrincipalInicio(
                     .offset(
                         x = (-85).dp,
                         y = 105.dp,
-                    ).requiredWidth(width = 190.dp)
+                    )
+                    .requiredWidth(width = 190.dp)
                     .requiredHeight(height = 60.dp),
         )
         Text(
@@ -89,7 +91,8 @@ fun PrincipalInicio(
                     .offset(
                         x = 20.dp,
                         y = 170.dp,
-                    ).requiredWidth(width = 271.dp),
+                    )
+                    .requiredWidth(width = 271.dp),
         )
         Image(
             painter = painterResource(id = R.drawable.ilustracionprincipalinicio),
@@ -101,7 +104,8 @@ fun PrincipalInicio(
                     .offset(
                         x = 30.dp,
                         y = 249.dp,
-                    ).requiredWidth(width = 330.dp)
+                    )
+                    .requiredWidth(width = 330.dp)
                     .requiredHeight(height = 315.dp),
         )
         Column(
@@ -111,7 +115,8 @@ fun PrincipalInicio(
                     .offset(
                         x = 20.dp,
                         y = 630.dp,
-                    ).requiredWidth(width = 350.dp)
+                    )
+                    .requiredWidth(width = 350.dp)
                     .requiredHeight(height = 50.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {

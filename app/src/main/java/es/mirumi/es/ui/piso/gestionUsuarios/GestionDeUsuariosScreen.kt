@@ -53,9 +53,9 @@ import androidx.compose.ui.unit.sp
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
 import androidx.lifecycle.viewmodel.compose.viewModel
-import es.mirumi.es.R
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
+import es.mirumi.es.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -82,7 +82,8 @@ fun GestionUsuariosPisoScreen(
         if (pisoId != 0L) {
             viewModel.loadData(pisoId)
         } else {
-            Toast.makeText(context, "Error FATAL: ID de piso no encontrado", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, "Error FATAL: ID de piso no encontrado", Toast.LENGTH_LONG)
+                .show()
         }
     }
 
@@ -211,7 +212,11 @@ fun GestionUsuariosPisoScreen(
                 Button(
                     onClick = {
                         if (pisoId == 0L) {
-                            Toast.makeText(context, "Error: No se ha cargado el ID del piso", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                context,
+                                "Error: No se ha cargado el ID del piso",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         } else {
                             scope.launch {
                                 try {
@@ -220,7 +225,11 @@ fun GestionUsuariosPisoScreen(
                                     // Mostrar diálogo QR (necesitarías convertir Bitmap a ImageBitmap)
                                     showQrDialog = true
                                 } catch (e: Exception) {
-                                    Toast.makeText(context, "Error al generar QR", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        "Error al generar QR",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             }
                         }
@@ -283,7 +292,11 @@ fun GestionUsuariosPisoScreen(
                             showEmailDialog = false
                             emailInput = ""
                         } else {
-                            Toast.makeText(context, "El email no puede estar vacío", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                context,
+                                "El email no puede estar vacío",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     },
                 ) {
@@ -418,7 +431,8 @@ private suspend fun generarQrBitmap(
             val bmp = createBitmap(width, height, Bitmap.Config.RGB_565)
             for (x in 0 until width) {
                 for (y in 0 until height) {
-                    bmp[x, y] = if (bitMatrix[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE
+                    bmp[x, y] =
+                        if (bitMatrix[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE
                 }
             }
             bmp

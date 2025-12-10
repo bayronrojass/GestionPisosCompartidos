@@ -5,16 +5,68 @@ import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.NoteAdd
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.InputChip
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,6 +82,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import es.mirumi.es.R
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.model.Tarea
 import es.mirumi.es.model.Usuario
@@ -38,14 +92,11 @@ import es.mirumi.es.ui.pizarra.postits.DraggableViewModelFactory
 import es.mirumi.es.ui.pizarra.postits.PizarraScreen
 import es.mirumi.es.ui.utils.FabActionItem
 import es.mirumi.es.ui.utils.FabActionType
-import java.util.Calendar
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
-import androidx.compose.foundation.lazy.items
-import androidx.lifecycle.viewmodel.compose.viewModel
-import es.mirumi.es.R
 
 @Composable
 fun TareasScreen(
@@ -312,7 +363,9 @@ fun TareasScreen(
                             item {
                                 Text(
                                     text = "No hay tareas pendientes",
-                                    modifier = Modifier.fillMaxWidth().padding(20.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(20.dp),
                                     textAlign = TextAlign.Center,
                                     color = Color.Gray,
                                 )
@@ -366,7 +419,9 @@ fun TareasScreen(
                             item {
                                 Text(
                                     text = "No hay tareas completadas",
-                                    modifier = Modifier.fillMaxWidth().padding(20.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(20.dp),
                                     textAlign = TextAlign.Center,
                                     color = Color.Gray,
                                 )
@@ -427,9 +482,11 @@ fun TareasScreen(
                 FabActionType.POST_IT -> {
                     model.addNewPostIt()
                 }
+
                 FabActionType.CREAR_TAREA -> {
                     showCreateDialog = true
                 }
+
                 else -> {}
             }
         },
@@ -442,7 +499,14 @@ fun TareasScreen(
             onDismiss = { showCreateDialog = false },
             onCreate = { nombre, descripcion, asignadoId, fechaFin, frecuencia, prioridad ->
                 if (nombre.isNotBlank()) {
-                    viewModel.crearTarea(nombre, descripcion, asignadoId, fechaFin, frecuencia, prioridad)
+                    viewModel.crearTarea(
+                        nombre,
+                        descripcion,
+                        asignadoId,
+                        fechaFin,
+                        frecuencia,
+                        prioridad
+                    )
                     showCreateDialog = false
                 } else {
                     Toast.makeText(context, "El nombre es obligatorio", Toast.LENGTH_SHORT).show()
@@ -458,7 +522,15 @@ fun TareasScreen(
             onDismiss = { taskToEdit = null },
             onSave = { nombre, descripcion, asignadoId, fechaFin, frecuencia, prioridad ->
                 if (nombre.isNotBlank()) {
-                    viewModel.editarTarea(tarea, nombre, descripcion, asignadoId, fechaFin, frecuencia, prioridad)
+                    viewModel.editarTarea(
+                        tarea,
+                        nombre,
+                        descripcion,
+                        asignadoId,
+                        fechaFin,
+                        frecuencia,
+                        prioridad
+                    )
                     taskToEdit = null
                 } else {
                     Toast.makeText(context, "El nombre es obligatorio", Toast.LENGTH_SHORT).show()
@@ -549,7 +621,8 @@ fun BotonAsignacion(
                 .shadow(
                     elevation = if (seleccionado) 4.dp else 0.dp,
                     shape = RoundedCornerShape(7.5.dp),
-                ).padding(horizontal = 10.dp, vertical = 7.dp),
+                )
+                .padding(horizontal = 10.dp, vertical = 7.dp),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -959,7 +1032,11 @@ fun TaskCardCompletada(
                         Modifier
                             .clip(RoundedCornerShape(20.dp))
                             .background(Color.White)
-                            .border(1.dp, Color(0xff939393), RoundedCornerShape(20.dp)) // Solo este mantiene el borde sutil
+                            .border(
+                                1.dp,
+                                Color(0xff939393),
+                                RoundedCornerShape(20.dp)
+                            ) // Solo este mantiene el borde sutil
                             .padding(start = 2.dp, end = 14.dp, top = 2.dp, bottom = 2.dp),
                 ) {
                     // Avatar del usuario
@@ -989,7 +1066,9 @@ fun TaskCardCompletada(
                         painter = painterResource(id = R.drawable.ic_check),
                         contentDescription = "Fecha",
                         colorFilter = ColorFilter.tint(Color.Black),
-                        modifier = Modifier.size(24.dp).clickable { onUncomplete() },
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable { onUncomplete() },
                     )
                     Text(
                         text = if (fechaFinDisplay.isNotBlank()) fechaFinDisplay else "Sin fecha", // ---- USO DE LA FECHA REAL ----
@@ -1075,7 +1154,9 @@ fun TaskCardCompletadaSimple(
                     painter = painterResource(id = R.drawable.ic_check),
                     contentDescription = "Fecha",
                     colorFilter = ColorFilter.tint(Color.Black),
-                    modifier = Modifier.size(24.dp).clickable { onUncomplete() },
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable { onUncomplete() },
                 )
                 Text(
                     text = if (fechaFinDisplay.isNotBlank()) fechaFinDisplay else "Sin fecha", // ---- USO DE LA FECHA REAL ----
@@ -1415,7 +1496,10 @@ fun NewCreateTaskDialog(
 
                     // Botones Aceptar/Cancelar
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            10.dp,
+                            Alignment.CenterHorizontally
+                        ),
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
@@ -1433,7 +1517,11 @@ fun NewCreateTaskDialog(
                         Button(
                             onClick = {
                                 if (nombre.isBlank()) {
-                                    Toast.makeText(context, "El nombre es obligatorio", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        "El nombre es obligatorio",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 } else {
                                     onCreate(
                                         nombre,
@@ -1548,7 +1636,8 @@ fun PrioridadChip(
                     width = 1.dp,
                     color = borderColor,
                     shape = RoundedCornerShape(17.dp),
-                ).clickable(onClick = onClick)
+                )
+                .clickable(onClick = onClick)
                 .padding(horizontal = 16.dp, vertical = 6.dp),
     ) {
         Text(
@@ -1584,7 +1673,8 @@ fun UsuarioChip(
                 .border(
                     border = BorderStroke(1.dp, borderColor),
                     shape = RoundedCornerShape(25.dp),
-                ).clickable(onClick = onClick)
+                )
+                .clickable(onClick = onClick)
                 .padding(start = 8.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
     ) {
         Image(
@@ -1689,7 +1779,14 @@ fun EditTaskDialog(
         },
         confirmButton = {
             Button(onClick = {
-                onSave(nombre, descripcion.ifBlank { null }, asignadoAId, fechaFin, frecuencia, prioridad)
+                onSave(
+                    nombre,
+                    descripcion.ifBlank { null },
+                    asignadoAId,
+                    fechaFin,
+                    frecuencia,
+                    prioridad
+                )
             }) {
                 Text("Guardar")
             }
@@ -1929,7 +2026,8 @@ fun UserSelectionExpandable(
                             modifier = Modifier.size(20.dp),
                         )
                         Text(
-                            text = miembros.find { it.id == selectedUserId }?.nombre ?: "Sin asignar",
+                            text = miembros.find { it.id == selectedUserId }?.nombre
+                                ?: "Sin asignar",
                             color = Color.Black,
                             style = TextStyle(fontSize = 14.sp),
                         )
@@ -1963,7 +2061,9 @@ fun UserSelectionExpandable(
                             border =
                                 BorderStroke(
                                     1.dp,
-                                    if (selectedUserId == null) Color(0xffddc1fb) else Color(0xff6c6c6c),
+                                    if (selectedUserId == null) Color(0xffddc1fb) else Color(
+                                        0xff6c6c6c
+                                    ),
                                 ),
                             shape = RoundedCornerShape(20.dp),
                             modifier = Modifier.fillMaxWidth(),
@@ -1974,7 +2074,9 @@ fun UserSelectionExpandable(
                         ) {
                             Text(
                                 text = "Sin asignar",
-                                color = if (selectedUserId == null) Color.White else Color(0xff6c6c6c),
+                                color = if (selectedUserId == null) Color.White else Color(
+                                    0xff6c6c6c
+                                ),
                             )
                         }
 

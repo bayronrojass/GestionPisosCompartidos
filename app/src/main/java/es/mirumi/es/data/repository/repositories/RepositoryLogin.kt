@@ -1,8 +1,8 @@
 package es.mirumi.es.data.repository.repositories
 
+import es.mirumi.es.data.repository.APIs.LoginAPI
 import es.mirumi.es.model.requests.LoginRequest
 import es.mirumi.es.model.responses.LoginResponse
-import es.mirumi.es.data.repository.APIs.LoginAPI
 
 class RepositoryLogin(
     private val apiService: LoginAPI,

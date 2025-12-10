@@ -116,7 +116,11 @@ fun EventosScreen(viewModel: EventosViewModel) {
                 ).apply {
                     val calendarMin =
                         Calendar.getInstance().apply {
-                            set(startDate!!.year, startDate!!.monthValue - 1, startDate!!.dayOfMonth)
+                            set(
+                                startDate!!.year,
+                                startDate!!.monthValue - 1,
+                                startDate!!.dayOfMonth
+                            )
                         }
                     datePicker.minDate = calendarMin.timeInMillis
                 }.show()
@@ -282,11 +286,18 @@ fun EventosScreen(viewModel: EventosViewModel) {
                             },
                             modifier = Modifier.fillMaxWidth(),
                         ) {
-                            Icon(Icons.Default.CalendarMonth, contentDescription = "Seleccionar fechas")
+                            Icon(
+                                Icons.Default.CalendarMonth,
+                                contentDescription = "Seleccionar fechas"
+                            )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 if (startDate != null && endDate != null) {
-                                    "${startDate!!.format(dateFormatter)} - ${endDate!!.format(dateFormatter)}"
+                                    "${startDate!!.format(dateFormatter)} - ${
+                                        endDate!!.format(
+                                            dateFormatter
+                                        )
+                                    }"
                                 } else if (startDate != null) {
                                     "${startDate!!.format(dateFormatter)} - Seleccionar fecha fin"
                                 } else {
@@ -298,7 +309,11 @@ fun EventosScreen(viewModel: EventosViewModel) {
                         if (startDate != null && endDate != null) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                "Evento: ${startDate!!.format(dateFormatter)} al ${endDate!!.format(dateFormatter)}",
+                                "Evento: ${startDate!!.format(dateFormatter)} al ${
+                                    endDate!!.format(
+                                        dateFormatter
+                                    )
+                                }",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.primary,
                             )

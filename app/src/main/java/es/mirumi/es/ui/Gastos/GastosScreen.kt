@@ -104,7 +104,9 @@ fun GastosScreen(
     Scaffold(
         containerColor = ColorFondo,
     ) { padding ->
-        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
+        Box(modifier = Modifier
+            .padding(padding)
+            .fillMaxSize()) {
             if (mostrarEstadisticas) {
                 VistaEstadisticas(
                     stats = stats,
@@ -167,7 +169,8 @@ fun GastosScreen(
                                             .background(
                                                 if (tabSeleccionado == 0) ColorLilaSelected else Color.Transparent,
                                                 RoundedCornerShape(50),
-                                            ).clickable { tabSeleccionado = 0 },
+                                            )
+                                            .clickable { tabSeleccionado = 0 },
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Text("Gastos", fontWeight = FontWeight.Medium, fontSize = 14.sp)
@@ -180,7 +183,8 @@ fun GastosScreen(
                                             .background(
                                                 if (tabSeleccionado == 1) ColorLilaSelected else Color.Transparent,
                                                 RoundedCornerShape(50),
-                                            ).clickable { tabSeleccionado = 1 },
+                                            )
+                                            .clickable { tabSeleccionado = 1 },
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Text("Saldos", fontWeight = FontWeight.Medium, fontSize = 14.sp)
@@ -293,7 +297,8 @@ fun VistaListaGastosContent(
     ) {
         item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                val categorias = listOf("TODOS", "ALQUILER", "COMIDA", "SUMINISTROS", "OCIO", "OTROS")
+                val categorias =
+                    listOf("TODOS", "ALQUILER", "COMIDA", "SUMINISTROS", "OCIO", "OTROS")
                 items(categorias) { cat ->
                     CategoryChip(cat, filtroActual, onFiltrar)
                 }
@@ -302,7 +307,12 @@ fun VistaListaGastosContent(
 
         item {
             Spacer(modifier = Modifier.height(8.dp))
-            Text("GASTOS FIJOS", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = ColorTextoGris)
+            Text(
+                "GASTOS FIJOS",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = ColorTextoGris
+            )
             Spacer(modifier = Modifier.height(8.dp))
         }
         item { ItemGastoFijoEjemplo() }
@@ -334,7 +344,9 @@ fun VistaSaldosContent(saldos: List<SaldoUsuario>) {
             elevation = CardDefaults.cardElevation(1.dp),
         ) {
             Row(
-                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
@@ -349,7 +361,11 @@ fun VistaSaldosContent(saldos: List<SaldoUsuario>) {
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Balance del Grupo", fontWeight = FontWeight.Bold)
-                    Text("Saldos calculados equitativamente", fontSize = 12.sp, color = ColorTextoGris)
+                    Text(
+                        "Saldos calculados equitativamente",
+                        fontSize = 12.sp,
+                        color = ColorTextoGris
+                    )
                 }
                 Icon(Icons.Default.KeyboardArrowRight, null)
             }
@@ -380,7 +396,9 @@ fun ItemSaldo(saldo: SaldoUsuario) {
         elevation = CardDefaults.cardElevation(0.dp),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 14.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
@@ -417,16 +435,22 @@ fun ItemGasto(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(0.dp),
-        modifier = Modifier.fillMaxWidth().clickable { onClick() },
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
     ) {
         Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.Top,
         ) {
             Icon(
                 imageVector = iconoCategoria,
                 contentDescription = null,
-                modifier = Modifier.padding(top = 4.dp, end = 16.dp).size(24.dp),
+                modifier = Modifier
+                    .padding(top = 4.dp, end = 16.dp)
+                    .size(24.dp),
                 tint = Color.Black,
             )
 
@@ -468,12 +492,18 @@ fun ItemGastoFijoEjemplo() {
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
-            modifier = Modifier.padding(20.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(20.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(24.dp).background(Color.Black, RoundedCornerShape(4.dp)))
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .background(Color.Black, RoundedCornerShape(4.dp))
+                )
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text("Alquiler", fontSize = 18.sp, fontWeight = FontWeight.W600)
@@ -483,7 +513,9 @@ fun ItemGastoFijoEjemplo() {
             Text("330€", fontSize = 20.sp, fontWeight = FontWeight.Bold)
         }
         Row(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(horizontal = 20.dp, vertical = 12.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row {
@@ -519,10 +551,14 @@ fun VistaDetalleGasto(
     val participantes = viewModel.obtenerParticipantesGasto(gasto.importe)
 
     Column(
-        modifier = Modifier.fillMaxSize().background(ColorFondo),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(ColorFondo),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -545,7 +581,12 @@ fun VistaDetalleGasto(
         Spacer(modifier = Modifier.height(30.dp))
 
         Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-            Text("PAGADO POR", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = ColorTextoGris)
+            Text(
+                "PAGADO POR",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = ColorTextoGris
+            )
             Spacer(modifier = Modifier.height(8.dp))
 
             Card(
@@ -554,7 +595,9 @@ fun VistaDetalleGasto(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Row(
-                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
@@ -576,7 +619,12 @@ fun VistaDetalleGasto(
                     .padding(horizontal = 20.dp)
                     .weight(1f),
         ) {
-            Text("PARTICIPANTES DEL PAGO", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = ColorTextoGris)
+            Text(
+                "PARTICIPANTES DEL PAGO",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = ColorTextoGris
+            )
             Spacer(modifier = Modifier.height(8.dp))
 
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -627,7 +675,11 @@ fun ItemParticipante(part: ParticipantePago) {
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(part.nombre, fontSize = 16.sp)
             }
-            Text("${String.format("%.2f", part.cantidad).replace('.', ',')}€", fontSize = 16.sp, color = ColorTextoGris)
+            Text(
+                "${String.format("%.2f", part.cantidad).replace('.', ',')}€",
+                fontSize = 16.sp,
+                color = ColorTextoGris
+            )
         }
     }
 }
@@ -638,7 +690,9 @@ fun VistaEstadisticas(
     onBack: () -> Unit,
 ) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(20.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(
@@ -679,6 +733,7 @@ fun VistaEstadisticas(
                                 offset = DpOffset(10.dp, 10.dp),
                                 modifier = Modifier.align(Alignment.TopStart),
                             )
+
                         1 ->
                             BubbleShape(
                                 text = data.textoPorcentaje,
@@ -689,6 +744,7 @@ fun VistaEstadisticas(
                                 offset = DpOffset(20.dp, (-10).dp),
                                 modifier = Modifier.align(Alignment.BottomStart),
                             )
+
                         2 ->
                             BubbleShape(
                                 text = data.textoPorcentaje,
@@ -699,6 +755,7 @@ fun VistaEstadisticas(
                                 offset = DpOffset((-10).dp, 60.dp),
                                 modifier = Modifier.align(Alignment.TopEnd),
                             )
+
                         3 ->
                             BubbleShape(
                                 text = data.textoPorcentaje,
@@ -723,7 +780,9 @@ fun VistaEstadisticas(
         ) {
             stats.take(4).forEach {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(12.dp).background(it.color, CircleShape))
+                    Box(modifier = Modifier
+                        .size(12.dp)
+                        .background(it.color, CircleShape))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(it.categoria, fontSize = 14.sp, color = ColorTextoGris)
                 }
@@ -756,7 +815,8 @@ fun BubbleShape(
                     } else {
                         Modifier.size(width = width!!, height = height!!)
                     },
-                ).clip(shape)
+                )
+                .clip(shape)
                 .background(color),
         contentAlignment = Alignment.Center,
     ) {
@@ -842,7 +902,9 @@ fun NuevoGastoDialog(
                         onDismiss()
                     }
                 },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color.Black),
             ) {

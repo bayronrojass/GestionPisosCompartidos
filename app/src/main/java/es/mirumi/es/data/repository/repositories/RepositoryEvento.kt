@@ -1,10 +1,10 @@
 package es.mirumi.es.data.repository.repositories
 
 import android.content.ContentResolver
+import com.google.gson.Gson
 import es.mirumi.es.data.repository.APIs.EventoAPI
 import es.mirumi.es.model.requests.eventRequest
 import es.mirumi.es.model.responses.eventoResponse
-import com.google.gson.Gson
 
 class RepositoryEvento(
     private val apiService: EventoAPI,

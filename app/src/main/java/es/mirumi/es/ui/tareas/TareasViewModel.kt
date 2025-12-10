@@ -66,7 +66,16 @@ class TareasViewModel(
         viewModelScope.launch {
             try {
                 val esPeriodica = !frecuencia.isNullOrBlank()
-                val request = TareaRequest(nombre, descripcion, false, fechaFin, frecuencia, esPeriodica, asignadoAId, prioridad)
+                val request = TareaRequest(
+                    nombre,
+                    descripcion,
+                    false,
+                    fechaFin,
+                    frecuencia,
+                    esPeriodica,
+                    asignadoAId,
+                    prioridad
+                )
                 repository.crearTarea(casaId, request)
                 cargarTareas()
             } catch (e: Exception) {
@@ -133,7 +142,16 @@ class TareasViewModel(
             val idParaEnviar = asignadoAId ?: -1L
             val esPeriodica = !nuevaFrecuencia.isNullOrBlank()
             val request =
-                TareaRequest(nuevoNombre, nuevaDesc, null, nuevaFechaFin, nuevaFrecuencia, esPeriodica, idParaEnviar, nuevaPrioridad)
+                TareaRequest(
+                    nuevoNombre,
+                    nuevaDesc,
+                    null,
+                    nuevaFechaFin,
+                    nuevaFrecuencia,
+                    esPeriodica,
+                    idParaEnviar,
+                    nuevaPrioridad
+                )
             try {
                 repository.actualizarTarea(tarea.id, request)
                 cargarTareas()

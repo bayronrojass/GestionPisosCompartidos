@@ -100,7 +100,8 @@ private fun handleLoginSuccess(
             )
         }
 
-    val casasJson = Json.encodeToString(ArraySerializer(Casa.serializer()), casasList.toTypedArray())
+    val casasJson =
+        Json.encodeToString(ArraySerializer(Casa.serializer()), casasList.toTypedArray())
     val casaId = 1L
     val casaNombre = "Temp"
     navController.navigate("lista_casas?casas=$casasJson") {

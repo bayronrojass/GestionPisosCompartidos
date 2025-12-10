@@ -190,6 +190,7 @@ fun ListaScreen(
                         CircularProgressIndicator()
                     }
                 }
+
                 filteredListas.isEmpty() -> {
                     Text(
                         text = "No tienes más listas",
@@ -201,6 +202,7 @@ fun ListaScreen(
                                 .offset(y = 400.dp),
                     )
                 }
+
                 else -> {
                     LazyColumn(
                         modifier =
@@ -261,7 +263,10 @@ fun ListaScreen(
                 action = FabActionType.CREAR_LISTA,
             ),
         )
-    val model = viewModel<DraggableViewModel>(key = "Lista", factory = DraggableViewModelFactory("Lista", casaId))
+    val model = viewModel<DraggableViewModel>(
+        key = "Lista",
+        factory = DraggableViewModelFactory("Lista", casaId)
+    )
 
     PizarraScreen(
         model,
@@ -271,9 +276,11 @@ fun ListaScreen(
                 FabActionType.POST_IT -> {
                     model.addNewPostIt()
                 }
+
                 FabActionType.CREAR_LISTA -> {
                     showCreateDialog = true
                 }
+
                 else -> {}
             }
         },
@@ -452,7 +459,8 @@ fun ParticipantAvatars(count: Int) {
                             width = 2.dp,
                             color = Color.White,
                             shape = CircleShape,
-                        ).then(
+                        )
+                        .then(
                             if (index > 0) {
                                 Modifier.offset(x = (-8 * index).dp)
                             } else {

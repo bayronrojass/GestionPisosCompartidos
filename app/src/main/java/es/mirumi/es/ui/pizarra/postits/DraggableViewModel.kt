@@ -50,7 +50,10 @@ class DraggableViewModel(
                     )
                 }
             _postIts.value = newPostItStates
-            Log.d("SYNC_POSTITS", "Sincronización completada. Total de Post-its: ${newPostItStates.size}")
+            Log.d(
+                "SYNC_POSTITS",
+                "Sincronización completada. Total de Post-its: ${newPostItStates.size}"
+            )
         } catch (e: Exception) {
             println("Error al sincronizar los Post-its: ${e.message}")
         }

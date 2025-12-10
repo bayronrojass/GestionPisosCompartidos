@@ -16,7 +16,11 @@ class GestionUsuariosPisoViewModelFactory(
         if (modelClass.isAssignableFrom(GestionUsuariosPisoViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
             // Pasa las dependencias al constructor del ViewModel
-            return GestionUsuariosPisoViewModel(pisoRepository, invitacionRepository, sessionManager) as T
+            return GestionUsuariosPisoViewModel(
+                pisoRepository,
+                invitacionRepository,
+                sessionManager
+            ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

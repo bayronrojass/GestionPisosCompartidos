@@ -3,6 +3,7 @@ package es.mirumi.es.data.repository.repositories
 import android.content.ContentResolver
 import android.net.Uri
 import android.webkit.MimeTypeMap
+import com.google.gson.Gson
 import es.mirumi.es.data.repository.APIs.CasaAPI
 import es.mirumi.es.model.Evento
 import es.mirumi.es.model.Gasto
@@ -12,7 +13,6 @@ import es.mirumi.es.model.requests.GastoRequest
 import es.mirumi.es.model.requests.JoinCasaRequest
 import es.mirumi.es.model.responses.CasaDetailsResponseDTO
 import es.mirumi.es.model.responses.CasaResponse
-import com.google.gson.Gson
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody

@@ -1,146 +1,145 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
-            xmlns:app="http://schemas.android.com/apk/res-auto"
-            xmlns:tools="http://schemas.android.com/tools"
-            android:id="@+id/nav_graph"
-            app:startDestination="@id/loginFragment">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/loginFragment">
 
     <fragment
-            android:id="@+id/loginFragment"
-            android:name="es.mirumi.es.ui.login.Login"
-            android:label="Login"
-            tools:layout="@layout/fragment_login" >
+        android:id="@+id/loginFragment"
+        android:name="es.mirumi.es.ui.login.Login"
+        android:label="Login"
+        tools:layout="@layout/fragment_login">
         <action
-                android:id="@+id/action_loginFragment_to_listaCasasFragment"
-                app:destination="@id/ListaCasasFragment"
-                app:popUpTo="@id/loginFragment"
-                app:popUpToInclusive="true" />
+            android:id="@+id/action_loginFragment_to_listaCasasFragment"
+            app:destination="@id/ListaCasasFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
     </fragment>
 
     <fragment
-            android:id="@+id/crearPisoFragment"
-            android:label="Crear Piso"
-            tools:layout="@layout/fragment_crear_piso" />
+        android:id="@+id/crearPisoFragment"
+        android:label="Crear Piso"
+        tools:layout="@layout/fragment_crear_piso" />
 
     <fragment
-            android:id="@+id/pizarraFragment"
-            android:name="es.mirumi.es.ui.pizarra.Pizarra"
-            android:label="Pizarra"
-            tools:layout="@layout/fragment_pizarra">
+        android:id="@+id/pizarraFragment"
+        android:name="es.mirumi.es.ui.pizarra.Pizarra"
+        android:label="Pizarra"
+        tools:layout="@layout/fragment_pizarra">
 
         <argument
-                android:name="casa_id"
-                app:argType="long" />
+            android:name="casa_id"
+            app:argType="long" />
     </fragment>
 
     <fragment
-            android:id="@+id/gestionUsuariosPisoFragment"
-            android:name="es.mirumi.es.ui.piso.gestionUsuarios.GestionUsuariosPiso"
-            android:label="Gestión del Piso"
-            tools:layout="@layout/fragment_gestion_usuarios_piso">
+        android:id="@+id/gestionUsuariosPisoFragment"
+        android:name="es.mirumi.es.ui.piso.gestionUsuarios.GestionUsuariosPiso"
+        android:label="Gestión del Piso"
+        tools:layout="@layout/fragment_gestion_usuarios_piso">
         <argument
-                android:name="PISO_ID"
-                app:argType="long" />
+            android:name="PISO_ID"
+            app:argType="long" />
     </fragment>
 
     <fragment
-            android:id="@+id/ListaCasasFragment"
-            android:name="es.mirumi.es.ui.piso.listaPisos.ListaCasas"
-            android:label="MisPisos"
-            tools:layout="@layout/fragment_lista_casas">
+        android:id="@+id/ListaCasasFragment"
+        android:name="es.mirumi.es.ui.piso.listaPisos.ListaCasas"
+        android:label="MisPisos"
+        tools:layout="@layout/fragment_lista_casas">
         <argument
-                android:name="casas"
-                app:argType="es.mirumi.es.model.Casa[]" />
+            android:name="casas"
+            app:argType="es.mirumi.es.model.Casa[]" />
         <action
-                android:id="@+id/action_ListaCasasFragment_to_crearPisoFragment"
-                app:destination="@id/crearPisoFragment" />
+            android:id="@+id/action_ListaCasasFragment_to_crearPisoFragment"
+            app:destination="@id/crearPisoFragment" />
         <action
-                android:id="@+id/action_listaCasasFragment_to_casaDashboardFragment"
-                app:destination="@id/Home2" />
+            android:id="@+id/action_listaCasasFragment_to_casaDashboardFragment"
+            app:destination="@id/Home2" />
         <action
-                android:id="@+id/action_ListaCasasFragment_to_invitacionesFragment"
-                app:destination="@id/invitacionesFragment" />
+            android:id="@+id/action_ListaCasasFragment_to_invitacionesFragment"
+            app:destination="@id/invitacionesFragment" />
     </fragment>
 
     <fragment
-            android:id="@+id/listaDeListasFragment"
-            android:name="es.mirumi.es.ui.listas.Listas"
-            android:label="Listas"
-            tools:layout="@layout/fragment_listas">
+        android:id="@+id/listaDeListasFragment"
+        android:name="es.mirumi.es.ui.listas.Listas"
+        android:label="Listas"
+        tools:layout="@layout/fragment_listas">
         <argument
-                android:name="casaId"
-                app:argType="long" />
+            android:name="casaId"
+            app:argType="long" />
         <argument
-                android:name="casaNombre"
-                app:argType="string" />
+            android:name="casaNombre"
+            app:argType="string" />
         <action
-                android:id="@+id/action_listaDeListasFragment_to_itemFragment"
-                app:destination="@id/itemFragment" />
+            android:id="@+id/action_listaDeListasFragment_to_itemFragment"
+            app:destination="@id/itemFragment" />
     </fragment>
 
     <fragment
-            android:id="@+id/itemFragment"
-            android:name="es.mirumi.es.ui.item.Item"
-            android:label="Lista de Compra"
-            tools:layout="@layout/fragment_item">
+        android:id="@+id/itemFragment"
+        android:name="es.mirumi.es.ui.item.Item"
+        android:label="Lista de Compra"
+        tools:layout="@layout/fragment_item">
         <argument
-                android:name="listaId"
-                app:argType="long" />
+            android:name="listaId"
+            app:argType="long" />
         <argument
-                android:name="listaNombre"
-                app:argType="string" />
+            android:name="listaNombre"
+            app:argType="string" />
         <argument
-                android:name="casaNombre"
-                app:argType="string" />
+            android:name="casaNombre"
+            app:argType="string" />
     </fragment>
 
     <fragment
-            android:id="@+id/Home2"
-            android:name="es.mirumi.es.ui.home.Home2"
-            android:label="Inicio"
-            tools:layout="@layout/fragment_home2">
+        android:id="@+id/Home2"
+        android:name="es.mirumi.es.ui.home.Home2"
+        android:label="Inicio"
+        tools:layout="@layout/fragment_home2">
         <argument
-                android:name="casaId"
-                app:argType="long" />
+            android:name="casaId"
+            app:argType="long" />
         <argument
-                android:name="casaNombre"
-                app:argType="string" />
+            android:name="casaNombre"
+            app:argType="string" />
 
         <action
-                android:id="@+id/action_Home2_toListasFragment"
-                app:destination="@id/listaDeListasFragment" />
+            android:id="@+id/action_Home2_toListasFragment"
+            app:destination="@id/listaDeListasFragment" />
         <action
-                android:id="@+id/action_Home2_toTareasFragment"
-                app:destination="@id/TareasFragment" />
+            android:id="@+id/action_Home2_toTareasFragment"
+            app:destination="@id/TareasFragment" />
 
         <action
-                android:id="@+id/action_Home2_toGestionUsuariosPisoFragment"
-                app:destination="@id/gestionUsuariosPisoFragment" />
+            android:id="@+id/action_Home2_toGestionUsuariosPisoFragment"
+            app:destination="@id/gestionUsuariosPisoFragment" />
 
         <action
-                android:id="@+id/action_Home2_toInvitacionesFragment"
-                app:destination="@id/invitacionesFragment" />
+            android:id="@+id/action_Home2_toInvitacionesFragment"
+            app:destination="@id/invitacionesFragment" />
     </fragment>
 
     <fragment
-            android:id="@+id/TareasFragment"
-            android:name="es.mirumi.es.ui.tareas.Tareas"
-            android:label="Tareas"
-            tools:layout="@layout/fragment_tareas" >
+        android:id="@+id/TareasFragment"
+        android:name="es.mirumi.es.ui.tareas.Tareas"
+        android:label="Tareas"
+        tools:layout="@layout/fragment_tareas">
         <argument
-                android:name="casaId"
-                app:argType="long" />
+            android:name="casaId"
+            app:argType="long" />
         <argument
-                android:name="casaNombre"
-                app:argType="string" />
+            android:name="casaNombre"
+            app:argType="string" />
     </fragment>
 
     <fragment
-            android:id="@+id/invitacionesFragment"
-            android:name="es.mirumi.es.ui.invitaciones.InvitacionesFragment"
-            android:label="Mis Invitaciones"
-            tools:layout="@layout/fragment_invitaciones" />
-
+        android:id="@+id/invitacionesFragment"
+        android:name="es.mirumi.es.ui.invitaciones.InvitacionesFragment"
+        android:label="Mis Invitaciones"
+        tools:layout="@layout/fragment_invitaciones" />
 
 
 </navigation>

@@ -1,4 +1,5 @@
 package es.mirumi.es.ui.pizarra
+
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
@@ -47,9 +48,11 @@ class PizarraViewModel(
                     puntos.clear()
                     Log.d("PizarraViewModel", "Error sending deltas ${result.message}")
                 }
+
                 is ApiResult.Success<*> -> {
                     puntos.clear()
                 }
+
                 is ApiResult.Throws -> {
                     puntos.clear()
                     Log.d("Q", "Throwed sending deltas ${result.exception.message}")
@@ -62,7 +65,8 @@ class PizarraViewModel(
         try {
             val check =
                 withContext(Dispatchers.IO) {
-                    val safeTimestamp = lastLoaded.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    val safeTimestamp =
+                        lastLoaded.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
                     repository.request { isUpdated(lienzoId, safeTimestamp) }
                 }
 
@@ -70,6 +74,7 @@ class PizarraViewModel(
                 is ApiResult.Error -> {
                     Log.d("PizarraViewModel", "No need loading: ${check.message}")
                 }
+
                 is ApiResult.Success<*> -> {
                     if (check.data as Boolean) {
                         Log.d("PizarraViewModel", "Data updated, loading new content")
@@ -80,8 +85,12 @@ class PizarraViewModel(
 
                         when (result) {
                             is ApiResult.Error -> {
-                                Log.e("PizarraViewModel", "Error loading: ${result.message} ${result.code} $lienzoId")
+                                Log.e(
+                                    "PizarraViewModel",
+                                    "Error loading: ${result.message} ${result.code} $lienzoId"
+                                )
                             }
+
                             is ApiResult.Success<*> -> {
                                 val responseBody = result.data as? ResponseBody
                                 responseBody?.let { body ->
@@ -124,14 +133,22 @@ class PizarraViewModel(
                                     Log.e("PizarraViewModel", "Response body is null")
                                 }
                             }
+
                             is ApiResult.Throws -> {
-                                Log.e("PizarraViewModel", "Throwed loading: ${result.exception.message}")
+                                Log.e(
+                                    "PizarraViewModel",
+                                    "Throwed loading: ${result.exception.message}"
+                                )
                             }
                         }
                     }
                 }
+
                 is ApiResult.Throws -> {
-                    Log.e("PizarraViewModel", "Throwed checking updates: ${check.exception.message}")
+                    Log.e(
+                        "PizarraViewModel",
+                        "Throwed checking updates: ${check.exception.message}"
+                    )
                 }
             }
         } catch (e: Exception) {

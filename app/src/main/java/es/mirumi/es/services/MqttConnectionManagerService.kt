@@ -27,7 +27,8 @@ class MqttConnectionManagerService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        manager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager =
+            applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         Log.d("MqttService", "Servicio MQTT iniciado")
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

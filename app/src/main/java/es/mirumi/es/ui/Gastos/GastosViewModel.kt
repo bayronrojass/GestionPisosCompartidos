@@ -189,7 +189,8 @@ class GastosViewModel(
         val saldosCalculados =
             usuarios
                 .map { usuario ->
-                    val pagadoPorUsuario = lista.filter { it.pagadoPorNombre == usuario }.sumOf { it.importe }
+                    val pagadoPorUsuario =
+                        lista.filter { it.pagadoPorNombre == usuario }.sumOf { it.importe }
                     val balance = pagadoPorUsuario - mediaPorPersona
 
                     SaldoUsuario(
@@ -231,5 +232,6 @@ class GastosViewModelFactory(
     private val casaId: Long,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T = GastosViewModel(repository, sessionManager, casaId) as T
+    override fun <T : ViewModel> create(modelClass: Class<T>): T =
+        GastosViewModel(repository, sessionManager, casaId) as T
 }

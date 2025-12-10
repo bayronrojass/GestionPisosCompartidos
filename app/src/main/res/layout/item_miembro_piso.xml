@@ -1,19 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        app:cardCornerRadius="8dp"
-        app:cardElevation="2dp"
-        app:cardBackgroundColor="#F8F8F8" > <androidx.constraintlayout.widget.ConstraintLayout
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="#F8F8F8">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="12dp">
 
-    <View
+        <View
             android:id="@+id/member_color_indicator"
             android:layout_width="20dp"
             android:layout_height="20dp"
@@ -23,7 +24,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             android:layout_marginStart="8dp" />
 
-    <TextView
+        <TextView
             android:id="@+id/member_name"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -38,7 +39,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             tools:text="Manolo" />
 
-    <TextView
+        <TextView
             android:id="@+id/member_role_admin"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -57,7 +58,7 @@
             android:visibility="gone"
             tools:visibility="visible" />
 
-    <TextView
+        <TextView
             android:id="@+id/member_role_you"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -76,7 +77,7 @@
             android:visibility="gone"
             tools:visibility="visible" />
 
-    <ImageView
+        <ImageView
             android:id="@+id/member_remove_button"
             android:layout_width="32dp"
             android:layout_height="32dp"
@@ -87,5 +88,5 @@
             app:layout_constraintBottom_toBottomOf="parent"
             android:contentDescription="Eliminar miembro" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.cardview.widget.CardView>

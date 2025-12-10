@@ -20,10 +20,15 @@ class RepositoryPostIt {
                 Log.e("Postit", "Error creando postit " + request.message + " " + request.code)
                 return null
             }
+
             is ApiResult.Success<PostItDTO> -> {
-                Log.e("Postit", "Creando postit " + request.data.id + " con lienzo " + request.data.lienzoId)
+                Log.e(
+                    "Postit",
+                    "Creando postit " + request.data.id + " con lienzo " + request.data.lienzoId
+                )
                 return request.data
             }
+
             is ApiResult.Throws -> {
                 Log.e("Postit", "Throws creando postit " + request.exception.message)
                 return null
@@ -41,9 +46,11 @@ class RepositoryPostIt {
                 Log.e("Postit", "Error recuperando postits " + request.message)
                 return null
             }
+
             is ApiResult.Success<List<PostItDTO>> -> {
                 return request.data
             }
+
             is ApiResult.Throws -> {
                 Log.e("Postit", "Throws recuperando postit " + request.exception.message)
                 return null
@@ -58,11 +65,16 @@ class RepositoryPostIt {
                 Log.e("Postit", "Error recuperando detalles de postit " + request.message)
                 return null
             }
+
             is ApiResult.Success<PostItDTO> -> {
                 return request.data
             }
+
             is ApiResult.Throws -> {
-                Log.e("Postit", "Throws recuperando detalles de postit " + request.exception.message)
+                Log.e(
+                    "Postit",
+                    "Throws recuperando detalles de postit " + request.exception.message
+                )
                 return null
             }
         }
@@ -75,11 +87,16 @@ class RepositoryPostIt {
                 Log.e("Postit", "Error actualizando posicion de postit " + request.message)
                 return null
             }
+
             is ApiResult.Success<Boolean> -> {
                 return request.data
             }
+
             is ApiResult.Throws -> {
-                Log.e("Postit", "Throws actualizando posicion de postit " + request.exception.message)
+                Log.e(
+                    "Postit",
+                    "Throws actualizando posicion de postit " + request.exception.message
+                )
                 return null
             }
         }
@@ -92,9 +109,11 @@ class RepositoryPostIt {
                 Log.e("Postit", "Error eliminando postit " + request.message)
                 return null
             }
+
             is ApiResult.Success<Boolean> -> {
                 return request.data
             }
+
             is ApiResult.Throws -> {
                 Log.e("Postit", "Throws eliminando postit " + request.exception.message)
                 return null

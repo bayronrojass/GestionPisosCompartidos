@@ -18,14 +18,14 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
 import es.mirumi.es.R
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.data.remote.NetworkModule
 import es.mirumi.es.data.repository.repositories.RepositoryCasa
 import es.mirumi.es.data.repository.repositories.RepositoryInvitacion
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.qrcode.QRCodeWriter
 import kotlinx.coroutines.launch
 
 class GestionUsuariosPiso : Fragment() {
@@ -79,7 +79,11 @@ class GestionUsuariosPiso : Fragment() {
         android.util.Log.d("GestionPiso", "ID del piso cargado: $pisoId")
 
         if (pisoId == 0L) {
-            Toast.makeText(requireContext(), "Error FATAL: ID de piso no encontrado", Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                requireContext(),
+                "Error FATAL: ID de piso no encontrado",
+                Toast.LENGTH_LONG
+            ).show()
         } else {
             viewModel.loadData(pisoId)
         }
@@ -112,7 +116,11 @@ class GestionUsuariosPiso : Fragment() {
         buttonInviteQr.setOnClickListener {
             val pisoId = 1L // arguments?.getLong("PISO_ID") ?: 1L
             if (pisoId == 0L) {
-                Toast.makeText(requireContext(), "Error: No se ha cargado el ID del piso", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Error: No se ha cargado el ID del piso",
+                    Toast.LENGTH_SHORT
+                ).show()
                 return@setOnClickListener
             }
 
@@ -168,7 +176,11 @@ class GestionUsuariosPiso : Fragment() {
                 if (email.isNotBlank()) {
                     viewModel.enviarInvitacion(email)
                 } else {
-                    Toast.makeText(requireContext(), "El email no puede estar vacío", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "El email no puede estar vacío",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }.show()
     }

@@ -102,7 +102,8 @@ fun CalendarioFullView(
             }
             Spacer(modifier = Modifier.height(20.dp))
             Text(
-                text = currentMonth.month.getDisplayName(TextStyle.FULL, Locale("es", "ES")).replaceFirstChar { it.uppercase() },
+                text = currentMonth.month.getDisplayName(TextStyle.FULL, Locale("es", "ES"))
+                    .replaceFirstChar { it.uppercase() },
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
@@ -159,13 +160,19 @@ fun CalendarioFullView(
                             }
                         }
                     } // else {
-                    Spacer(modifier = Modifier.padding(4.dp).aspectRatio(1f))
+                    Spacer(modifier = Modifier
+                        .padding(4.dp)
+                        .aspectRatio(1f))
                     // }
                 }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
-            Text("Eventos", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(
+                "Eventos",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
             Spacer(modifier = Modifier.height(10.dp))
 
             // val eventosDelDiaSeleccionado =

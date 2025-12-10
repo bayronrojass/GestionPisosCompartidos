@@ -1,6 +1,5 @@
 package es.mirumi.es.ui.item
 
-import androidx.compose.foundation.lazy.items
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -119,6 +119,7 @@ fun ItemScreen(
                     isLoading -> {
                         CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                     }
+
                     items.isEmpty() -> {
                         Text(
                             text = "No hay elementos en esta lista",
@@ -127,6 +128,7 @@ fun ItemScreen(
                             modifier = Modifier.align(Alignment.Center),
                         )
                     }
+
                     else -> {
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -284,10 +286,20 @@ fun ItemRow(
 
             Row {
                 IconButton(onClick = onEditClick, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Default.Edit, contentDescription = "Editar", tint = Color(0xFF1976D2), modifier = Modifier.size(20.dp))
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Editar",
+                        tint = Color(0xFF1976D2),
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
                 IconButton(onClick = onDeleteClick, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Default.Delete, contentDescription = "Borrar", tint = Color(0xFFE53935), modifier = Modifier.size(20.dp))
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Borrar",
+                        tint = Color(0xFFE53935),
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
         }

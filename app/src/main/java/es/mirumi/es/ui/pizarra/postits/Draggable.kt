@@ -48,9 +48,11 @@ fun DraggablePostIt(
                         change.consume()
                         onDrag(Offset(dragAmount.x, dragAmount.y))
                     }
-                }.pointerInput(state.id) {
+                }
+                .pointerInput(state.id) {
                     detectTapGestures(onTap = { onExpandToggle() })
-                }.scale(0.7f),
+                }
+                .scale(0.7f),
     )
 }
 

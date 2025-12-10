@@ -56,7 +56,8 @@ class CrearCasaViewModel(
                     rutaImagen = null,
                 )
 
-            val response = repository.crearCasa(casaRequest, _uiState.value.imagenUri, contentResolver)
+            val response =
+                repository.crearCasa(casaRequest, _uiState.value.imagenUri, contentResolver)
             _createFlatResult.value = true
             true
         } catch (e: Exception) {

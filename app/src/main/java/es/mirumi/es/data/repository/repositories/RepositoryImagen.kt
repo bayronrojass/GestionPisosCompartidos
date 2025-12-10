@@ -25,15 +25,18 @@ class RepositoryImagen {
         uri: Uri,
         contentResolver: ContentResolver,
     ): ImagenDTO? {
-        val request = repository.request { crearImagen(casaId, createFilePart(uri, contentResolver)) }
+        val request =
+            repository.request { crearImagen(casaId, createFilePart(uri, contentResolver)) }
         when (request) {
             is ApiResult.Error -> {
                 Log.e("Imagen", "Error creando imagen " + request.message + " " + request.code)
                 return null
             }
+
             is ApiResult.Success<ImagenDTO> -> {
                 return request.data
             }
+
             is ApiResult.Throws -> {
                 Log.e("Imagen", "Throws creando imagen " + request.exception.message)
                 return null
@@ -50,9 +53,11 @@ class RepositoryImagen {
                 Log.e("Imagen", "Error recuperando imagenes " + request.message)
                 return null
             }
+
             is ApiResult.Success<List<Long>> -> {
                 return request.data
             }
+
             is ApiResult.Throws -> {
                 Log.e("Imagen", "Throws recuperando imagenes " + request.exception.message)
                 return null
@@ -67,11 +72,16 @@ class RepositoryImagen {
                 Log.e("Imagen", "Error recuperando detalles de imagen " + request.message)
                 return null
             }
+
             is ApiResult.Success<ImagenDTO> -> {
                 return request.data
             }
+
             is ApiResult.Throws -> {
-                Log.e("Imagen", "Throws recuperando detalles de imagen " + request.exception.message)
+                Log.e(
+                    "Imagen",
+                    "Throws recuperando detalles de imagen " + request.exception.message
+                )
                 return null
             }
         }
@@ -84,11 +94,16 @@ class RepositoryImagen {
                 Log.e("Imagen", "Error actualizando posicion de imagen " + request.message)
                 return null
             }
+
             is ApiResult.Success<Boolean> -> {
                 return request.data
             }
+
             is ApiResult.Throws -> {
-                Log.e("Imagen", "Throws actualizando posicion de imagen " + request.exception.message)
+                Log.e(
+                    "Imagen",
+                    "Throws actualizando posicion de imagen " + request.exception.message
+                )
                 return null
             }
         }
@@ -101,9 +116,11 @@ class RepositoryImagen {
                 Log.e("Imagen", "Error eliminando imagen " + request.message)
                 return null
             }
+
             is ApiResult.Success<Boolean> -> {
                 return request.data
             }
+
             is ApiResult.Throws -> {
                 Log.e("Imagen", "Throws eliminando imagen " + request.exception.message)
                 return null

@@ -176,7 +176,8 @@ fun LoginScreenUI(
                     .offset(
                         x = 27.dp,
                         y = 4.dp,
-                    ).requiredWidth(width = 343.dp)
+                    )
+                    .requiredWidth(width = 343.dp)
                     .requiredHeight(height = 40.dp),
         )
         Box(
@@ -186,7 +187,8 @@ fun LoginScreenUI(
                     .offset(
                         x = 0.dp,
                         y = 80.dp,
-                    ).requiredWidth(width = 390.dp)
+                    )
+                    .requiredWidth(width = 390.dp)
                     .requiredHeight(height = 885.dp)
                     .clip(shape = RoundedCornerShape(40.dp))
                     .background(color = Color(0xfff8f8f8)),
@@ -198,7 +200,8 @@ fun LoginScreenUI(
                     .offset(
                         x = 0.dp,
                         y = 100.dp,
-                    ).requiredWidth(width = 50.dp)
+                    )
+                    .requiredWidth(width = 50.dp)
                     .requiredHeight(height = 10.dp)
                     .clip(shape = RoundedCornerShape(20.dp))
                     .background(color = Color(0xff6c6c6c)),
@@ -213,7 +216,8 @@ fun LoginScreenUI(
                     .offset(
                         x = 142.dp,
                         y = 153.dp,
-                    ).requiredWidth(width = 108.dp)
+                    )
+                    .requiredWidth(width = 108.dp)
                     .requiredHeight(height = 153.dp),
         )
         Text(
@@ -228,7 +232,8 @@ fun LoginScreenUI(
                     .offset(
                         x = 1.dp,
                         y = 342.dp,
-                    ).requiredWidth(width = 350.dp),
+                    )
+                    .requiredWidth(width = 350.dp),
         )
 
         // Campo de usuario
@@ -239,7 +244,8 @@ fun LoginScreenUI(
                     .offset(
                         x = 20.dp,
                         y = 430.dp,
-                    ).requiredWidth(width = 350.dp),
+                    )
+                    .requiredWidth(width = 350.dp),
         ) {
             OutlinedTextField(
                 value = username,
@@ -263,7 +269,8 @@ fun LoginScreenUI(
                     .offset(
                         x = 20.dp,
                         y = 500.dp,
-                    ).requiredWidth(width = 350.dp),
+                    )
+                    .requiredWidth(width = 350.dp),
         ) {
             OutlinedTextField(
                 value = password,
@@ -298,7 +305,8 @@ fun LoginScreenUI(
                     .offset(
                         x = 20.dp,
                         y = 580.dp,
-                    ).requiredWidth(width = 350.dp)
+                    )
+                    .requiredWidth(width = 350.dp)
                     .height(52.dp),
             enabled = !isLoading && username.isNotEmpty() && password.isNotEmpty(),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xff581327)),
@@ -327,7 +335,8 @@ fun LoginScreenUI(
                     .offset(
                         x = 1.dp,
                         y = 640.dp,
-                    ).clickable(onClick = onForgotPasswordClick)
+                    )
+                    .clickable(onClick = onForgotPasswordClick)
                     .requiredWidth(width = 212.dp)
                     .requiredHeight(height = 20.dp),
         )
@@ -357,7 +366,8 @@ fun LoginScreenUI(
                     .offset(
                         x = 220.dp,
                         y = 690.5.dp,
-                    ).requiredWidth(width = 160.dp)
+                    )
+                    .requiredWidth(width = 160.dp)
                     .border(border = BorderStroke(1.dp, Color(0xff6c6c6c))),
         )
         Image(
@@ -369,7 +379,8 @@ fun LoginScreenUI(
                     .offset(
                         x = 20.dp,
                         y = 690.5.dp,
-                    ).requiredWidth(width = 160.dp)
+                    )
+                    .requiredWidth(width = 160.dp)
                     .border(border = BorderStroke(1.dp, Color(0xff6c6c6c))),
         )
 
@@ -383,14 +394,16 @@ fun LoginScreenUI(
                     .offset(
                         x = 245.dp,
                         y = 730.dp,
-                    ).requiredWidth(width = 60.dp)
+                    )
+                    .requiredWidth(width = 60.dp)
                     .requiredHeight(height = 50.dp)
                     .clip(shape = RoundedCornerShape(15.dp))
                     .background(color = Color.White)
                     .border(
                         border = BorderStroke(1.dp, Color(0xff6c6c6c)),
                         shape = RoundedCornerShape(15.dp),
-                    ).clickable { onSocialLogin("facebook") },
+                    )
+                    .clickable { onSocialLogin("facebook") },
         ) {
             Image(
                 painter = painterResource(id = R.drawable.facebook),
@@ -410,14 +423,16 @@ fun LoginScreenUI(
                     .offset(
                         x = 165.dp,
                         y = 730.dp,
-                    ).requiredWidth(width = 60.dp)
+                    )
+                    .requiredWidth(width = 60.dp)
                     .requiredHeight(height = 50.dp)
                     .clip(shape = RoundedCornerShape(15.dp))
                     .background(color = Color.White)
                     .border(
                         border = BorderStroke(1.dp, Color(0xff6c6c6c)),
                         shape = RoundedCornerShape(15.dp),
-                    ).clickable { onSocialLogin("google") },
+                    )
+                    .clickable { onSocialLogin("google") },
         ) {
             Image(
                 painter = painterResource(id = R.drawable.google),
@@ -437,19 +452,22 @@ fun LoginScreenUI(
                     .offset(
                         x = 85.dp,
                         y = 730.dp,
-                    ).requiredWidth(width = 60.dp)
+                    )
+                    .requiredWidth(width = 60.dp)
                     .requiredHeight(height = 50.dp)
                     .clip(shape = RoundedCornerShape(15.dp))
                     .background(color = Color.White)
                     .border(
                         border = BorderStroke(1.dp, Color(0xff6c6c6c)),
                         shape = RoundedCornerShape(15.dp),
-                    ).padding(
+                    )
+                    .padding(
                         start = 10.dp,
                         end = 10.dp,
                         top = 10.dp,
                         bottom = 12.dp,
-                    ).clickable { onSocialLogin("apple") },
+                    )
+                    .clickable { onSocialLogin("apple") },
         ) {
             Image(
                 painter = painterResource(id = R.drawable.apple),
@@ -496,7 +514,8 @@ fun LoginScreenUI(
                     .offset(
                         x = 1.5.dp,
                         y = 800.dp,
-                    ).clickable(onClick = onRegisterClick)
+                    )
+                    .clickable(onClick = onRegisterClick)
                     .requiredWidth(width = 273.dp)
                     .requiredHeight(height = 19.dp),
         )
@@ -534,7 +553,8 @@ private fun handleLoginSuccess(
             )
         }
 
-    val casasJson = Json.encodeToString(ArraySerializer(Casa.serializer()), casasList.toTypedArray())
+    val casasJson =
+        Json.encodeToString(ArraySerializer(Casa.serializer()), casasList.toTypedArray())
     navController.navigate("lista_casas?casas=$casasJson") {
         popUpTo("login") { inclusive = true }
     }

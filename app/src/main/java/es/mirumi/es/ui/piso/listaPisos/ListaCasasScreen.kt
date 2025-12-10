@@ -49,13 +49,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.google.zxing.integration.android.IntentIntegrator
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.data.remote.NetworkModule
 import es.mirumi.es.data.repository.repositories.RepositoryCasa
 import es.mirumi.es.model.Casa
 import es.mirumi.es.model.requests.JoinCasaRequest
 import es.mirumi.es.ui.navigation.Route
-import com.google.zxing.integration.android.IntentIntegrator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -79,7 +79,14 @@ fun ListaCasasScreen(
             contract = ActivityResultContracts.StartActivityForResult(),
         ) { result ->
             val intentResult = IntentIntegrator.parseActivityResult(result.resultCode, result.data)
-            intentResult.contents?.let { handleQrResult(it, sessionManager, repositoryCasa, context) }
+            intentResult.contents?.let {
+                handleQrResult(
+                    it,
+                    sessionManager,
+                    repositoryCasa,
+                    context
+                )
+            }
                 ?: Toast.makeText(context, "Escaneo cancelado", Toast.LENGTH_SHORT).show()
         }
 

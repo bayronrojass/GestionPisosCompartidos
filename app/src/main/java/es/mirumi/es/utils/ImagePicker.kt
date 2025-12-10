@@ -28,7 +28,11 @@ class ImagePicker(
                 if (granted) {
                     openGallery()
                 } else {
-                    Toast.makeText(fragment.requireContext(), "Permiso denegado", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        fragment.requireContext(),
+                        "Permiso denegado",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
 
@@ -40,10 +44,16 @@ class ImagePicker(
                         val bitmap =
                             try {
                                 if (Build.VERSION.SDK_INT >= 28) {
-                                    val source = ImageDecoder.createSource(fragment.requireContext().contentResolver, uri)
+                                    val source = ImageDecoder.createSource(
+                                        fragment.requireContext().contentResolver,
+                                        uri
+                                    )
                                     ImageDecoder.decodeBitmap(source)
                                 } else {
-                                    MediaStore.Images.Media.getBitmap(fragment.requireContext().contentResolver, uri)
+                                    MediaStore.Images.Media.getBitmap(
+                                        fragment.requireContext().contentResolver,
+                                        uri
+                                    )
                                 }
                             } catch (e: Exception) {
                                 e.printStackTrace()

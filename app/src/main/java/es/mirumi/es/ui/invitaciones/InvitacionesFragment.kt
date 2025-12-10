@@ -110,7 +110,8 @@ class InvitacionesFragment : Fragment() {
                     viewModel.error.collect { errorMsg ->
                         if (errorMsg != null) {
                             Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_LONG).show()
-                            binding.tvMensajeVacio.isVisible = true // Muestra mensaje de vacío si hay error
+                            binding.tvMensajeVacio.isVisible =
+                                true // Muestra mensaje de vacío si hay error
                             viewModel.clearError() // Limpia el error para que no se repita
                         }
                     }
