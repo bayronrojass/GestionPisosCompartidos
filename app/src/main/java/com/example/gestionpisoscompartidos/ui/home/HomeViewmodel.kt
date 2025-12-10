@@ -73,6 +73,9 @@ class HomeViewModel(
     val casaRepo = RepositoryCasa(NetworkModule.casaApiService)
     val tareaRepo = RepositoryTarea(NetworkModule.tareaApiService)
 
+    private val _eventosDelMes = MutableStateFlow<List<Evento>>(emptyList())
+    val eventosDelMes: StateFlow<List<Evento>> = _eventosDelMes
+
     init {
         cargarEventos()
         cargarUsuario()
@@ -92,6 +95,10 @@ class HomeViewModel(
                 _isLoadingUser.value = false
             }
         }
+    }
+
+    fun cargarEventos() {
+        cargarEventosPorDias(7)
     }
 
     fun cargarCasa() {
@@ -136,21 +143,25 @@ class HomeViewModel(
         }
     }
 
-    fun cargarEventos() {
+    fun cargarEventosPorDias(dias: Int) {
         viewModelScope.launch {
             val token = sessionManager.fetchAuthToken() ?: return@launch
             try {
-                Log.d("CALENDARIO", "Pidiendo eventos para casaId: $casaId")
+                Log.d("CALENDARIO", "Pidiendo eventos para casaId: $casaId por $dias días")
 
                 val response = repository.getEventosCasa(token, casaId)
 
                 if (response.isSuccessful) {
                     val listaRecibida = response.body() ?: emptyList()
                     Log.d("CALENDARIO", "Eventos recibidos: ${listaRecibida.size}")
-                    listaRecibida.forEach { Log.d("CALENDARIO", "Evento: ${it.nombre} - Fecha: ${it.fechaInicio}") }
 
                     _eventos.value = listaRecibida
-                    seleccionarFecha(_fechaSeleccionada.value)
+
+                    val hoy = LocalDate.now()
+                    val limite = hoy.plusDays(dias.toLong() - 1)
+
+                    seleccionarFecha(hoy)
+                    filtrarEventosPorFecha(hoy, limite, dias)
                 } else {
                     Log.e("CALENDARIO", "Error al cargar eventos: ${response.code()}")
                     _error.value = "Error al cargar eventos: ${response.code()}"
@@ -165,12 +176,20 @@ class HomeViewModel(
 
     fun seleccionarFecha(fecha: LocalDate) {
         _fechaSeleccionada.value = fecha
-        filtrarEventosPorFecha(fecha)
+        val limite = fecha.plusDays(6)
+
+        filtrarEventosPorFecha(
+            fecha = fecha,
+            limit = limite,
+            dias = 7,
+        )
     }
 
-    private fun filtrarEventosPorFecha(fecha: LocalDate) {
-        val limit = fecha.plusDays(6)
-
+    private fun filtrarEventosPorFecha(
+        fecha: LocalDate,
+        limit: LocalDate,
+        dias: Int,
+    ) {
         val listaFiltrada =
             _eventos.value
                 .filter { evento ->
@@ -178,12 +197,16 @@ class HomeViewModel(
                     !fechaEvento.isBefore(fecha) && !fechaEvento.isAfter(limit)
                 }.sortedBy { it.fechaInicio }
 
-        _eventosDelDia.value = listaFiltrada
+        if (dias == 7) {
+            _eventosDelDia.value = listaFiltrada
+        } else {
+            _eventosDelMes.value = listaFiltrada
+        }
     }
 
-    fun parseFechaSegura(fechaString: String): LocalDate =
+    fun parseFechaSegura(fechaString: String?): LocalDate =
         try {
-            if (fechaString.length >= 10) {
+            if (fechaString != null && fechaString.length >= 10) {
                 LocalDate.parse(fechaString.substring(0, 10))
             } else {
                 LocalDate.now()
@@ -194,7 +217,7 @@ class HomeViewModel(
 
     fun crea(
         title: String,
-        description: String,
+        description: String?,
         startDate: LocalDateTime,
         endDate: LocalDateTime,
     ) {
@@ -205,7 +228,7 @@ class HomeViewModel(
 
     private suspend fun createEvent(
         title: String,
-        description: String,
+        description: String?,
         startDate: LocalDateTime,
         endDate: LocalDateTime,
     ): Boolean =
@@ -223,6 +246,7 @@ class HomeViewModel(
             val response = eventRepository.crearEvento(eventRequest, casaId, contentResolver)
             kotlinx.coroutines.delay(1000L)
             cargarEventos()
+            cargarEventosDelMes()
             _createEventResult.value = true
             true
         } catch (e: Exception) {
@@ -249,6 +273,7 @@ class HomeViewModel(
                 val success = eliminarEvento(eventoId)
                 if (success) {
                     cargarEventos()
+                    cargarEventosDelMes()
                     _deleteEventResult.value = true
                 } else {
                     _deleteEventResult.value = false
@@ -286,6 +311,7 @@ class HomeViewModel(
                 if (evento.id != null) {
                     eventRepository.actualizarEvento(evento.id, request)
                     cargarEventos()
+                    cargarEventosDelMes()
                     _updateEventResult.value = true
                 } else {
                     _error.value = "El evento no tiene ID válido"
@@ -372,6 +398,50 @@ class HomeViewModel(
             val res = tareaRepo.getTareasByCasaId(casaId)
             val tareasDelUsuario = res.filter { it.asignadoA?.id == userID }
             _tareasDelUsuario.value = tareasDelUsuario
+        }
+    }
+
+    fun cargarEventosDelMes(fechaBase: LocalDate = LocalDate.now()) {
+        viewModelScope.launch {
+            val token = sessionManager.fetchAuthToken() ?: return@launch
+            try {
+                val response = repository.getEventosCasa(token, casaId)
+                if (response.isSuccessful) {
+                    val allEvents = response.body() ?: emptyList()
+                    _eventos.value = allEvents
+
+                    val inicioMes = fechaBase.withDayOfMonth(1)
+                    val finMes = fechaBase.withDayOfMonth(fechaBase.lengthOfMonth())
+
+                    val filteredEvents =
+                        allEvents
+                            .filter { evento ->
+                                val fechaEvento = parseFechaSegura(evento.fechaInicio)
+                                !fechaEvento.isBefore(inicioMes) && !fechaEvento.isAfter(finMes)
+                            }.sortedBy { it.fechaInicio }
+
+                    _eventosDelMes.value = filteredEvents
+                }
+            } catch (e: Exception) {
+                Log.e("CALENDARIO", "Error cargando eventos del mes: ${e.message}")
+            }
+        }
+    }
+
+    fun mesesTraducidos(mes: String): String {
+        when (mes) {
+            "JANUARY" -> return "Enero"
+            "FEBRUARY" -> return "Febrero"
+            "MARCH" -> return "Marzo"
+            "APRIL" -> return "Abril"
+            "MAY" -> return "Mayo"
+            "JUNE" -> return "Junio"
+            "JULY" -> return "Julio"
+            "AUGUST" -> return "Agosto"
+            "SEPTEMBER" -> return "Septiembre"
+            "OCTOBER" -> return "Octubre"
+            "NOVEMBER" -> return "Noviembre"
+            else -> return "Diciembre"
         }
     }
 }

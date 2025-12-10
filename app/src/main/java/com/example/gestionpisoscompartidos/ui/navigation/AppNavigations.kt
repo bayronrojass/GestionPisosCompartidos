@@ -3,6 +3,7 @@ package com.example.gestionpisoscompartidos.ui.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -10,6 +11,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.gestionpisoscompartidos.data.SessionManager
 import com.example.gestionpisoscompartidos.model.Casa
+import com.example.gestionpisoscompartidos.ui.home.HomeViewModel
+import com.example.gestionpisoscompartidos.ui.home.HomeViewModelFactory
 import com.example.gestionpisoscompartidos.ui.home.PrincipalInicio
 import com.example.gestionpisoscompartidos.ui.home.PrincipalInicioCarga
 import com.example.gestionpisoscompartidos.ui.home.PrincipalInicioSesin
@@ -18,6 +21,7 @@ import com.example.gestionpisoscompartidos.ui.item.ItemScreen
 import com.example.gestionpisoscompartidos.ui.login.LoginDestination
 import com.example.gestionpisoscompartidos.ui.piso.crearPiso.CrearCasaScreen
 import com.example.gestionpisoscompartidos.ui.piso.listaPisos.ListaCasasScreen
+import com.example.gestionpisoscompartidos.ui.screens.CalendarioScreen
 import kotlinx.serialization.json.Json
 
 @Composable
@@ -103,8 +107,23 @@ fun AppNavigation(
                     navArgument("casaNombre") { type = NavType.StringType },
                 ),
         ) { backStackEntry ->
+
             val casaId = backStackEntry.arguments?.getLong("casaId") ?: 0L
             val casaNombre = backStackEntry.arguments?.getString("casaNombre") ?: ""
+
+            val context = LocalContext.current
+
+            // ESTE es el ViewModel principal compartido
+            val homeViewModel: HomeViewModel =
+                viewModel(
+                    backStackEntry,
+                    factory =
+                        HomeViewModelFactory(
+                            context = context,
+                            sessionManager = sessionManager,
+                            casaId = casaId,
+                        ),
+                )
 
             MainScreenWithNavigation(
                 casaId = casaId,
@@ -119,6 +138,35 @@ fun AppNavigation(
                         popUpTo(0) { inclusive = true }
                     }
                 },
+                onNavigateToMonthlyView = {
+                    navController.navigate(Route.Calendario.route)
+                },
+            )
+        }
+
+        composable(Route.Calendario.route) { backStackEntry ->
+
+            val parentEntry =
+                remember(backStackEntry) {
+                    navController.getBackStackEntry(Route.Home.route)
+                }
+
+            val context = LocalContext.current
+
+            val homeViewModel: HomeViewModel =
+                viewModel(
+                    parentEntry,
+                    factory =
+                        HomeViewModelFactory(
+                            context = context,
+                            sessionManager = sessionManager,
+                            casaId = parentEntry.arguments?.getLong("casaId") ?: 0L,
+                        ),
+                )
+
+            CalendarioScreen(
+                onNavigateBack = { navController.popBackStack() },
+                viewModel = homeViewModel,
             )
         }
 
