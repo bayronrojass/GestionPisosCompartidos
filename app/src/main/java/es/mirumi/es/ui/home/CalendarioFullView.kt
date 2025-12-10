@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -61,7 +60,6 @@ fun CalendarioFullView(
     var showEditDialog by remember { mutableStateOf(false) }
     var eventoToEdit by remember { mutableStateOf<Evento?>(null) }
 
-    // Function to open edit dialog
     fun openEditDialog(evento: Evento) {
         eventoToEdit = evento
         showEditDialog = true
@@ -132,10 +130,10 @@ fun CalendarioFullView(
                         val date = currentMonth.atDay(day)
                         val isSelected = date.isEqual(fechaSeleccionada)
 
-                        val hasEvent =
-                            eventos.any {
-                                parsearFechaSegura(it.fechaInicio).isEqual(date)
-                            }
+                        // val hasEvent =
+                        // eventos.any {
+                        // parsearFechaSegura(it.fechaInicio).isEqual(date)
+                        // }
 
                         Box(
                             modifier =
@@ -154,15 +152,15 @@ fun CalendarioFullView(
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                     color = Color.Black,
                                 )
-                                if (hasEvent) {
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Box(modifier = Modifier.size(4.dp).clip(CircleShape).background(Color(0xffff5686)))
-                                }
+                                // if (hasEvent) {
+                                // Spacer(modifier = Modifier.height(2.dp))
+                                // Box(modifier = Modifier.size(4.dp).clip(CircleShape).background(Color(0xffff5686)))
+                                // }
                             }
                         }
-                    } else {
-                        Spacer(modifier = Modifier.padding(4.dp).aspectRatio(1f))
-                    }
+                    } // else {
+                    Spacer(modifier = Modifier.padding(4.dp).aspectRatio(1f))
+                    // }
                 }
             }
 
@@ -170,16 +168,16 @@ fun CalendarioFullView(
             Text("Eventos", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(10.dp))
 
-            val eventosDelDiaSeleccionado =
-                eventos.filter {
-                    parsearFechaSegura(it.fechaInicio).isEqual(fechaSeleccionada)
-                }
+            // val eventosDelDiaSeleccionado =
+            // eventos.filter {
+            // parsearFechaSegura(it.fechaInicio).isEqual(fechaSeleccionada)
+            // }
 
-            ListaEventosDelDia(
-                eventos = eventosDelDiaSeleccionado,
-                viewModel = viewModel,
-                onEditEvent = { evento -> openEditDialog(evento) },
-            )
+            // ListaEventosDelDia(
+            // eventos = eventosDelDiaSeleccionado,
+            // viewModel = viewModel,
+            // onEditEvent = { evento -> openEditDialog(evento) },
+            // )
         }
     }
 

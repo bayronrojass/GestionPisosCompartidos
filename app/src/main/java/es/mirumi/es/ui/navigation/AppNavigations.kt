@@ -1,8 +1,10 @@
 package es.mirumi.es.ui.navigation
 
+import CalendarioScreen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -10,6 +12,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.model.Casa
+import es.mirumi.es.ui.home.HomeViewModel
+import es.mirumi.es.ui.home.HomeViewModelFactory
 import es.mirumi.es.ui.home.PrincipalInicio
 import es.mirumi.es.ui.home.PrincipalInicioCarga
 import es.mirumi.es.ui.home.PrincipalInicioSesin
@@ -103,8 +107,23 @@ fun AppNavigation(
                     navArgument("casaNombre") { type = NavType.StringType },
                 ),
         ) { backStackEntry ->
+
             val casaId = backStackEntry.arguments?.getLong("casaId") ?: 0L
             val casaNombre = backStackEntry.arguments?.getString("casaNombre") ?: ""
+
+            val context = LocalContext.current
+
+            // ESTE es el ViewModel principal compartido
+            val homeViewModel: HomeViewModel =
+                viewModel(
+                    backStackEntry,
+                    factory =
+                        HomeViewModelFactory(
+                            context = context,
+                            sessionManager = sessionManager,
+                            casaId = casaId,
+                        ),
+                )
 
             MainScreenWithNavigation(
                 casaId = casaId,
@@ -119,6 +138,35 @@ fun AppNavigation(
                         popUpTo(0) { inclusive = true }
                     }
                 },
+                onNavigateToMonthlyView = {
+                    navController.navigate(Route.Calendario.route)
+                },
+            )
+        }
+
+        composable(Route.Calendario.route) { backStackEntry ->
+
+            val parentEntry =
+                remember(backStackEntry) {
+                    navController.getBackStackEntry(Route.Home.route)
+                }
+
+            val context = LocalContext.current
+
+            val homeViewModel: HomeViewModel =
+                viewModel(
+                    parentEntry,
+                    factory =
+                        HomeViewModelFactory(
+                            context = context,
+                            sessionManager = sessionManager,
+                            casaId = parentEntry.arguments?.getLong("casaId") ?: 0L,
+                        ),
+                )
+
+            CalendarioScreen(
+                onNavigateBack = { navController.popBackStack() },
+                viewModel = homeViewModel,
             )
         }
 

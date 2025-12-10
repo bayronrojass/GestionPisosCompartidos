@@ -1,6 +1,5 @@
 package es.mirumi.es.ui.navigation
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,7 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
@@ -41,7 +39,6 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import es.mirumi.es.R
 import es.mirumi.es.data.SessionManager
@@ -64,11 +61,90 @@ import es.mirumi.es.ui.tareas.TareasViewModel
 import es.mirumi.es.ui.tareas.TareasViewModelFactory
 
 @Composable
+fun MainScreenWithNavigation(
+    casaId: Long,
+    casaNombre: String,
+    onNavigateToItem: (Long, String) -> Unit,
+    onLogout: (String) -> Unit,
+    onNavigateToMonthlyView: () -> Unit, // Add this parameter
+) {
+    var selectedTab by remember { mutableIntStateOf(2) }
+    val savedStateHandle = rememberSaveableStateHolder()
+    val context = LocalContext.current.applicationContext
+
+    val sessionManager = remember { SessionManager(context) }
+    val repositoryCasa = remember { RepositoryCasa(NetworkModule.casaApiService) }
+    val contentResolver = LocalContext.current.applicationContext.contentResolver
+
+    val homeViewModel: HomeViewModel =
+        viewModel(
+            factory =
+                HomeViewModelFactory(
+                    context = context,
+                    sessionManager = sessionManager,
+                    casaId = casaId,
+                ),
+        )
+
+    val listaViewModel: ListasViewModel =
+        viewModel(
+            factory = ListasViewModelFactory(casaId),
+        )
+
+    val eventosViewModel: EventosViewModel =
+        viewModel()
+
+    val tareasViewModel: TareasViewModel =
+        viewModel(
+            factory = TareasViewModelFactory(casaId),
+        )
+
+    val gastosViewModel: GastosViewModel =
+        viewModel(
+            factory = GastosViewModelFactory(repositoryCasa, sessionManager, casaId),
+        )
+
+    Scaffold(
+        bottomBar = {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 20.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                NavigationBar(
+                    selectedTab = selectedTab,
+                    onTabSelected = { selectedTab = it },
+                    // No need for onNavigateToMonthlyView here
+                )
+            }
+        },
+    ) { padding ->
+        Box(modifier = Modifier.padding(padding)) {
+            savedStateHandle.SaveableStateProvider(selectedTab) {
+                when (selectedTab) {
+                    0 -> GastosScreen(viewModel = gastosViewModel, casaId = casaId)
+                    1 -> TareasScreen(tareasViewModel, casaNombre, casaId = casaId)
+                    2 ->
+                        HomeScreen(
+                            viewModel = homeViewModel,
+                            onNavigateToMonthlyView = onNavigateToMonthlyView, // Pass it here
+                        )
+                    3 -> ListaScreen(listaViewModel, onNavigateToItem, casaId = casaId)
+                    4 -> PerfilScreen(sessionManager, onLogout)
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun NavigationBar(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
-) {
+    ) {
     val barWidth = 380.dp
 
     Card(
@@ -187,105 +263,14 @@ fun NavigationBarPreview() {
     }
 }
 
-@Composable
-fun MainScreenWithNavigation(
-    casaId: Long,
-    casaNombre: String,
-    onNavigateToItem: (Long, String) -> Unit,
-    onLogout: (String) -> Unit,
-) {
-    var selectedTab by remember { mutableIntStateOf(2) }
-    var showCalendar by remember { mutableStateOf(false) }
-    val savedStateHandle = rememberSaveableStateHolder()
-    val context = LocalContext.current.applicationContext
-
-    val sessionManager = remember { SessionManager(context) }
-    val repositoryCasa = remember { RepositoryCasa(NetworkModule.casaApiService) }
-    val contentResolver = LocalContext.current.applicationContext.contentResolver
-
-    val homeViewModel: HomeViewModel =
-        viewModel(
-            factory =
-                HomeViewModelFactory(
-                    repositoryCasa,
-                    sessionManager,
-                    casaId,
-                    contentResolver,
-                ),
-        )
-
-    val listaViewModel: ListasViewModel =
-        viewModel(
-            factory = ListasViewModelFactory(casaId),
-        )
-
-    val eventosViewModel: EventosViewModel =
-        viewModel()
-
-    val tareasViewModel: TareasViewModel =
-        viewModel(
-            factory = TareasViewModelFactory(casaId),
-        )
-
-    val gastosViewModel: GastosViewModel =
-        viewModel(
-            factory = GastosViewModelFactory(repositoryCasa, sessionManager, casaId),
-        )
-
-    if (showCalendar) {
-        val fechaSeleccionada by homeViewModel.fechaSeleccionada.collectAsStateWithLifecycle()
-        val eventos by homeViewModel.eventos.collectAsStateWithLifecycle()
-
-        // Manejar el botón "Atrás" del sistema para volver a la pantalla principal
-        BackHandler { showCalendar = false }
-
-        CalendarioFullView(
-            fechaSeleccionada = fechaSeleccionada,
-            eventos = eventos,
-            onFechaClick = { homeViewModel.seleccionarFecha(it) },
-            onBackClick = { showCalendar = false },
-            viewModel = homeViewModel,
-        )
-    } else {
-        Scaffold(
-            bottomBar = {
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 20.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    NavigationBar(
-                        selectedTab = selectedTab,
-                        onTabSelected = { selectedTab = it },
-                    )
-                }
-            },
-        ) { padding ->
-            Box(modifier = Modifier.padding(padding)) {
-                savedStateHandle.SaveableStateProvider(selectedTab) {
-                    when (selectedTab) {
-                        0 -> GastosScreen(viewModel = gastosViewModel, casaId = casaId)
-                        1 -> TareasScreen(tareasViewModel, casaNombre, casaId = casaId)
-                        2 ->
-                            HomeScreen(
-                                viewModel = homeViewModel,
-                                casaId = casaId,
-                                onVistaMensualClick = { showCalendar = true },
-                            )
-                        3 -> ListaScreen(listaViewModel, onNavigateToItem, casaId = casaId)
-                        4 -> PerfilScreen(sessionManager, onLogout)
-                    }
-                }
-            }
-        }
-    }
-}
-
-// PREVIEW de la pantalla completa
 @Preview
 @Composable
 fun MainScreenWithNavigationPreview() {
-    MainScreenWithNavigation(1L, "1", {} as (Long, String) -> Unit, {})
+    MainScreenWithNavigation(
+        casaId = 1L,
+        casaNombre = "Casa de prueba",
+        onNavigateToItem = { _, _ -> },
+        onLogout = {},
+        onNavigateToMonthlyView = {},
+    )
 }

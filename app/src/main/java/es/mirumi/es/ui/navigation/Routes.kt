@@ -67,4 +67,5 @@ sealed class Route(
     object InicioPrincipal : Route("inicio_principal")
 
     object InicioSesion : Route("inicio_sesion")
+    object Calendario : Route("calendario")
 }
