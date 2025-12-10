@@ -34,6 +34,8 @@ foundation = "1.9.5"
 uiVersion = "1.9.5"
 composeMaterial3 = "1.5.5"
 animation = "1.9.5"
+uiText = "1.10.0"
+foundationLayout = "1.10.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -72,6 +74,8 @@ androidx-foundation = { group = "androidx.compose.foundation", name = "foundatio
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "uiVersion" }
 androidx-compose-material3 = { group = "androidx.wear.compose", name = "compose-material3", version.ref = "composeMaterial3" }
 androidx-compose-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "animation" }
+androidx-compose-ui-text = { group = "androidx.compose.ui", name = "ui-text", version.ref = "uiText" }
+androidx-compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayout" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

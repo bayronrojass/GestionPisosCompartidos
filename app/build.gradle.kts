@@ -5,13 +5,14 @@ plugins {
     id("androidx.navigation.safeargs.kotlin")
     id("kotlin-parcelize")
     kotlin("plugin.serialization") version "2.2.21"
+    id("com.google.gms.google-services")
 }
 
 android {
-    namespace = "com.example.gestionpisoscompartidos"
+    namespace = "es.mirumi.es"
     compileSdk = 36
     defaultConfig {
-        applicationId = "com.example.gestionpisoscompartidos"
+        applicationId = "es.mirumi.es"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
@@ -60,7 +61,8 @@ dependencies {
 
     // Jetpack Compose
     implementation(libs.ui)
-
+    implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
+    implementation("com.google.firebase:firebase-messaging")
     implementation("androidx.activity:activity-compose:1.11.0")
     implementation("androidx.compose.material3:material3:1.4.0")
     implementation("androidx.compose.material3:material3-window-size-class:1.4.0")
@@ -95,6 +97,8 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.animation)
+    implementation(libs.androidx.compose.ui.text)
+    implementation(libs.androidx.compose.foundation.layout)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -16,3 +16,5 @@
 .externalNativeBuild
 .cxx
 local.properties
+app/google-services.json
+app/mirumi-23884-firebase-adminsdk-fbsvc-ce13046c20.json

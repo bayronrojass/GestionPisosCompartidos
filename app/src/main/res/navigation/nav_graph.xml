@@ -7,7 +7,7 @@
 
     <fragment
             android:id="@+id/loginFragment"
-            android:name="com.example.gestionpisoscompartidos.ui.login.Login"
+            android:name="es.mirumi.es.ui.login.Login"
             android:label="Login"
             tools:layout="@layout/fragment_login" >
         <action
@@ -24,7 +24,7 @@
 
     <fragment
             android:id="@+id/pizarraFragment"
-            android:name="com.example.gestionpisoscompartidos.ui.pizarra.Pizarra"
+            android:name="es.mirumi.es.ui.pizarra.Pizarra"
             android:label="Pizarra"
             tools:layout="@layout/fragment_pizarra">
 
@@ -35,7 +35,7 @@
 
     <fragment
             android:id="@+id/gestionUsuariosPisoFragment"
-            android:name="com.example.gestionpisoscompartidos.ui.piso.gestionUsuarios.GestionUsuariosPiso"
+            android:name="es.mirumi.es.ui.piso.gestionUsuarios.GestionUsuariosPiso"
             android:label="Gestión del Piso"
             tools:layout="@layout/fragment_gestion_usuarios_piso">
         <argument
@@ -45,12 +45,12 @@
 
     <fragment
             android:id="@+id/ListaCasasFragment"
-            android:name="com.example.gestionpisoscompartidos.ui.piso.listaPisos.ListaCasas"
+            android:name="es.mirumi.es.ui.piso.listaPisos.ListaCasas"
             android:label="MisPisos"
             tools:layout="@layout/fragment_lista_casas">
         <argument
                 android:name="casas"
-                app:argType="com.example.gestionpisoscompartidos.model.Casa[]" />
+                app:argType="es.mirumi.es.model.Casa[]" />
         <action
                 android:id="@+id/action_ListaCasasFragment_to_crearPisoFragment"
                 app:destination="@id/crearPisoFragment" />
@@ -64,7 +64,7 @@
 
     <fragment
             android:id="@+id/listaDeListasFragment"
-            android:name="com.example.gestionpisoscompartidos.ui.listas.Listas"
+            android:name="es.mirumi.es.ui.listas.Listas"
             android:label="Listas"
             tools:layout="@layout/fragment_listas">
         <argument
@@ -80,7 +80,7 @@
 
     <fragment
             android:id="@+id/itemFragment"
-            android:name="com.example.gestionpisoscompartidos.ui.item.Item"
+            android:name="es.mirumi.es.ui.item.Item"
             android:label="Lista de Compra"
             tools:layout="@layout/fragment_item">
         <argument
@@ -96,7 +96,7 @@
 
     <fragment
             android:id="@+id/Home2"
-            android:name="com.example.gestionpisoscompartidos.ui.home.Home2"
+            android:name="es.mirumi.es.ui.home.Home2"
             android:label="Inicio"
             tools:layout="@layout/fragment_home2">
         <argument
@@ -124,7 +124,7 @@
 
     <fragment
             android:id="@+id/TareasFragment"
-            android:name="com.example.gestionpisoscompartidos.ui.tareas.Tareas"
+            android:name="es.mirumi.es.ui.tareas.Tareas"
             android:label="Tareas"
             tools:layout="@layout/fragment_tareas" >
         <argument
@@ -137,7 +137,7 @@
 
     <fragment
             android:id="@+id/invitacionesFragment"
-            android:name="com.example.gestionpisoscompartidos.ui.invitaciones.InvitacionesFragment"
+            android:name="es.mirumi.es.ui.invitaciones.InvitacionesFragment"
             android:label="Mis Invitaciones"
             tools:layout="@layout/fragment_invitaciones" />
 
