@@ -21,6 +21,7 @@ class RepositoryPostIt {
                 return null
             }
             is ApiResult.Success<PostItDTO> -> {
+                Log.e("Postit", "Creando postit " + request.data.id + " con lienzo " + request.data.lienzoId)
                 return request.data
             }
             is ApiResult.Throws -> {
@@ -33,14 +34,14 @@ class RepositoryPostIt {
     suspend fun getPostIts(
         casaId: Long,
         location: String,
-    ): List<Long>? {
+    ): List<PostItDTO>? {
         val request = repository.request { getPostIts(casaId, location) }
         when (request) {
             is ApiResult.Error -> {
                 Log.e("Postit", "Error recuperando postits " + request.message)
                 return null
             }
-            is ApiResult.Success<List<Long>> -> {
+            is ApiResult.Success<List<PostItDTO>> -> {
                 return request.data
             }
             is ApiResult.Throws -> {

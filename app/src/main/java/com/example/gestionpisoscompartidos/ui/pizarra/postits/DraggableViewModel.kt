@@ -5,6 +5,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryPostIt
+import com.example.gestionpisoscompartidos.model.dtos.PostItDTO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,33 +37,20 @@ class DraggableViewModel(
 
     private suspend fun syncPostIts() {
         try {
-            val postitsFromApi = postItRepository.getPostIts(casaId, location) ?: emptyList()
-            val localPostIts = _postIts.value
+            val postitIdsFromApi = postItRepository.getPostIts(casaId, location) ?: emptyList()
 
-            val apiMap = postitsFromApi.associateBy { it }
-            val localMap = localPostIts.associateBy { it.id }
-
-            val toAdd = apiMap.filterKeys { it !in localMap.keys }
-            val toRemove = localMap.filterKeys { it !in apiMap.keys }
-
-            _postIts.update { currentList ->
-                val listAfterRemoval = currentList.filterNot { it.id in toRemove.keys }
-
-                val newPostItStates =
-                    toAdd.values.map { id ->
-                        val newPostItDTO = postItRepository.getPostItDetails(id)
-                        PostItState(
-                            id = newPostItDTO?.id!!,
-                            offset = Offset(newPostItDTO.posicionX, newPostItDTO.posicionY),
-                            location = newPostItDTO.localizacion,
-                            lienzoId = newPostItDTO.lienzoId!!,
-                            isExpanded = false,
-                        )
-                    }
-
-                // Devolvemos la lista combinada
-                listAfterRemoval + newPostItStates
-            }
+            val newPostItStates =
+                postitIdsFromApi.map { dto ->
+                    PostItState(
+                        id = dto.id!!,
+                        offset = Offset(dto.posicionX, dto.posicionY),
+                        location = dto.localizacion,
+                        lienzoId = dto.lienzoId!!,
+                        isExpanded = _postIts.value.find { it.id == dto.id }?.isExpanded ?: false,
+                    )
+                }
+            _postIts.value = newPostItStates
+            Log.d("SYNC_POSTITS", "Sincronización completada. Total de Post-its: ${newPostItStates.size}")
         } catch (e: Exception) {
             println("Error al sincronizar los Post-its: ${e.message}")
         }
@@ -72,7 +60,6 @@ class DraggableViewModel(
         viewModelScope.launch {
             try {
                 postItRepository.createPostIt(casaId = casaId, location)
-
                 syncPostIts()
             } catch (e: Exception) {
                 println("Error al crear el Post-it: ${e.message}")
@@ -113,6 +100,27 @@ class DraggableViewModel(
                     postIt.copy(offset = postIt.offset + dragAmount)
                 } else {
                     postIt
+                }
+            }
+        }
+    }
+
+    fun onDragEnd(postId: Long) {
+        viewModelScope.launch {
+            val postItToUpdate = _postIts.value.find { it.id == postId }
+            if (postItToUpdate != null) {
+                try {
+                    postItRepository.updatePostItPosition(
+                        PostItDTO(
+                            id = postItToUpdate.id,
+                            posicionX = postItToUpdate.offset.x,
+                            posicionY = postItToUpdate.offset.y,
+                            localizacion = postItToUpdate.location,
+                            lienzoId = postItToUpdate.lienzoId,
+                        ),
+                    )
+                } catch (e: Exception) {
+                    Log.e("DRAG_END", "Error al actualizar la posición del Post-it: ${e.message}")
                 }
             }
         }

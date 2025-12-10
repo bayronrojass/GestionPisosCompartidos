@@ -33,6 +33,7 @@ fun DraggablePostIt(
     onDrag: (Offset) -> Unit,
     onExpandToggle: () -> Unit,
     modifier: Modifier = Modifier,
+    onDragEnd: () -> Unit,
 ) {
     Image(
         painter = painterResource(id = R.drawable.postitplegado),
@@ -41,7 +42,9 @@ fun DraggablePostIt(
             modifier
                 .offset { IntOffset(state.offset.x.roundToInt(), state.offset.y.roundToInt()) }
                 .pointerInput(Unit) {
-                    detectDragGestures { change, dragAmount ->
+                    detectDragGestures(
+                        onDragEnd = { onDragEnd() },
+                    ) { change, dragAmount ->
                         change.consume()
                         onDrag(Offset(dragAmount.x, dragAmount.y))
                     }
@@ -70,6 +73,7 @@ fun PizarraScreen(
                         viewModel.updatePostItPosition(postItState.id, dragAmount)
                     },
                     onExpandToggle = { viewModel.toggleExpand(postItState.id) },
+                    onDragEnd = { viewModel.onDragEnd(postItState.id) },
                 )
             }
 
@@ -110,6 +114,7 @@ fun DraggablePostItPreview() {
         state = PostItState(),
         onDrag = {},
         onExpandToggle = {},
+        onDragEnd = {},
     )
 }
 

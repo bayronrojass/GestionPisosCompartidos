@@ -19,7 +19,7 @@ interface PostItAPI {
     suspend fun getPostIts(
         @Path("id") id: Long,
         @Path("location") location: String,
-    ): Response<List<Long>>
+    ): Response<List<PostItDTO>>
 
     @GET("postits/{id}")
     suspend fun getPostItDetails(

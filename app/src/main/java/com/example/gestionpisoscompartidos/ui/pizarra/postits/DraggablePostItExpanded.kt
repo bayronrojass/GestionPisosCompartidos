@@ -20,7 +20,6 @@ import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,7 +28,6 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -41,6 +39,7 @@ import com.example.gestionpisoscompartidos.ui.pizarra.PizarraView
 import com.example.gestionpisoscompartidos.ui.pizarra.PizarraViewModel
 import com.example.gestionpisoscompartidos.ui.pizarra.PizarraViewModelFactory
 import kotlinx.coroutines.launch
+import java.time.Instant
 
 @Composable
 fun ExpandedPostIt(
@@ -83,6 +82,7 @@ fun ExpandedPostIt(
                 selected = true,
                 onClick = {
                     pizarraViewModel.stop()
+                    pizarraViewModel._bitmapState.value = null
                     onClose()
                 },
                 colors = chipColors,
@@ -100,6 +100,7 @@ fun ExpandedPostIt(
                 selected = true,
                 onClick = {
                     pizarraViewModel.stop()
+                    pizarraViewModel._bitmapState.value = null
                     onMinimize()
                 },
                 colors = chipColors,
@@ -130,31 +131,34 @@ fun ExpandedPostIt(
                         )
                     },
         ) {
-            val context = LocalContext.current
             val lifecycleOwner = LocalLifecycleOwner.current
 
-            val pizarraView =
-                remember(state.lienzoId) {
-                    PizarraView(context).apply {
-                        this.activatedDraw = true
-                        setModel(pizarraViewModel)
-                    }
-                }
-
-            LaunchedEffect(pizarraView, lifecycleOwner) {
+            LaunchedEffect(pizarraViewModel, lifecycleOwner) {
                 lifecycleOwner.lifecycleScope.launch {
                     pizarraViewModel.load()
-
-                    pizarraViewModel.bitmapState.collect { bitmap ->
-                        bitmap?.let {
-                            pizarraView.setBackgroundBitmap(it)
-                        }
-                    }
                 }
             }
 
             AndroidView(
-                factory = { pizarraView },
+                factory = { ctx ->
+                    PizarraView(ctx).apply {
+                        this.activatedDraw = true
+                        setModel(pizarraViewModel)
+
+                        lifecycleOwner.lifecycleScope.launch {
+                            pizarraViewModel.bitmapState.collect { bitmap ->
+                                bitmap?.let {
+                                    setBackgroundBitmap(it)
+                                }
+                            }
+                        }
+                    }
+                },
+                update = { view ->
+                    pizarraViewModel.lienzoId = state.lienzoId
+                    pizarraViewModel.lastLoaded = Instant.ofEpochMilli(1000000)
+                    view.load()
+                },
                 modifier = Modifier.fillMaxSize(),
             )
         }
