@@ -1,6 +1,5 @@
 package com.example.gestionpisoscompartidos.ui.home
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -54,20 +53,18 @@ import com.example.gestionpisoscompartidos.ui.utils.FabActionType
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
     casaId: Long,
     viewModel: HomeViewModel,
-    onVistaMensualClick: () -> Unit, // Nuevo parámetro para navegación
+    onVistaMensualClick: () -> Unit,
 ) {
     val userName by viewModel.userName.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoadingUser.collectAsStateWithLifecycle()
     val houseName by viewModel.currentHouse.collectAsStateWithLifecycle()
     val selectedDate by viewModel.fechaSeleccionada.collectAsStateWithLifecycle()
 
-    // Obtenemos eventos y tareas para los indicadores
     val eventos by viewModel.eventos.collectAsStateWithLifecycle()
     val tareas by viewModel.tareasDelUsuario.collectAsStateWithLifecycle()
 
@@ -108,13 +105,12 @@ fun HomeScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            // TodayEventsSection()
-
-            // Spacer(modifier = Modifier.height(16.dp))
-
-            // SaturdayEventsSection()
-
-            weeklyEvents(viewModel)
+            // Agenda Semanal (Eventos y Tareas combinados)
+            weeklyEvents(
+                viewModel = viewModel,
+                tareas = tareas,
+                selectedDate = selectedDate,
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -275,7 +271,7 @@ fun CalendarSection(
                 color = Color(0xff6c6c6c),
                 textDecoration = TextDecoration.Underline,
                 style = TextStyle(fontSize = 14.sp),
-                modifier = Modifier.clickable { onVistaMensualClick() }, // Navegación activada
+                modifier = Modifier.clickable { onVistaMensualClick() },
             )
         }
 
@@ -289,19 +285,16 @@ fun CalendarSection(
                 val date = ldt.toLocalDate()
                 val isSelected = selectedDate?.let { it == date } ?: false
 
-                // Comprobamos si hay evento o tarea para este día
-                val hasMarker =
-                    remember(eventos, tareas, date) {
-                        eventos.any { viewModel.parseFechaSegura(it.fechaInicio).isEqual(date) } ||
-                            tareas.any { !it.fechaFin.isNullOrEmpty() && viewModel.parseFechaSegura(it.fechaFin!!).isEqual(date) }
-                    }
+                val hasEvent = eventos.any { viewModel.parseFechaSegura(it.fechaInicio).isEqual(date) }
+                val hasTask = tareas.any { !it.fechaFin.isNullOrEmpty() && viewModel.parseFechaSegura(it.fechaFin!!).isEqual(date) }
 
                 DayItem(
                     day = ldt.dayOfMonth.toString(),
                     dayName = viewModel.diasTraducidos(ldt.dayOfWeek),
                     isToday = index == 0,
                     isSelected = isSelected,
-                    hasMarker = hasMarker,
+                    hasEvent = hasEvent,
+                    hasTask = hasTask,
                     onClick = { onDateSelected(date) },
                 )
             }
@@ -315,7 +308,8 @@ fun DayItem(
     dayName: String,
     isToday: Boolean = false,
     isSelected: Boolean = false,
-    hasMarker: Boolean = false, // Nuevo parámetro
+    hasEvent: Boolean = false,
+    hasTask: Boolean = false,
     onClick: () -> Unit,
 ) {
     Column(
@@ -350,16 +344,28 @@ fun DayItem(
                     style = TextStyle(fontSize = 12.sp),
                 )
 
-                // Indicador de evento/tarea (punto rojo dentro de la tarjeta)
-                if (hasMarker) {
+                if (hasEvent || hasTask) {
                     Spacer(modifier = Modifier.height(2.dp))
-                    Box(
-                        modifier =
-                            Modifier
-                                .size(4.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xffff5686)),
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                        if (hasEvent) {
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .size(4.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xffff5686)),
+                            )
+                        }
+                        if (hasTask) {
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .size(4.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFDDC1FB)),
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -377,22 +383,67 @@ fun DayItem(
 }
 
 @Composable
-fun weeklyEvents(viewModel: HomeViewModel) {
+fun weeklyEvents(
+    viewModel: HomeViewModel,
+    tareas: List<Tarea>,
+    selectedDate: LocalDate,
+) {
     val eventosDelDia by viewModel.eventosDelDia.collectAsStateWithLifecycle()
-    val sortedList = viewModel.sortEvents(eventosDelDia)
+
+    // Filtrar tareas para los próximos 7 días (igual que los eventos)
+    val tareasFiltradas =
+        remember(tareas, selectedDate) {
+            val limit = selectedDate.plusDays(6)
+            tareas.filter {
+                if (it.fechaFin.isNullOrEmpty()) return@filter false
+                val fecha = viewModel.parseFechaSegura(it.fechaFin)
+                !fecha.isBefore(selectedDate) && !fecha.isAfter(limit)
+            }
+        }
+
+    // Combinar Eventos y Tareas en una sola lista ordenada
+    val combinedList =
+        remember(eventosDelDia, tareasFiltradas) {
+            (eventosDelDia + tareasFiltradas).sortedBy {
+                when (it) {
+                    is Evento -> viewModel.parseFechaSegura(it.fechaInicio)
+                    is Tarea -> viewModel.parseFechaSegura(it.fechaFin!!)
+                    else -> LocalDate.MAX
+                }
+            }
+        }
+
     Column(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
     ) {
-        if (!sortedList.isEmpty()) {
-            for (i in 0..<sortedList.size) {
-                var prev = if (i == 0) null else sortedList.get(i - 1)
-                var day = sortedList.get(i)
-                if (i == 0 || !viewModel.areSameDay(prev!!.fechaInicio, day.fechaInicio)) {
+        if (combinedList.isNotEmpty()) {
+            for (i in combinedList.indices) {
+                val item = combinedList[i]
+                val itemDate =
+                    when (item) {
+                        is Evento -> viewModel.parseFechaSegura(item.fechaInicio)
+                        is Tarea -> viewModel.parseFechaSegura(item.fechaFin!!)
+                        else -> LocalDate.now()
+                    }
+
+                // Lógica de Cabeceras (Día de la semana)
+                val prevItemDate =
+                    if (i > 0) {
+                        when (val prev = combinedList[i - 1]) {
+                            is Evento -> viewModel.parseFechaSegura(prev.fechaInicio)
+                            is Tarea -> viewModel.parseFechaSegura(prev.fechaFin!!)
+                            else -> LocalDate.MIN
+                        }
+                    } else {
+                        null
+                    }
+
+                if (i == 0 || (prevItemDate != null && !prevItemDate.isEqual(itemDate))) {
                     Text(
-                        text = viewModel.diasTraducidos(viewModel.parseFechaSegura(day.fechaInicio).dayOfWeek),
+                        text = viewModel.diasTraducidos(itemDate.dayOfWeek),
                         color = Color.Black,
                         style =
                             TextStyle(
@@ -403,12 +454,23 @@ fun weeklyEvents(viewModel: HomeViewModel) {
                     Spacer(modifier = Modifier.height(12.dp))
                 }
 
-                EventItem(
-                    title = day.nombre,
-                    color = Color(0xfffff8cf),
-                    creadoPor = day.creadoPor,
-                    viewModel = viewModel,
-                )
+                // COLOR: Amarillo si es el día seleccionado, Blanco si no
+                val isSelectedDay = itemDate.isEqual(selectedDate)
+                val cardColor = if (isSelectedDay) Color(0xfffff8cf) else Color.White
+
+                if (item is Evento) {
+                    EventItem(
+                        title = item.nombre,
+                        color = cardColor,
+                        creadoPor = item.creadoPor,
+                        viewModel = viewModel,
+                    )
+                } else if (item is Tarea) {
+                    TimelineTaskItem(
+                        tarea = item,
+                        color = cardColor,
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -464,6 +526,65 @@ fun EventItem(
                 text = "Creado por: ${creadorName ?: "Cargando..."}",
                 style = TextStyle(fontSize = 12.sp),
                 modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+fun TimelineTaskItem(
+    tarea: Tarea,
+    color: Color,
+) {
+    // Definimos el color del indicador de prioridad
+    val priorityColor =
+        when (tarea.prioridad) {
+            "Alta" -> Color(0xFFFF6490)
+            "Media" -> Color(0xFFDDC1FB)
+            else -> Color(0xFFA9E6A8)
+        }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.small,
+        colors = CardDefaults.cardColors(containerColor = color),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // Indicador Morado para diferenciar que es una Tarea (o usar priorityColor)
+            Box(
+                modifier =
+                    Modifier
+                        .size(8.dp)
+                        .clip(MaterialTheme.shapes.small)
+                        .background(Color(0xFFDDC1FB)),
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = tarea.nombre,
+                    style = TextStyle(fontSize = 15.sp),
+                )
+                Text(
+                    text = "Asignado a: ${tarea.asignadoA?.nombre ?: "Sin asignar"}",
+                    style = TextStyle(fontSize = 12.sp, color = Color.Gray),
+                )
+            }
+
+            // Etiqueta de prioridad pequeña
+            Text(
+                text = tarea.prioridad ?: "",
+                style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray),
+                modifier =
+                    Modifier
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .background(priorityColor)
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
             )
         }
     }
