@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -163,7 +164,6 @@ fun CalendarioScreen(
         onDismiss = { showEventDialog = false },
         onConfirm = { nombre, descripcion, fechaInicio, fechaFin ->
             if (editingEvent != null) {
-                // For editing events, dates should not be null
                 if (fechaInicio == null || fechaFin == null) {
                     return@EventDialog
                 }
@@ -175,7 +175,6 @@ fun CalendarioScreen(
                     nuevaFechaFin = fechaFin.atStartOfDay(),
                 )
             } else {
-                // For new events, handle null dates
                 val startDateTime = fechaInicio?.atStartOfDay() ?: LocalDate.now().atStartOfDay()
                 val endDateTime = fechaFin?.atStartOfDay() ?: startDateTime
                 viewModel.crea(
@@ -217,14 +216,14 @@ fun TopBar(onBackClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth(),
     ) {
-//        Image(
-//            painter = painterResource(id = R.drawable.iconoatrs),
-//            contentDescription = "Back",
-//            modifier =
-//                Modifier
-//                    .size(24.dp)
-//                    .clickable { onBackClick() },
-//        )
+      Image(
+          painter = painterResource(id = R.drawable.icono_atr_s),
+          contentDescription = "Back",
+          modifier =
+                Modifier
+                    .size(24.dp)
+                    .clickable { onBackClick() },
+       )
 
         Spacer(modifier = Modifier.weight(1f))
 
@@ -588,9 +587,9 @@ fun DeleteEventDialog(
 @Composable
 fun EventDialog(
     showDialog: Boolean,
-    event: Evento? = null, // Null for add, non-null for edit
+    event: Evento? = null,
     onDismiss: () -> Unit,
-    onConfirm: (String, String, LocalDate?, LocalDate?) -> Unit, // Changed to nullable dates
+    onConfirm: (String, String, LocalDate?, LocalDate?) -> Unit,
     viewModel: HomeViewModel,
 ) {
     if (!showDialog) return
@@ -607,17 +606,14 @@ fun EventDialog(
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
 
-    // Initialize dates as null for new events, or with event dates for editing
     var startDate by remember { mutableStateOf<LocalDate?>(null) }
     var endDate by remember { mutableStateOf<LocalDate?>(null) }
 
-    // Initialize dates only when editing
     LaunchedEffect(isEditing) {
         if (isEditing && event != null) {
             startDate = viewModel.parseFechaSegura(event.fechaInicio)
             endDate = viewModel.parseFechaSegura(event.fechaFin)
         } else {
-            // For new events, keep dates as null
             startDate = null
             endDate = null
         }
@@ -651,7 +647,6 @@ fun EventDialog(
         isSelectingDates = false
     }
 
-    // Calculate if form is valid
     val isFormValid by remember {
         derivedStateOf {
             eventName.isNotBlank() && startDate != null && endDate != null
@@ -813,7 +808,7 @@ fun EventDialog(
                     onConfirm(eventName, eventDescription, startDate, endDate)
                     onDismiss()
                 },
-                enabled = isFormValid, // Disable button when form is invalid
+                enabled = isFormValid,
                 colors =
                     ButtonDefaults.textButtonColors(
                         contentColor = if (isFormValid) accentColor else Color.Gray,
