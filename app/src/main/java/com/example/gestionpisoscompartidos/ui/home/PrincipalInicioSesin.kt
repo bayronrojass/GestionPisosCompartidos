@@ -333,7 +333,7 @@ fun LoginScreenUI(
         )
 
         Text(
-            text = "o ",
+            text = "o",
             color = Color(0xff6c6c6c),
             textAlign = TextAlign.Center,
             style =
@@ -355,7 +355,7 @@ fun LoginScreenUI(
                 Modifier
                     .align(alignment = Alignment.TopStart)
                     .offset(
-                        x = 210.dp,
+                        x = 220.dp,
                         y = 690.5.dp,
                     ).requiredWidth(width = 160.dp)
                     .border(border = BorderStroke(1.dp, Color(0xff6c6c6c))),
