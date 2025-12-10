@@ -27,11 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import es.mirumi.es.data.remote.NetworkModule
-import es.mirumi.es.data.repository.repositories.RepositoryUsuario
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.mirumi.es.model.Evento
-import es.mirumi.es.model.Tarea
-import es.mirumi.es.model.Usuario
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -42,6 +39,7 @@ import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import es.mirumi.es.R
 
 @Composable
 fun CalendarioScreen(
@@ -172,14 +170,14 @@ fun TopBar(onBackClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.iconoatrs),
-            contentDescription = "Back",
-            modifier =
-                Modifier
-                    .size(24.dp)
-                    .clickable { onBackClick() },
-        )
+//        Image(
+//            painter = painterResource(id = R.drawable.iconoatrs),
+//            contentDescription = "Back",
+//            modifier =
+//                Modifier
+//                    .size(24.dp)
+//                    .clickable { onBackClick() },
+//        )
 
         Spacer(modifier = Modifier.weight(1f))
 
@@ -458,7 +456,7 @@ fun EventItem(
 }
 
 @Composable
-fun ScrollToTopFloatingButton(
+private fun ScrollToTopFloatingButton(
     isVisible: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,

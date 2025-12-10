@@ -48,7 +48,6 @@ import es.mirumi.es.ui.eventos.EventosViewModel
 import es.mirumi.es.ui.gastos.GastosScreen
 import es.mirumi.es.ui.gastos.GastosViewModel
 import es.mirumi.es.ui.gastos.GastosViewModelFactory
-import es.mirumi.es.ui.home.CalendarioFullView
 import es.mirumi.es.ui.home.HomeScreen
 import es.mirumi.es.ui.home.HomeViewModel
 import es.mirumi.es.ui.home.HomeViewModelFactory
@@ -144,7 +143,7 @@ fun NavigationBar(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    ) {
+) {
     val barWidth = 380.dp
 
     Card(

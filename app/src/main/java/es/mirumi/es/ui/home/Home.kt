@@ -23,15 +23,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import es.mirumi.es.R
-import es.mirumi.es.model.Evento
-import es.mirumi.es.model.Tarea
-import es.mirumi.es.ui.pizarra.postits.DraggableViewModel
-import es.mirumi.es.ui.pizarra.postits.DraggableViewModelFactory
-import es.mirumi.es.ui.pizarra.postits.PizarraScreen
-import es.mirumi.es.ui.utils.FabActionItem
-import es.mirumi.es.ui.utils.FabActionType
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
 

@@ -1,6 +1,5 @@
 package es.mirumi.es.ui.navigation
 
-import CalendarioScreen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
@@ -12,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.model.Casa
+import es.mirumi.es.ui.home.CalendarioScreen
 import es.mirumi.es.ui.home.HomeViewModel
 import es.mirumi.es.ui.home.HomeViewModelFactory
 import es.mirumi.es.ui.home.PrincipalInicio

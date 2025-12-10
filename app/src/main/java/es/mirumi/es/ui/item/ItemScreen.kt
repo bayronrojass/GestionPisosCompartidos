@@ -1,5 +1,6 @@
 package es.mirumi.es.ui.item
 
+import androidx.compose.foundation.lazy.items
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -132,13 +133,20 @@ fun ItemScreen(
                             contentPadding = PaddingValues(bottom = 80.dp),
                         ) {
                             items(items, key = { it.id ?: it.hashCode() }) { item ->
-                                ItemRow(
-                                    item = item,
-                                    onItemClick = { showDetailDialog = item },
-                                    onCheckClick = { viewModel.toggleItemCompletado(item) },
-                                    onEditClick = { showEditDialog = item },
-                                    onDeleteClick = { showDeleteDialog = item },
-                                )
+                                Box(
+                                    Modifier.animateItem(
+                                        fadeInSpec = null,
+                                        fadeOutSpec = null,
+                                    ),
+                                ) {
+                                    ItemRow(
+                                        item = item,
+                                        onItemClick = { showDetailDialog = item },
+                                        onCheckClick = { viewModel.toggleItemCompletado(item) },
+                                        onEditClick = { showEditDialog = item },
+                                        onDeleteClick = { showDeleteDialog = item },
+                                    )
+                                }
                             }
                         }
                     }

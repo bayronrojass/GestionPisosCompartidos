@@ -30,7 +30,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.model.Tarea
 import es.mirumi.es.model.Usuario
@@ -44,6 +43,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import androidx.compose.foundation.lazy.items
+import androidx.lifecycle.viewmodel.compose.viewModel
+import es.mirumi.es.R
 
 @Composable
 fun TareasScreen(
@@ -407,18 +409,15 @@ fun TareasScreen(
             ),
         )
 
+    val draggableViewModelKey = if (selectedTab == 0) "Tareas" else "TareasCompletadas"
     val model: DraggableViewModel =
-        if (selectedTab == 0) {
-            viewModel<DraggableViewModel>(
-                key = "Tareas",
-                factory = DraggableViewModelFactory("Tareas", casaId),
-            )
-        } else {
-            viewModel<DraggableViewModel>(
-                key = "TareasCompletadas",
-                factory = DraggableViewModelFactory("TareasCompletadas", casaId),
-            )
-        }
+        viewModel(
+            key = draggableViewModelKey,
+            factory =
+                remember(draggableViewModelKey) {
+                    DraggableViewModelFactory(draggableViewModelKey, casaId)
+                },
+        )
 
     PizarraScreen(
         model,
