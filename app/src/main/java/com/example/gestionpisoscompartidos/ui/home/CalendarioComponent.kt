@@ -22,8 +22,10 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -42,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,6 +65,7 @@ import androidx.compose.ui.unit.sp
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryUsuario
 import com.example.gestionpisoscompartidos.model.Evento
+import com.example.gestionpisoscompartidos.model.Tarea
 import com.example.gestionpisoscompartidos.model.Usuario
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -130,6 +134,7 @@ fun CalendarioFullView(
     viewModel: HomeViewModel,
 ) {
     val context = LocalContext.current
+    val tareas by viewModel.tareasDelUsuario.collectAsState()
 
     var showCreateDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -140,7 +145,6 @@ fun CalendarioFullView(
     var startDate by remember { mutableStateOf<LocalDate?>(null) }
     var endDate by remember { mutableStateOf<LocalDate?>(null) }
 
-    // Function declarations in correct order
     fun resetDialogFields() {
         nuevoNombre = ""
         nuevaDescripcion = ""
@@ -215,7 +219,8 @@ fun CalendarioFullView(
                     .fillMaxSize()
                     .background(Color(0xFFF8F8F8))
                     .padding(padding)
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -251,32 +256,46 @@ fun CalendarioFullView(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            LazyVerticalGrid(columns = GridCells.Fixed(7)) {
-                items(daysList.size) { index ->
-                    val day = daysList[index]
-                    if (day != null) {
-                        val date = currentMonth.atDay(day)
-                        val isSelected = date.isEqual(fechaSeleccionada)
-                        val hasEvent =
-                            eventos.any {
-                                parsearFechaSegura(it.fechaInicio).isEqual(date)
-                            }
+            Box(modifier = Modifier.height(350.dp)) {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(7),
+                    userScrollEnabled = false,
+                ) {
+                    items(daysList.size) { index ->
+                        val day = daysList[index]
+                        if (day != null) {
+                            val date = currentMonth.atDay(day)
+                            val isSelected = date.isEqual(fechaSeleccionada)
+                            val hasEvent =
+                                eventos.any {
+                                    parsearFechaSegura(it.fechaInicio).isEqual(date)
+                                }
+                            val hasTarea =
+                                tareas.any {
+                                    !it.fechaFin.isNullOrEmpty() && parsearFechaSegura(it.fechaFin!!).isEqual(date)
+                                }
 
-                        Box(
-                            modifier =
-                                Modifier
-                                    .padding(4.dp)
-                                    .aspectRatio(1f)
-                                    .clip(CircleShape)
-                                    .background(if (isSelected) Color(0xfffff8cf) else Color.Transparent)
-                                    .clickable { onFechaClick(date) },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(text = day.toString())
-                                if (hasEvent) {
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .padding(4.dp)
+                                        .aspectRatio(1f)
+                                        .clip(CircleShape)
+                                        .background(if (isSelected) Color(0xfffff8cf) else Color.Transparent)
+                                        .clickable { onFechaClick(date) },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(text = day.toString())
                                     Spacer(modifier = Modifier.height(2.dp))
-                                    Box(modifier = Modifier.size(4.dp).clip(CircleShape).background(ColorRosaFuerte))
+                                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                        if (hasEvent) {
+                                            Box(modifier = Modifier.size(4.dp).clip(CircleShape).background(ColorRosaFuerte))
+                                        }
+                                        if (hasTarea) {
+                                            Box(modifier = Modifier.size(4.dp).clip(CircleShape).background(Color(0xFFDDC1FB)))
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -285,19 +304,30 @@ fun CalendarioFullView(
             }
 
             Spacer(modifier = Modifier.height(20.dp))
-            Text("Eventos", fontWeight = FontWeight.Bold)
+            Text("Agenda del Mes", fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(10.dp))
 
-            val eventosDelDiaSeleccionado =
+            // Filtramos eventos y tareas de TODO EL MES ACTUAL
+            val eventosDelMes =
                 eventos.filter {
-                    parsearFechaSegura(it.fechaInicio).isEqual(fechaSeleccionada)
+                    val fecha = parsearFechaSegura(it.fechaInicio)
+                    YearMonth.from(fecha) == currentMonth
                 }
 
-            ListaEventosDelDia(
-                eventosDelDiaSeleccionado,
-                viewModel,
+            val tareasDelMes =
+                tareas.filter {
+                    !it.fechaFin.isNullOrEmpty() && YearMonth.from(parsearFechaSegura(it.fechaFin!!)) == currentMonth
+                }
+
+            ListaAgendaDelMes(
+                eventos = eventosDelMes,
+                tareas = tareasDelMes,
+                fechaSeleccionada = fechaSeleccionada,
+                viewModel = viewModel,
                 onEditEvent = { evento -> openEditDialog(evento) },
             )
+
+            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 
@@ -521,31 +551,99 @@ fun ItemDiaCalendario(
 }
 
 @Composable
-fun ListaEventosDelDia(
+fun ListaAgendaDelMes(
     eventos: List<Evento>,
+    tareas: List<Tarea>,
+    fechaSeleccionada: LocalDate,
     viewModel: HomeViewModel,
     onEditEvent: (Evento) -> Unit,
 ) {
+    val items = (eventos + tareas)
+
+    // Agrupamos por fecha
+    val groupedItems =
+        items
+            .groupBy {
+                when (it) {
+                    is Evento -> parsearFechaSegura(it.fechaInicio)
+                    is Tarea -> parsearFechaSegura(it.fechaFin!!)
+                    else -> LocalDate.MAX
+                }
+            }.toSortedMap()
+
     Column(
         modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        if (eventos.isEmpty()) {
+        if (groupedItems.isEmpty()) {
             Text(
-                text = "No hay eventos para este día",
+                text = "No hay eventos ni tareas para este mes",
                 style = TextStyle(fontSize = 14.sp, color = Color.Gray),
                 modifier = Modifier.padding(start = 40.dp, top = 10.dp),
             )
         } else {
-            eventos.forEach { evento ->
-                ItemEventoTimeline(
-                    evento = evento,
-                    onEditEvent = { onEditEvent(evento) },
-                    onDeleteEvent = { eventId -> viewModel.eliminar(eventId) },
-                )
+            groupedItems.forEach { (fecha, listaDelDia) ->
+                // Header del día
+                val isSelectedDay = fecha.isEqual(fechaSeleccionada)
+                val fechaFormat = if (fecha.year == LocalDate.now().year) "EEEE d MMMM" else "EEEE d MMMM yyyy"
+                val titulo =
+                    if (fecha.isEqual(LocalDate.now())) {
+                        "Hoy"
+                    } else {
+                        if (fecha.isEqual(LocalDate.now().plusDays(1))) {
+                            "Mañana"
+                        } else {
+                            fecha
+                                .format(DateTimeFormatter.ofPattern(fechaFormat, Locale("es", "ES")))
+                                .replaceFirstChar { it.uppercase() }
+                        }
+                    }
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = titulo,
+                        style =
+                            TextStyle(
+                                fontSize = 16.sp,
+                                fontWeight = if (isSelectedDay) FontWeight.Bold else FontWeight.SemiBold,
+                                color = if (isSelectedDay) ColorRosaFuerte else Color.Black,
+                            ),
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+
+                    listaDelDia.forEach { item ->
+                        when (item) {
+                            is Evento -> {
+                                ItemEventoTimeline(
+                                    evento = item,
+                                    onEditEvent = { onEditEvent(item) },
+                                    onDeleteEvent = { eventId -> viewModel.eliminar(eventId) },
+                                    isHighlighted = isSelectedDay,
+                                )
+                            }
+                            is Tarea -> {
+                                ItemTareaTimeline(
+                                    tarea = item,
+                                    isHighlighted = isSelectedDay,
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
+}
+
+// Mantenemos esta función para compatibilidad pero redirigimos a la nueva lógica
+@Composable
+fun ListaEventosDelDia(
+    eventos: List<Evento>,
+    viewModel: HomeViewModel,
+    onEditEvent: (Evento) -> Unit,
+    tareas: List<Tarea> = emptyList(),
+) {
+    ListaAgendaDelMes(eventos, tareas, LocalDate.now(), viewModel, onEditEvent)
 }
 
 @Composable
@@ -553,9 +651,13 @@ fun ItemEventoTimeline(
     evento: Evento,
     onEditEvent: () -> Unit,
     onDeleteEvent: (Long) -> Unit,
+    isHighlighted: Boolean = false,
 ) {
     var usuarioCreador by remember { mutableStateOf<Usuario?>(null) }
     val coroutineScope = rememberCoroutineScope()
+
+    // Amarillo si seleccionado, Blanco si no
+    val backgroundColor = if (isHighlighted) ColorAmarilloNota else Color.White
 
     LaunchedEffect(evento.creadoPor) {
         coroutineScope.launch {
@@ -573,23 +675,24 @@ fun ItemEventoTimeline(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.width(30.dp),
         ) {
+            // Eliminamos el número de día porque ya está en el Header
             Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(ColorRosaFuerte))
         }
         Box(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
+                    .height(60.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(ColorAmarilloNota)
-                    .shadow(elevation = 4.dp, shape = RoundedCornerShape(10.dp))
+                    .background(backgroundColor)
+                    .shadow(elevation = if (isHighlighted) 4.dp else 1.dp, shape = RoundedCornerShape(10.dp))
                     .padding(horizontal = 15.dp),
             contentAlignment = Alignment.CenterStart,
         ) {
             Column {
                 Text(text = evento.nombre, style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.Black))
                 if (!evento.descripcion.isNullOrBlank()) {
-                    Text(text = evento.descripcion, style = TextStyle(fontSize = 12.sp, color = Color.Gray))
+                    Text(text = evento.descripcion, style = TextStyle(fontSize = 12.sp, color = Color.Gray), maxLines = 1)
                 }
                 Text(
                     text = "Creado Por: ${usuarioCreador?.nombre ?: "Cargando..."}",
@@ -620,61 +723,69 @@ fun ItemEventoTimeline(
 }
 
 @Composable
+fun ItemTareaTimeline(
+    tarea: Tarea,
+    isHighlighted: Boolean = false,
+) {
+    val (colorPrioridad, colorTexto) =
+        when (tarea.prioridad) {
+            "Alta" -> Pair(Color(0xFFFF6490), Color(0xFF581327))
+            "Media" -> Pair(Color(0xFFDDC1FB), Color(0xFF5D427A))
+            else -> Pair(Color(0xFFA9E6A8), Color(0xFF2D5C2C))
+        }
+
+    val backgroundColor = if (isHighlighted) ColorAmarilloNota else Color.White
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.width(30.dp),
+        ) {
+            // Eliminamos el número de día porque ya está en el Header
+            Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(colorPrioridad))
+        }
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(60.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(backgroundColor)
+                    .border(BorderStroke(1.dp, colorPrioridad), RoundedCornerShape(10.dp))
+                    .shadow(elevation = if (isHighlighted) 4.dp else 1.dp, shape = RoundedCornerShape(10.dp))
+                    .padding(horizontal = 15.dp),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            Column {
+                Text(text = tarea.nombre, style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.Black))
+                Text(
+                    text = "Asignado a: ${tarea.asignadoA?.nombre ?: "Sin asignar"}",
+                    style = TextStyle(fontSize = 12.sp, color = Color.Gray),
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun ListaEventosAgrupados(
     eventos: List<Evento>,
     viewModel: HomeViewModel,
     onEditEvent: (Evento) -> Unit,
 ) {
-    val eventosPorFecha =
-        eventos.groupBy {
-            try {
-                LocalDate.parse(it.fechaInicio.take(10))
-            } catch (e: Exception) {
-                LocalDate.now()
-            }
-        }
+    val eventosPorFecha = eventos.groupBy { parsearFechaSegura(it.fechaInicio) }
 
     Column(
         modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        if (eventos.isEmpty()) {
-            Text(
-                text = "No hay más eventos esta semana",
-                style = TextStyle(fontSize = 14.sp, color = Color.Gray),
-                modifier = Modifier.padding(start = 40.dp, top = 10.dp),
-            )
-        } else {
-            eventosPorFecha.forEach { (fecha, lista) ->
-
-                val tituloCabecera =
-                    when {
-                        fecha.isEqual(LocalDate.now()) -> "Hoy"
-                        fecha.isEqual(LocalDate.now().plusDays(1)) -> "Mañana"
-                        else -> {
-                            val diaSemana =
-                                fecha.dayOfWeek
-                                    .getDisplayName(java.time.format.TextStyle.SHORT, Locale("es", "ES"))
-                                    .replace(".", "")
-                                    .replaceFirstChar { it.uppercase() }
-                            val diaMes = fecha.dayOfMonth
-                            "$diaSemana $diaMes"
-                        }
-                    }
-
-                Text(
-                    text = tituloCabecera,
-                    style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black),
-                    modifier = Modifier.padding(top = 8.dp),
+        eventosPorFecha.forEach { (_, lista) ->
+            lista.forEach { evento ->
+                ItemEventoTimeline(
+                    evento = evento,
+                    onEditEvent = { onEditEvent(evento) },
+                    onDeleteEvent = { viewModel.eliminar(it) },
                 )
-
-                lista.forEach { evento ->
-                    ItemEventoTimeline(
-                        evento = evento,
-                        onEditEvent = { onEditEvent(evento) },
-                        onDeleteEvent = { eventId -> viewModel.eliminar(eventId) },
-                    )
-                }
             }
         }
     }

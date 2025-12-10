@@ -1,19 +1,23 @@
 package com.example.gestionpisoscompartidos.ui.listas
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,6 +27,8 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,6 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -44,10 +51,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gestionpisoscompartidos.model.Lista
 import com.example.gestionpisoscompartidos.ui.pizarra.postits.DraggableViewModel
@@ -67,7 +75,8 @@ fun ListaScreen(
     val isLoading by viewModel.isLoading.observeAsState()
     val error by viewModel.error.observeAsState()
 
-    // Estados locales para diálogos
+    // Estados locales
+    var selectedTab by remember { mutableIntStateOf(0) } // 0: Mis listas, 1: Compartidas
     var showCreateDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf<Lista?>(null) }
     var createListName by remember { mutableStateOf("") }
@@ -87,29 +96,91 @@ fun ListaScreen(
         }
     }
 
-    Scaffold { paddingValues ->
-        Column(
+    // Filtrar listas según la pestaña seleccionada
+    val filteredListas =
+        when (selectedTab) {
+            0 -> listas?.filter { it.nombre !in listOf("Cena del sábado 1") } ?: emptyList()
+            1 -> listas?.filter { it.nombre in listOf("Cena del sábado 1") } ?: emptyList()
+            else -> emptyList()
+        }
+
+    Scaffold(
+        containerColor = Color(0xfff8f8f8),
+    ) { paddingValues ->
+        Box(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(color = Color(0xfff8f8f8))
                     .padding(paddingValues)
-                    .padding(horizontal = 20.dp),
+                    .background(Color(0xfff8f8f8)),
         ) {
-            Spacer(modifier = Modifier.height(63.dp))
-
-            ScreenHeader(title = "Listas")
-
-            Spacer(modifier = Modifier.height(80.dp))
-
-            TabSelector(
-                selectedTab = 0,
-                onTabSelected = { /* TODO: Implementar cambio de tab */ },
-                modifier = Modifier.fillMaxWidth(),
+            // Título
+            Text(
+                text = "Listas",
+                color = Color.Black,
+                style = MaterialTheme.typography.displaySmall,
+                modifier =
+                    Modifier
+                        .align(Alignment.TopStart)
+                        .offset(x = 20.dp, y = 25.dp),
             )
 
-            Spacer(modifier = Modifier.height(33.dp))
+            // Selector de pestañas
+            Box(
+                modifier =
+                    Modifier
+                        .align(Alignment.TopStart)
+                        .offset(x = 65.dp, y = 105.dp)
+                        .requiredWidth(width = 260.dp)
+                        .requiredHeight(height = 24.dp),
+            ) {
+                // Fondo blanco
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(26.dp))
+                            .background(Color.White)
+                            .shadow(4.dp, RoundedCornerShape(26.dp)),
+                )
 
+                // Fondo morado (Selector)
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth(0.5f)
+                            .fillMaxHeight()
+                            .align(if (selectedTab == 0) Alignment.CenterStart else Alignment.CenterEnd)
+                            .clip(RoundedCornerShape(26.dp))
+                            .background(Color(0xffddc1fb)),
+                )
+
+                // Textos
+                Text(
+                    text = "Mis listas",
+                    color = Color.Black,
+                    style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
+                    modifier =
+                        Modifier
+                            .align(Alignment.CenterStart)
+                            .offset(x = 22.dp)
+                            .clickable { selectedTab = 0 }
+                            .padding(horizontal = 10.dp, vertical = 2.dp),
+                )
+                Text(
+                    text = "Compartidas",
+                    color = Color.Black,
+                    style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
+                    modifier =
+                        Modifier
+                            .align(Alignment.CenterEnd)
+                            .offset(x = (-22).dp)
+                            .clickable { selectedTab = 1 }
+                            .padding(horizontal = 10.dp, vertical = 2.dp),
+                )
+            }
+
+            // Contenido principal - Listas
             when {
                 isLoading == true -> {
                     Box(
@@ -119,32 +190,52 @@ fun ListaScreen(
                         CircularProgressIndicator()
                     }
                 }
-                listas?.isEmpty() != false -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = "No hay listas creadas",
-                            color = Color.Gray,
-                        )
-                    }
+                filteredListas.isEmpty() -> {
+                    Text(
+                        text = "No tienes más listas",
+                        color = Color.Black,
+                        fontSize = 14.sp,
+                        modifier =
+                            Modifier
+                                .align(Alignment.TopCenter)
+                                .offset(y = 400.dp),
+                    )
                 }
                 else -> {
                     LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(20.dp),
+                        modifier =
+                            Modifier
+                                .align(Alignment.TopStart)
+                                .offset(y = 160.dp)
+                                .fillMaxSize()
+                                .padding(horizontal = 20.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        contentPadding = PaddingValues(bottom = 150.dp),
                     ) {
-                        val currentListas = listas ?: emptyList()
+                        items(filteredListas.size) { index ->
+                            val lista = filteredListas[index]
+                            val dateText =
+                                when (lista.nombre) {
+                                    "Compra semanal" -> "Editada el 11 de Nov"
+                                    "Compra Ikea" -> "Creada el 13 de Nov"
+                                    "Limpieza" -> "Creada el 13 de Nov"
+                                    "Cosas hamster" -> "Creada el 13 de Nov"
+                                    "Galletas caseras" -> "Editada el 23 de Oct"
+                                    "Cena del sábado 1" -> "Creada el 13 de Nov"
+                                    else -> "Creada el NA"
+                                }
 
-                        items(
-                            count = currentListas.size,
-                            key = { index -> currentListas[index].id }, // Usar ID como key única
-                        ) { index ->
-                            val lista = currentListas[index]
-                            ShoppingListItem(
+                            val participantCount =
+                                when (lista.nombre) {
+                                    "Compra Ikea" -> 1
+                                    "Cena del sábado 1" -> 3
+                                    else -> -1
+                                }
+
+                            ShoppingListItemCard(
                                 title = lista.nombre,
-                                date = "Creada el NA",
-                                participantCount = -1,
+                                date = dateText,
+                                participantCount = participantCount,
                                 onItemClick = { onNavigateToItem(lista.id, lista.nombre) },
                                 onDeleteClick = { showDeleteDialog = lista },
                                 modifier = Modifier.fillMaxWidth(),
@@ -156,6 +247,7 @@ fun ListaScreen(
         }
     }
 
+    // Configuración del FAB y pizarra
     val pizarraFabActions =
         listOf(
             FabActionItem(
@@ -261,9 +353,9 @@ fun ListaScreen(
     }
 }
 
-// ShoppingListItem actualizado con callbacks
+// ShoppingListItem usando Card como las tareas
 @Composable
-private fun ShoppingListItem(
+fun ShoppingListItemCard(
     title: String,
     date: String,
     participantCount: Int,
@@ -271,49 +363,57 @@ private fun ShoppingListItem(
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier =
-            modifier
-                .height(80.dp)
-                .clip(RoundedCornerShape(15.dp))
-                .background(Color.White)
-                .shadow(elevation = 4.dp, shape = RoundedCornerShape(15.dp))
-                .clickable { onItemClick() }
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+    Card(
+        colors =
+            CardDefaults.cardColors(
+                containerColor = Color.White,
+            ),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation = 4.dp, // Sombra sutil como las tareas
+            ),
+        shape = RoundedCornerShape(15.dp),
+        modifier = modifier.clickable(onClick = onItemClick),
     ) {
         Row(
-            modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(all = 20.dp),
         ) {
             // Información de la lista
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center,
+                verticalArrangement = Arrangement.spacedBy(7.dp),
             ) {
                 Text(
                     text = title,
                     color = Color.Black,
                     style =
-                        MaterialTheme.typography.titleMedium.copy(
+                        TextStyle(
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Medium,
                         ),
                 )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
                 Text(
                     text = date,
                     color = Color(0xff6c6c6c),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = TextStyle(fontSize = 13.sp),
                 )
             }
 
             // Avatares de participantes y botón de eliminar
             Row(
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                ParticipantAvatars(count = participantCount)
-                Spacer(modifier = Modifier.width(8.dp))
+                // Mostrar avatares solo si hay participantes
+                if (participantCount > 0) {
+                    ParticipantAvatars(count = participantCount)
+                }
+
+                // Botón de eliminar
                 IconButton(
                     onClick = onDeleteClick,
                     modifier = Modifier.size(24.dp),
@@ -329,131 +429,30 @@ private fun ShoppingListItem(
     }
 }
 
-// Header actualizado con acciones reales (puedes personalizar)
+// Componente para los avatares de participantes - Mejorado
 @Composable
-private fun ScreenHeader(
-    title: String,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = title,
-            color = Color.Black,
-            style = MaterialTheme.typography.displaySmall,
-        )
-
-        Row {
-            IconButton(onClick = { /* TODO: Acción 1 */ }) {
-                Box(
-                    modifier =
-                        Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color.LightGray),
-                )
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            IconButton(onClick = { /* TODO: Acción 2 */ }) {
-                Box(
-                    modifier =
-                        Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color.LightGray),
-                )
-            }
-        }
-    }
-}
-
-// Componente para el selector de pestañas
-@Composable
-private fun TabSelector(
-    selectedTab: Int,
-    onTabSelected: (Int) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier =
-            modifier
-                .height(24.dp)
-                .clip(RoundedCornerShape(26.dp))
-                .background(Color.White)
-                .shadow(elevation = 4.dp, shape = RoundedCornerShape(26.dp)),
-    ) {
-        // Fondo del tab seleccionado
-        Box(
-            modifier =
-                Modifier
-                    .align(Alignment.CenterStart)
-                    .width(130.dp)
-                    .height(24.dp)
-                    .clip(RoundedCornerShape(26.dp))
-                    .background(Color(0xffddc1fb)),
-        )
-
-        Row(modifier = Modifier.fillMaxSize()) {
-            TabOption(
-                text = "Mis listas",
-                isSelected = selectedTab == 0,
-                onClick = { onTabSelected(0) },
-                modifier = Modifier.weight(1f),
-            )
-
-            TabOption(
-                text = "Compartidas",
-                isSelected = selectedTab == 1,
-                onClick = { onTabSelected(1) },
-                modifier = Modifier.weight(1f),
-            )
-        }
-    }
-}
-
-// Componente para cada opción del tab
-@Composable
-private fun TabOption(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .clip(RoundedCornerShape(26.dp)),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = text,
-            color = if (isSelected) Color.White else Color.Black,
-            textAlign = TextAlign.Center,
-            style =
-                MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.Medium,
-                ),
-        )
-    }
-}
-
-// Componente para los avatares de participantes
-@Composable
-private fun ParticipantAvatars(count: Int) {
+fun ParticipantAvatars(count: Int) {
     Row {
-        repeat(count) { index ->
-            // Avatar placeholder
+        val avatarColors =
+            listOf(
+                Color(0xFFE57373), // Rojo claro
+                Color(0xFF81C784), // Verde claro
+                Color(0xFF64B5F6), // Azul claro
+                Color(0xFFBA68C8), // Púrpura claro
+            )
+
+        repeat(minOf(count, avatarColors.size)) { index ->
             Box(
                 modifier =
                     Modifier
                         .size(30.dp)
                         .clip(CircleShape)
-                        .background(Color.Gray.copy(alpha = 0.3f))
-                        .then(
+                        .background(avatarColors[index])
+                        .border(
+                            width = 2.dp,
+                            color = Color.White,
+                            shape = CircleShape,
+                        ).then(
                             if (index > 0) {
                                 Modifier.offset(x = (-8 * index).dp)
                             } else {
@@ -465,7 +464,7 @@ private fun ParticipantAvatars(count: Int) {
     }
 }
 
-@Preview(widthDp = 390, heightDp = 1165)
+@Preview(widthDp = 390, heightDp = 844)
 @Composable
 private fun ShoppingListScreenPreview() {
     ListaScreen(viewModel(), { _, _ -> }, 0)

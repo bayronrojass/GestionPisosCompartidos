@@ -1,5 +1,6 @@
 package com.example.gestionpisoscompartidos.ui.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
@@ -39,6 +41,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gestionpisoscompartidos.R
 import com.example.gestionpisoscompartidos.data.SessionManager
@@ -48,6 +51,7 @@ import com.example.gestionpisoscompartidos.ui.eventos.EventosViewModel
 import com.example.gestionpisoscompartidos.ui.gastos.GastosScreen
 import com.example.gestionpisoscompartidos.ui.gastos.GastosViewModel
 import com.example.gestionpisoscompartidos.ui.gastos.GastosViewModelFactory
+import com.example.gestionpisoscompartidos.ui.home.CalendarioFullView
 import com.example.gestionpisoscompartidos.ui.home.HomeScreen
 import com.example.gestionpisoscompartidos.ui.home.HomeViewModel
 import com.example.gestionpisoscompartidos.ui.home.HomeViewModelFactory
@@ -191,6 +195,7 @@ fun MainScreenWithNavigation(
     onLogout: (String) -> Unit,
 ) {
     var selectedTab by remember { mutableIntStateOf(2) }
+    var showCalendar by remember { mutableStateOf(false) }
     val savedStateHandle = rememberSaveableStateHolder()
     val context = LocalContext.current.applicationContext
 
@@ -227,30 +232,51 @@ fun MainScreenWithNavigation(
             factory = GastosViewModelFactory(repositoryCasa, sessionManager, casaId),
         )
 
-    Scaffold(
-        bottomBar = {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 20.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                NavigationBar(
-                    selectedTab = selectedTab,
-                    onTabSelected = { selectedTab = it },
-                )
-            }
-        },
-    ) { padding ->
-        Box(modifier = Modifier.padding(padding)) {
-            savedStateHandle.SaveableStateProvider(selectedTab) {
-                when (selectedTab) {
-                    0 -> GastosScreen(viewModel = gastosViewModel, casaId = casaId)
-                    1 -> TareasScreen(tareasViewModel, casaNombre, casaId = casaId)
-                    2 -> HomeScreen(viewModel = homeViewModel, casaId = casaId)
-                    3 -> ListaScreen(listaViewModel, onNavigateToItem, casaId = casaId)
-                    4 -> PerfilScreen(sessionManager, onLogout)
+    if (showCalendar) {
+        val fechaSeleccionada by homeViewModel.fechaSeleccionada.collectAsStateWithLifecycle()
+        val eventos by homeViewModel.eventos.collectAsStateWithLifecycle()
+
+        // Manejar el botón "Atrás" del sistema para volver a la pantalla principal
+        BackHandler { showCalendar = false }
+
+        CalendarioFullView(
+            fechaSeleccionada = fechaSeleccionada,
+            eventos = eventos,
+            onFechaClick = { homeViewModel.seleccionarFecha(it) },
+            onBackClick = { showCalendar = false },
+            viewModel = homeViewModel,
+        )
+    } else {
+        Scaffold(
+            bottomBar = {
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 20.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    NavigationBar(
+                        selectedTab = selectedTab,
+                        onTabSelected = { selectedTab = it },
+                    )
+                }
+            },
+        ) { padding ->
+            Box(modifier = Modifier.padding(padding)) {
+                savedStateHandle.SaveableStateProvider(selectedTab) {
+                    when (selectedTab) {
+                        0 -> GastosScreen(viewModel = gastosViewModel, casaId = casaId)
+                        1 -> TareasScreen(tareasViewModel, casaNombre, casaId = casaId)
+                        2 ->
+                            HomeScreen(
+                                viewModel = homeViewModel,
+                                casaId = casaId,
+                                onVistaMensualClick = { showCalendar = true },
+                            )
+                        3 -> ListaScreen(listaViewModel, onNavigateToItem, casaId = casaId)
+                        4 -> PerfilScreen(sessionManager, onLogout)
+                    }
                 }
             }
         }
