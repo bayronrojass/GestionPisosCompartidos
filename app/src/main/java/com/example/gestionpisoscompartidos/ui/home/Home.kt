@@ -1,6 +1,8 @@
 package com.example.gestionpisoscompartidos.ui.home
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.NoteAdd
@@ -41,6 +44,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gestionpisoscompartidos.R
+import com.example.gestionpisoscompartidos.model.Evento
+import com.example.gestionpisoscompartidos.model.Tarea
 import com.example.gestionpisoscompartidos.ui.pizarra.postits.DraggableViewModel
 import com.example.gestionpisoscompartidos.ui.pizarra.postits.DraggableViewModelFactory
 import com.example.gestionpisoscompartidos.ui.pizarra.postits.PizarraScreen
@@ -49,16 +54,23 @@ import com.example.gestionpisoscompartidos.ui.utils.FabActionType
 import java.time.LocalDate
 import java.time.LocalDateTime
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
     casaId: Long,
     viewModel: HomeViewModel,
+    onVistaMensualClick: () -> Unit, // Nuevo parámetro para navegación
 ) {
     val userName by viewModel.userName.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoadingUser.collectAsStateWithLifecycle()
     val houseName by viewModel.currentHouse.collectAsStateWithLifecycle()
     val selectedDate by viewModel.fechaSeleccionada.collectAsStateWithLifecycle()
+
+    // Obtenemos eventos y tareas para los indicadores
+    val eventos by viewModel.eventos.collectAsStateWithLifecycle()
+    val tareas by viewModel.tareasDelUsuario.collectAsStateWithLifecycle()
+
     val next7days = viewModel.next7days()
 
     LaunchedEffect(Unit) {
@@ -90,6 +102,9 @@ fun HomeScreen(
                 selectedDate = selectedDate,
                 onDateSelected = { date -> viewModel.seleccionarFecha(date) },
                 viewModel = viewModel,
+                onVistaMensualClick = onVistaMensualClick,
+                eventos = eventos,
+                tareas = tareas,
             )
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -220,6 +235,9 @@ fun CalendarSection(
     selectedDate: LocalDate? = null,
     onDateSelected: (LocalDate) -> Unit,
     viewModel: HomeViewModel,
+    onVistaMensualClick: () -> Unit,
+    eventos: List<Evento>,
+    tareas: List<Tarea>,
 ) {
     Column(
         modifier =
@@ -257,6 +275,7 @@ fun CalendarSection(
                 color = Color(0xff6c6c6c),
                 textDecoration = TextDecoration.Underline,
                 style = TextStyle(fontSize = 14.sp),
+                modifier = Modifier.clickable { onVistaMensualClick() }, // Navegación activada
             )
         }
 
@@ -267,13 +286,23 @@ fun CalendarSection(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             list.forEachIndexed { index, ldt ->
-                val isSelected = selectedDate?.let { it == ldt.toLocalDate() } ?: false
+                val date = ldt.toLocalDate()
+                val isSelected = selectedDate?.let { it == date } ?: false
+
+                // Comprobamos si hay evento o tarea para este día
+                val hasMarker =
+                    remember(eventos, tareas, date) {
+                        eventos.any { viewModel.parseFechaSegura(it.fechaInicio).isEqual(date) } ||
+                            tareas.any { !it.fechaFin.isNullOrEmpty() && viewModel.parseFechaSegura(it.fechaFin!!).isEqual(date) }
+                    }
+
                 DayItem(
                     day = ldt.dayOfMonth.toString(),
                     dayName = viewModel.diasTraducidos(ldt.dayOfWeek),
                     isToday = index == 0,
                     isSelected = isSelected,
-                    onClick = { onDateSelected(ldt.toLocalDate()) },
+                    hasMarker = hasMarker,
+                    onClick = { onDateSelected(date) },
                 )
             }
         }
@@ -286,6 +315,7 @@ fun DayItem(
     dayName: String,
     isToday: Boolean = false,
     isSelected: Boolean = false,
+    hasMarker: Boolean = false, // Nuevo parámetro
     onClick: () -> Unit,
 ) {
     Column(
@@ -319,6 +349,18 @@ fun DayItem(
                     text = dayName,
                     style = TextStyle(fontSize = 12.sp),
                 )
+
+                // Indicador de evento/tarea (punto rojo dentro de la tarjeta)
+                if (hasMarker) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Box(
+                        modifier =
+                            Modifier
+                                .size(4.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xffff5686)),
+                    )
+                }
             }
         }
 

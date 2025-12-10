@@ -42,6 +42,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,6 +63,7 @@ import androidx.compose.ui.unit.sp
 import com.example.gestionpisoscompartidos.data.remote.NetworkModule
 import com.example.gestionpisoscompartidos.data.repository.repositories.RepositoryUsuario
 import com.example.gestionpisoscompartidos.model.Evento
+import com.example.gestionpisoscompartidos.model.Tarea
 import com.example.gestionpisoscompartidos.model.Usuario
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -130,6 +132,7 @@ fun CalendarioFullView(
     viewModel: HomeViewModel,
 ) {
     val context = LocalContext.current
+    val tareas by viewModel.tareasDelUsuario.collectAsState()
 
     var showCreateDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -261,6 +264,10 @@ fun CalendarioFullView(
                             eventos.any {
                                 parsearFechaSegura(it.fechaInicio).isEqual(date)
                             }
+                        val hasTarea =
+                            tareas.any {
+                                !it.fechaFin.isNullOrEmpty() && parsearFechaSegura(it.fechaFin!!).isEqual(date)
+                            }
 
                         Box(
                             modifier =
@@ -274,9 +281,14 @@ fun CalendarioFullView(
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(text = day.toString())
-                                if (hasEvent) {
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Box(modifier = Modifier.size(4.dp).clip(CircleShape).background(ColorRosaFuerte))
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    if (hasEvent) {
+                                        Box(modifier = Modifier.size(4.dp).clip(CircleShape).background(ColorRosaFuerte))
+                                    }
+                                    if (hasTarea) {
+                                        Box(modifier = Modifier.size(4.dp).clip(CircleShape).background(Color(0xFFDDC1FB)))
+                                    }
                                 }
                             }
                         }
@@ -285,7 +297,7 @@ fun CalendarioFullView(
             }
 
             Spacer(modifier = Modifier.height(20.dp))
-            Text("Eventos", fontWeight = FontWeight.Bold)
+            Text("Agenda", fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(10.dp))
 
             val eventosDelDiaSeleccionado =
@@ -293,10 +305,16 @@ fun CalendarioFullView(
                     parsearFechaSegura(it.fechaInicio).isEqual(fechaSeleccionada)
                 }
 
+            val tareasDelDiaSeleccionado =
+                tareas.filter {
+                    !it.fechaFin.isNullOrEmpty() && parsearFechaSegura(it.fechaFin!!).isEqual(fechaSeleccionada)
+                }
+
             ListaEventosDelDia(
                 eventosDelDiaSeleccionado,
                 viewModel,
                 onEditEvent = { evento -> openEditDialog(evento) },
+                tareas = tareasDelDiaSeleccionado,
             )
         }
     }
@@ -525,14 +543,15 @@ fun ListaEventosDelDia(
     eventos: List<Evento>,
     viewModel: HomeViewModel,
     onEditEvent: (Evento) -> Unit,
+    tareas: List<Tarea> = emptyList(), // Parámetro opcional para compatibilidad
 ) {
     Column(
         modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        if (eventos.isEmpty()) {
+        if (eventos.isEmpty() && tareas.isEmpty()) {
             Text(
-                text = "No hay eventos para este día",
+                text = "No hay eventos ni tareas para este día",
                 style = TextStyle(fontSize = 14.sp, color = Color.Gray),
                 modifier = Modifier.padding(start = 40.dp, top = 10.dp),
             )
@@ -543,6 +562,9 @@ fun ListaEventosDelDia(
                     onEditEvent = { onEditEvent(evento) },
                     onDeleteEvent = { eventId -> viewModel.eliminar(eventId) },
                 )
+            }
+            tareas.forEach { tarea ->
+                ItemTareaTimeline(tarea = tarea)
             }
         }
     }
@@ -614,6 +636,45 @@ fun ItemEventoTimeline(
                 ) {
                     Icon(Icons.Filled.Delete, contentDescription = "Eliminar", modifier = Modifier.size(18.dp))
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun ItemTareaTimeline(tarea: Tarea) {
+    val (colorFondo, colorTexto) =
+        when (tarea.prioridad) {
+            "Alta" -> Pair(Color(0xFFFF6490), Color(0xFF581327))
+            "Media" -> Pair(Color(0xFFDDC1FB), Color(0xFF5D427A))
+            else -> Pair(Color(0xFFA9E6A8), Color(0xFF2D5C2C))
+        }
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.width(30.dp),
+        ) {
+            Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(colorFondo))
+        }
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color.White)
+                    .border(BorderStroke(1.dp, colorFondo), RoundedCornerShape(10.dp))
+                    .shadow(elevation = 4.dp, shape = RoundedCornerShape(10.dp))
+                    .padding(horizontal = 15.dp),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            Column {
+                Text(text = tarea.nombre, style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.Black))
+                Text(
+                    text = "Asignado a: ${tarea.asignadoA?.nombre ?: "Sin asignar"}",
+                    style = TextStyle(fontSize = 12.sp, color = Color.Gray),
+                )
             }
         }
     }
