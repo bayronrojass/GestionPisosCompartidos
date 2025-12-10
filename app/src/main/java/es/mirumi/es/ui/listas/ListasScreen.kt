@@ -263,10 +263,11 @@ fun ListaScreen(
                 action = FabActionType.CREAR_LISTA,
             ),
         )
-    val model = viewModel<DraggableViewModel>(
-        key = "Lista",
-        factory = DraggableViewModelFactory("Lista", casaId)
-    )
+    val model =
+        viewModel<DraggableViewModel>(
+            key = "Lista",
+            factory = DraggableViewModelFactory("Lista", casaId),
+        )
 
     PizarraScreen(
         model,
@@ -459,8 +460,7 @@ fun ParticipantAvatars(count: Int) {
                             width = 2.dp,
                             color = Color.White,
                             shape = CircleShape,
-                        )
-                        .then(
+                        ).then(
                             if (index > 0) {
                                 Modifier.offset(x = (-8 * index).dp)
                             } else {

@@ -266,10 +266,12 @@ fun CrearCasaScreen(viewModel: CrearCasaViewModel = viewModel()) {
                     scope.launch {
                         val success = viewModel.crearCasa()
                         if (success) {
-                            Toast.makeText(context, "Casa creada con éxito", Toast.LENGTH_SHORT)
+                            Toast
+                                .makeText(context, "Casa creada con éxito", Toast.LENGTH_SHORT)
                                 .show()
                         } else {
-                            Toast.makeText(context, "Error al crear un piso", Toast.LENGTH_SHORT)
+                            Toast
+                                .makeText(context, "Error al crear un piso", Toast.LENGTH_SHORT)
                                 .show()
                         }
                     }

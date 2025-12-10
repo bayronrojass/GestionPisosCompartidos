@@ -162,7 +162,8 @@ class Item : Fragment() {
                 if (nombre.isNotBlank()) {
                     viewModel.crearElemento(nombre, descripcion)
                 } else {
-                    Toast.makeText(context, "El nombre no puede estar vacío", Toast.LENGTH_SHORT)
+                    Toast
+                        .makeText(context, "El nombre no puede estar vacío", Toast.LENGTH_SHORT)
                         .show()
                 }
                 dialog.dismiss()
@@ -211,7 +212,8 @@ class Item : Fragment() {
                 if (nombre.isNotBlank()) {
                     viewModel.actualizarNombreDescripcion(item, nombre, descripcion)
                 } else {
-                    Toast.makeText(context, "El nombre no puede estar vacío", Toast.LENGTH_SHORT)
+                    Toast
+                        .makeText(context, "El nombre no puede estar vacío", Toast.LENGTH_SHORT)
                         .show()
                 }
                 dialog.dismiss()

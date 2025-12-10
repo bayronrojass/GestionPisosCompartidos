@@ -87,7 +87,7 @@ class PizarraViewModel(
                             is ApiResult.Error -> {
                                 Log.e(
                                     "PizarraViewModel",
-                                    "Error loading: ${result.message} ${result.code} $lienzoId"
+                                    "Error loading: ${result.message} ${result.code} $lienzoId",
                                 )
                             }
 
@@ -137,7 +137,7 @@ class PizarraViewModel(
                             is ApiResult.Throws -> {
                                 Log.e(
                                     "PizarraViewModel",
-                                    "Throwed loading: ${result.exception.message}"
+                                    "Throwed loading: ${result.exception.message}",
                                 )
                             }
                         }
@@ -147,7 +147,7 @@ class PizarraViewModel(
                 is ApiResult.Throws -> {
                     Log.e(
                         "PizarraViewModel",
-                        "Throwed checking updates: ${check.exception.message}"
+                        "Throwed checking updates: ${check.exception.message}",
                     )
                 }
             }

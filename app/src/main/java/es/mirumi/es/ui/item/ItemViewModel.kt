@@ -69,11 +69,12 @@ class ItemViewModel(
         _error.value = null
         viewModelScope.launch {
             val estadoNuevo = !elemento.completado
-            val request = ElementoRequest(
-                nombre = elemento.nombre,
-                descripcion = null,
-                completado = estadoNuevo
-            )
+            val request =
+                ElementoRequest(
+                    nombre = elemento.nombre,
+                    descripcion = null,
+                    completado = estadoNuevo,
+                )
             try {
                 if (elemento.id != null) {
                     repository.actualizarElemento(elemento.id, request)

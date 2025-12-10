@@ -54,8 +54,7 @@ fun TareasCompletadas(modifier: Modifier = Modifier) {
                     .offset(
                         x = 27.dp,
                         y = 4.dp,
-                    )
-                    .fillMaxSize(),
+                    ).fillMaxSize(),
             // .requiredHeight(height = 40.dp),
         ) {
         }
@@ -78,8 +77,7 @@ fun TareasCompletadas(modifier: Modifier = Modifier) {
                     .offset(
                         x = 65.dp,
                         y = 143.dp,
-                    )
-                    .requiredWidth(width = 260.dp)
+                    ).requiredWidth(width = 260.dp)
                     .requiredHeight(height = 24.dp),
         ) {
             Box(
@@ -89,16 +87,14 @@ fun TareasCompletadas(modifier: Modifier = Modifier) {
                         .offset(
                             x = 0.dp,
                             y = 0.dp,
-                        )
-                        .requiredWidth(width = 260.dp)
+                        ).requiredWidth(width = 260.dp)
                         .requiredHeight(height = 24.dp)
                         .clip(shape = RoundedCornerShape(26.dp))
                         .background(color = Color.White)
                         .border(
                             border = BorderStroke(3.dp, Color.White),
                             shape = RoundedCornerShape(26.dp),
-                        )
-                        .shadow(
+                        ).shadow(
                             elevation = 4.dp,
                             shape = RoundedCornerShape(26.dp),
                         ),
@@ -110,8 +106,7 @@ fun TareasCompletadas(modifier: Modifier = Modifier) {
                         .offset(
                             x = 65.dp,
                             y = 0.dp,
-                        )
-                        .requiredWidth(width = 130.dp)
+                        ).requiredWidth(width = 130.dp)
                         .requiredHeight(height = 24.dp)
                         .clip(shape = RoundedCornerShape(26.dp))
                         .background(color = Color(0xffddc1fb)),
@@ -130,8 +125,7 @@ fun TareasCompletadas(modifier: Modifier = Modifier) {
                         .offset(
                             x = 22.dp,
                             y = 2.09.dp,
-                        )
-                        .requiredWidth(width = 86.dp)
+                        ).requiredWidth(width = 86.dp)
                         .requiredHeight(height = 20.dp),
             )
             Text(
@@ -148,8 +142,7 @@ fun TareasCompletadas(modifier: Modifier = Modifier) {
                         .offset(
                             x = 144.dp,
                             y = 2.09.dp,
-                        )
-                        .requiredWidth(width = 102.dp)
+                        ).requiredWidth(width = 102.dp)
                         .requiredHeight(height = 20.dp),
             )
         }
@@ -166,8 +159,7 @@ fun TareasCompletadas(modifier: Modifier = Modifier) {
                     .offset(
                         x = 20.dp,
                         y = 200.dp,
-                    )
-                    .requiredWidth(width = 198.dp)
+                    ).requiredWidth(width = 198.dp)
                     .requiredHeight(height = 20.dp),
         )
         TareaHecha(
@@ -219,8 +211,7 @@ fun TareasCompletadas(modifier: Modifier = Modifier) {
                     .offset(
                         x = 20.dp,
                         y = 700.dp,
-                    )
-                    .requiredWidth(width = 198.dp)
+                    ).requiredWidth(width = 198.dp)
                     .requiredHeight(height = 20.dp),
         )
         Property2Default(
@@ -285,8 +276,7 @@ fun TareaHecha(modifier: Modifier = Modifier) {
                     end = 20.dp,
                     top = 17.dp,
                     bottom = 20.dp,
-                )
-                .shadow(
+                ).shadow(
                     elevation = 4.dp,
                     shape = RoundedCornerShape(15.dp),
                 ),
@@ -353,8 +343,7 @@ fun HechoPor(modifier: Modifier = Modifier) {
                 .border(
                     border = BorderStroke(1.dp, Color(0xff939393)),
                     shape = RoundedCornerShape(20.dp),
-                )
-                .padding(
+                ).padding(
                     start = 2.dp,
                     end = 14.dp,
                     top = 2.dp,
@@ -458,8 +447,7 @@ fun Property2cerrado(modifier: Modifier = Modifier) {
                     .offset(
                         x = 0.dp,
                         y = 110.dp,
-                    )
-                    .requiredWidth(width = 60.dp)
+                    ).requiredWidth(width = 60.dp)
                     .requiredHeight(height = 60.dp)
                     .clip(shape = RoundedCornerShape(30.dp))
                     .rotate(degrees = 180f)
@@ -501,8 +489,7 @@ fun Property2Default(modifier: Modifier = Modifier) {
                     end = 10.dp,
                     top = 18.dp,
                     bottom = 18.dp,
-                )
-                .shadow(
+                ).shadow(
                     elevation = 4.dp,
                     shape = RoundedCornerShape(15.dp),
                 ),

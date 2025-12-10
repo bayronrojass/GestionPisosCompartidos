@@ -119,7 +119,7 @@ fun EventosScreen(viewModel: EventosViewModel) {
                             set(
                                 startDate!!.year,
                                 startDate!!.monthValue - 1,
-                                startDate!!.dayOfMonth
+                                startDate!!.dayOfMonth,
                             )
                         }
                     datePicker.minDate = calendarMin.timeInMillis
@@ -288,14 +288,14 @@ fun EventosScreen(viewModel: EventosViewModel) {
                         ) {
                             Icon(
                                 Icons.Default.CalendarMonth,
-                                contentDescription = "Seleccionar fechas"
+                                contentDescription = "Seleccionar fechas",
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 if (startDate != null && endDate != null) {
                                     "${startDate!!.format(dateFormatter)} - ${
                                         endDate!!.format(
-                                            dateFormatter
+                                            dateFormatter,
                                         )
                                     }"
                                 } else if (startDate != null) {
@@ -311,7 +311,7 @@ fun EventosScreen(viewModel: EventosViewModel) {
                             Text(
                                 "Evento: ${startDate!!.format(dateFormatter)} al ${
                                     endDate!!.format(
-                                        dateFormatter
+                                        dateFormatter,
                                     )
                                 }",
                                 style = MaterialTheme.typography.bodySmall,

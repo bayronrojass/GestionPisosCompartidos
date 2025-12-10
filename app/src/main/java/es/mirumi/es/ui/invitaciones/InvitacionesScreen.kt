@@ -43,10 +43,11 @@ import kotlinx.coroutines.launch
 fun InvitacionesScreen(sessionManager: SessionManager) {
     val viewModel: InvitacionesViewModel =
         viewModel(
-            factory = InvitacionesViewModelFactory(
-                RepositoryInvitacion(NetworkModule.invitacionApiService),
-                sessionManager
-            ),
+            factory =
+                InvitacionesViewModelFactory(
+                    RepositoryInvitacion(NetworkModule.invitacionApiService),
+                    sessionManager,
+                ),
         )
 
     val invitaciones by viewModel.invitaciones.collectAsState()

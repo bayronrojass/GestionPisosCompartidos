@@ -363,9 +363,10 @@ fun TareasScreen(
                             item {
                                 Text(
                                     text = "No hay tareas pendientes",
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(20.dp),
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(20.dp),
                                     textAlign = TextAlign.Center,
                                     color = Color.Gray,
                                 )
@@ -419,9 +420,10 @@ fun TareasScreen(
                             item {
                                 Text(
                                     text = "No hay tareas completadas",
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(20.dp),
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(20.dp),
                                     textAlign = TextAlign.Center,
                                     color = Color.Gray,
                                 )
@@ -505,7 +507,7 @@ fun TareasScreen(
                         asignadoId,
                         fechaFin,
                         frecuencia,
-                        prioridad
+                        prioridad,
                     )
                     showCreateDialog = false
                 } else {
@@ -529,7 +531,7 @@ fun TareasScreen(
                         asignadoId,
                         fechaFin,
                         frecuencia,
-                        prioridad
+                        prioridad,
                     )
                     taskToEdit = null
                 } else {
@@ -621,8 +623,7 @@ fun BotonAsignacion(
                 .shadow(
                     elevation = if (seleccionado) 4.dp else 0.dp,
                     shape = RoundedCornerShape(7.5.dp),
-                )
-                .padding(horizontal = 10.dp, vertical = 7.dp),
+                ).padding(horizontal = 10.dp, vertical = 7.dp),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -1035,7 +1036,7 @@ fun TaskCardCompletada(
                             .border(
                                 1.dp,
                                 Color(0xff939393),
-                                RoundedCornerShape(20.dp)
+                                RoundedCornerShape(20.dp),
                             ) // Solo este mantiene el borde sutil
                             .padding(start = 2.dp, end = 14.dp, top = 2.dp, bottom = 2.dp),
                 ) {
@@ -1066,9 +1067,10 @@ fun TaskCardCompletada(
                         painter = painterResource(id = R.drawable.ic_check),
                         contentDescription = "Fecha",
                         colorFilter = ColorFilter.tint(Color.Black),
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clickable { onUncomplete() },
+                        modifier =
+                            Modifier
+                                .size(24.dp)
+                                .clickable { onUncomplete() },
                     )
                     Text(
                         text = if (fechaFinDisplay.isNotBlank()) fechaFinDisplay else "Sin fecha", // ---- USO DE LA FECHA REAL ----
@@ -1154,9 +1156,10 @@ fun TaskCardCompletadaSimple(
                     painter = painterResource(id = R.drawable.ic_check),
                     contentDescription = "Fecha",
                     colorFilter = ColorFilter.tint(Color.Black),
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable { onUncomplete() },
+                    modifier =
+                        Modifier
+                            .size(24.dp)
+                            .clickable { onUncomplete() },
                 )
                 Text(
                     text = if (fechaFinDisplay.isNotBlank()) fechaFinDisplay else "Sin fecha", // ---- USO DE LA FECHA REAL ----
@@ -1496,10 +1499,11 @@ fun NewCreateTaskDialog(
 
                     // Botones Aceptar/Cancelar
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(
-                            10.dp,
-                            Alignment.CenterHorizontally
-                        ),
+                        horizontalArrangement =
+                            Arrangement.spacedBy(
+                                10.dp,
+                                Alignment.CenterHorizontally,
+                            ),
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
@@ -1517,11 +1521,12 @@ fun NewCreateTaskDialog(
                         Button(
                             onClick = {
                                 if (nombre.isBlank()) {
-                                    Toast.makeText(
-                                        context,
-                                        "El nombre es obligatorio",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            "El nombre es obligatorio",
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
                                 } else {
                                     onCreate(
                                         nombre,
@@ -1636,8 +1641,7 @@ fun PrioridadChip(
                     width = 1.dp,
                     color = borderColor,
                     shape = RoundedCornerShape(17.dp),
-                )
-                .clickable(onClick = onClick)
+                ).clickable(onClick = onClick)
                 .padding(horizontal = 16.dp, vertical = 6.dp),
     ) {
         Text(
@@ -1673,8 +1677,7 @@ fun UsuarioChip(
                 .border(
                     border = BorderStroke(1.dp, borderColor),
                     shape = RoundedCornerShape(25.dp),
-                )
-                .clickable(onClick = onClick)
+                ).clickable(onClick = onClick)
                 .padding(start = 8.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
     ) {
         Image(
@@ -1785,7 +1788,7 @@ fun EditTaskDialog(
                     asignadoAId,
                     fechaFin,
                     frecuencia,
-                    prioridad
+                    prioridad,
                 )
             }) {
                 Text("Guardar")
@@ -2026,8 +2029,9 @@ fun UserSelectionExpandable(
                             modifier = Modifier.size(20.dp),
                         )
                         Text(
-                            text = miembros.find { it.id == selectedUserId }?.nombre
-                                ?: "Sin asignar",
+                            text =
+                                miembros.find { it.id == selectedUserId }?.nombre
+                                    ?: "Sin asignar",
                             color = Color.Black,
                             style = TextStyle(fontSize = 14.sp),
                         )
@@ -2061,9 +2065,13 @@ fun UserSelectionExpandable(
                             border =
                                 BorderStroke(
                                     1.dp,
-                                    if (selectedUserId == null) Color(0xffddc1fb) else Color(
-                                        0xff6c6c6c
-                                    ),
+                                    if (selectedUserId == null) {
+                                        Color(0xffddc1fb)
+                                    } else {
+                                        Color(
+                                            0xff6c6c6c,
+                                        )
+                                    },
                                 ),
                             shape = RoundedCornerShape(20.dp),
                             modifier = Modifier.fillMaxWidth(),
@@ -2074,9 +2082,14 @@ fun UserSelectionExpandable(
                         ) {
                             Text(
                                 text = "Sin asignar",
-                                color = if (selectedUserId == null) Color.White else Color(
-                                    0xff6c6c6c
-                                ),
+                                color =
+                                    if (selectedUserId == null) {
+                                        Color.White
+                                    } else {
+                                        Color(
+                                            0xff6c6c6c,
+                                        )
+                                    },
                             )
                         }
 

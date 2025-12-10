@@ -80,7 +80,7 @@ class RepositoryImagen {
             is ApiResult.Throws -> {
                 Log.e(
                     "Imagen",
-                    "Throws recuperando detalles de imagen " + request.exception.message
+                    "Throws recuperando detalles de imagen " + request.exception.message,
                 )
                 return null
             }
@@ -102,7 +102,7 @@ class RepositoryImagen {
             is ApiResult.Throws -> {
                 Log.e(
                     "Imagen",
-                    "Throws actualizando posicion de imagen " + request.exception.message
+                    "Throws actualizando posicion de imagen " + request.exception.message,
                 )
                 return null
             }

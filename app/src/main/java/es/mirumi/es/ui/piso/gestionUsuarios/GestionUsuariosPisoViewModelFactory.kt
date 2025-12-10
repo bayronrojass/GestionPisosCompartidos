@@ -19,7 +19,7 @@ class GestionUsuariosPisoViewModelFactory(
             return GestionUsuariosPisoViewModel(
                 pisoRepository,
                 invitacionRepository,
-                sessionManager
+                sessionManager,
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

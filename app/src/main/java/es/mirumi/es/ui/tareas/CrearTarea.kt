@@ -55,8 +55,7 @@ fun AadirTarea(modifier: Modifier = Modifier) {
                     .offset(
                         x = 306.dp,
                         y = 20.dp,
-                    )
-                    .requiredSize(size = 24.dp),
+                    ).requiredSize(size = 24.dp),
         )
         Row(
             horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.Start),
@@ -102,8 +101,7 @@ fun AadirTarea(modifier: Modifier = Modifier) {
                     .offset(
                         x = 20.dp,
                         y = 75.dp,
-                    )
-                    .requiredWidth(width = 110.dp)
+                    ).requiredWidth(width = 110.dp)
                     .requiredHeight(height = 20.dp),
         )
         InputChip(
@@ -156,8 +154,7 @@ fun AadirTarea(modifier: Modifier = Modifier) {
                     .offset(
                         x = 20.dp,
                         y = 165.dp,
-                    )
-                    .requiredWidth(width = 139.dp)
+                    ).requiredWidth(width = 139.dp)
                     .requiredHeight(height = 20.dp),
         )
         Property1baja(
@@ -195,8 +192,7 @@ fun AadirTarea(modifier: Modifier = Modifier) {
                     .offset(
                         x = 20.dp,
                         y = 243.dp,
-                    )
-                    .requiredWidth(width = 310.dp),
+                    ).requiredWidth(width = 310.dp),
         ) {
             Text(
                 text = "Compartir gasto con:",
@@ -243,16 +239,14 @@ fun AadirTarea(modifier: Modifier = Modifier) {
                     .offset(
                         x = 90.dp,
                         y = 334.dp,
-                    )
-                    .requiredWidth(width = 170.dp)
+                    ).requiredWidth(width = 170.dp)
                     .requiredHeight(height = 40.dp)
                     .clip(shape = RoundedCornerShape(20.dp))
                     .background(color = Color.White)
                     .border(
                         border = BorderStroke(1.dp, Color(0xff6c6c6c)),
                         shape = RoundedCornerShape(20.dp),
-                    )
-                    .padding(
+                    ).padding(
                         horizontal = 55.dp,
                         vertical = 10.dp,
                     ),
@@ -318,8 +312,7 @@ fun AadirUsuario(modifier: Modifier = Modifier) {
                 .border(
                     border = BorderStroke(1.dp, Color(0xff6c6c6c)),
                     shape = RoundedCornerShape(25.dp),
-                )
-                .padding(
+                ).padding(
                     start = 3.dp,
                     end = 6.dp,
                     top = 1.dp,

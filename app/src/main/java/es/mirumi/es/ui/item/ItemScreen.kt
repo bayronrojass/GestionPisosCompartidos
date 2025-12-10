@@ -290,7 +290,7 @@ fun ItemRow(
                         Icons.Default.Edit,
                         contentDescription = "Editar",
                         tint = Color(0xFF1976D2),
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(20.dp),
                     )
                 }
                 IconButton(onClick = onDeleteClick, modifier = Modifier.size(36.dp)) {
@@ -298,7 +298,7 @@ fun ItemRow(
                         Icons.Default.Delete,
                         contentDescription = "Borrar",
                         tint = Color(0xFFE53935),
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(20.dp),
                     )
                 }
             }

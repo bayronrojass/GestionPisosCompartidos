@@ -84,7 +84,7 @@ fun ListaCasasScreen(
                     it,
                     sessionManager,
                     repositoryCasa,
-                    context
+                    context,
                 )
             }
                 ?: Toast.makeText(context, "Escaneo cancelado", Toast.LENGTH_SHORT).show()

@@ -24,7 +24,7 @@ class RepositoryPostIt {
             is ApiResult.Success<PostItDTO> -> {
                 Log.e(
                     "Postit",
-                    "Creando postit " + request.data.id + " con lienzo " + request.data.lienzoId
+                    "Creando postit " + request.data.id + " con lienzo " + request.data.lienzoId,
                 )
                 return request.data
             }
@@ -73,7 +73,7 @@ class RepositoryPostIt {
             is ApiResult.Throws -> {
                 Log.e(
                     "Postit",
-                    "Throws recuperando detalles de postit " + request.exception.message
+                    "Throws recuperando detalles de postit " + request.exception.message,
                 )
                 return null
             }
@@ -95,7 +95,7 @@ class RepositoryPostIt {
             is ApiResult.Throws -> {
                 Log.e(
                     "Postit",
-                    "Throws actualizando posicion de postit " + request.exception.message
+                    "Throws actualizando posicion de postit " + request.exception.message,
                 )
                 return null
             }

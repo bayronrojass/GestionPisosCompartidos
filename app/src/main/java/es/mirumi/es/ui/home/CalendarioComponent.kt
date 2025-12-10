@@ -132,7 +132,7 @@ fun CalendarioScreen(
             eventos = eventosDelMes,
             viewModel = viewModel,
             month = date.month,
-            year = date.year
+            year = date.year,
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -757,9 +757,9 @@ fun EventDialog(
                                                     append(
                                                         "Inicio: ${
                                                             startDate!!.format(
-                                                                dateFormatter
+                                                                dateFormatter,
                                                             )
-                                                        }"
+                                                        }",
                                                     )
                                                 }
                                                 if (startDate != null && endDate != null) append(" | ")
@@ -911,8 +911,7 @@ fun EventDialog(
                                         return !selectedDate.isBefore(LocalDate.now())
                                     }
 
-                                    override fun isSelectableYear(year: Int): Boolean =
-                                        year >= LocalDate.now().year
+                                    override fun isSelectableYear(year: Int): Boolean = year >= LocalDate.now().year
                                 },
                         )
 
@@ -1047,8 +1046,7 @@ fun EventDialog(
                                         return startDate?.let { !selectedDate.isBefore(it) } ?: true
                                     }
 
-                                    override fun isSelectableYear(year: Int): Boolean =
-                                        startDate?.let { year >= it.year } ?: true
+                                    override fun isSelectableYear(year: Int): Boolean = startDate?.let { year >= it.year } ?: true
                                 },
                         )
 

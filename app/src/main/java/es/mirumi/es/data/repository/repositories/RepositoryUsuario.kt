@@ -29,6 +29,17 @@ class RepositoryUsuario(
         throw Exception("Error actualizando usuario: ${response.code()}")
     }
 
+    suspend fun updateUsuarioToken(
+        id: Long,
+        token: String,
+    ) {
+        val response = api.updateUsuarioToken(id, token)
+        if (response.isSuccessful) {
+            return
+        }
+        throw Exception("Error actualizando usuario: ${response.code()}")
+    }
+
     suspend fun deleteUsuario(id: Long) {
         val response = api.deleteUsuario(id)
         if (!response.isSuccessful) {

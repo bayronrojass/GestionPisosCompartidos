@@ -42,21 +42,12 @@
             android:exported="true"></activity>
 
         <service
-            android:name="info.mqtt.android.service.MqttService"
-            android:exported="false" />
-
-        <receiver
-            android:name=".services.MqttServiceStartReceiver"
-            android:exported="true">
+            android:name=".services.MyFirebaseMessagingService"
+            android:exported="false">
             <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
-        </receiver>
-
-        <service
-            android:name=".services.MqttConnectionManagerService"
-            android:exported="false"
-            android:foregroundServiceType="dataSync" />
+        </service>
     </application>
 
 </manifest>

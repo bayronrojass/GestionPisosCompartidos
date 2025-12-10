@@ -16,7 +16,7 @@ class RepositoryLienzo {
             is ApiResult.Error -> {
                 Log.e(
                     "Pizarra",
-                    "Error when loading lienzo " + lienzoResponse.message + lienzoResponse.code
+                    "Error when loading lienzo " + lienzoResponse.message + lienzoResponse.code,
                 )
                 return null
             }

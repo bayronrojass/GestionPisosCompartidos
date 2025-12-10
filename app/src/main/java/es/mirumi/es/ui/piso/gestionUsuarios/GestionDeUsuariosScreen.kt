@@ -82,7 +82,8 @@ fun GestionUsuariosPisoScreen(
         if (pisoId != 0L) {
             viewModel.loadData(pisoId)
         } else {
-            Toast.makeText(context, "Error FATAL: ID de piso no encontrado", Toast.LENGTH_LONG)
+            Toast
+                .makeText(context, "Error FATAL: ID de piso no encontrado", Toast.LENGTH_LONG)
                 .show()
         }
     }
@@ -212,11 +213,12 @@ fun GestionUsuariosPisoScreen(
                 Button(
                     onClick = {
                         if (pisoId == 0L) {
-                            Toast.makeText(
-                                context,
-                                "Error: No se ha cargado el ID del piso",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            Toast
+                                .makeText(
+                                    context,
+                                    "Error: No se ha cargado el ID del piso",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
                         } else {
                             scope.launch {
                                 try {
@@ -225,11 +227,12 @@ fun GestionUsuariosPisoScreen(
                                     // Mostrar diálogo QR (necesitarías convertir Bitmap a ImageBitmap)
                                     showQrDialog = true
                                 } catch (e: Exception) {
-                                    Toast.makeText(
-                                        context,
-                                        "Error al generar QR",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            "Error al generar QR",
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
                                 }
                             }
                         }
@@ -292,11 +295,12 @@ fun GestionUsuariosPisoScreen(
                             showEmailDialog = false
                             emailInput = ""
                         } else {
-                            Toast.makeText(
-                                context,
-                                "El email no puede estar vacío",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            Toast
+                                .makeText(
+                                    context,
+                                    "El email no puede estar vacío",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
                         }
                     },
                 ) {

@@ -77,14 +77,15 @@ class ListaCasas : Fragment() {
         casasAdapter =
             CasasAdapter(emptyList()) { casaSeleccionada ->
                 // Acción al hacer clic en una casa
-                Toast.makeText(
-                    context,
-                    "Has seleccionado: ${casaSeleccionada.nombre}",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast
+                    .makeText(
+                        context,
+                        "Has seleccionado: ${casaSeleccionada.nombre}",
+                        Toast.LENGTH_SHORT,
+                    ).show()
                 Log.d(
                     "ListaCasasFragment",
-                    "Navegando a DashBoard de casaId: ${casaSeleccionada.id}"
+                    "Navegando a DashBoard de casaId: ${casaSeleccionada.id}",
                 )
                 val action =
                     ListaCasasDirections.actionListaCasasFragmentToCasaDashboardFragment(
@@ -104,7 +105,7 @@ class ListaCasas : Fragment() {
             casasAdapter.updateData(listaCasas)
             Log.d(
                 "ListaCasasFragment",
-                "Lista de casas actualizada en el adaptador: ${listaCasas.size} elementos"
+                "Lista de casas actualizada en el adaptador: ${listaCasas.size} elementos",
             )
         }
 
@@ -157,11 +158,12 @@ class ListaCasas : Fragment() {
 
                 val miId = sessionManager.fetchCurrentUserId()
                 if (miId == -1L) {
-                    Toast.makeText(
-                        context,
-                        "Error: Inicia sesión antes de unirte",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    Toast
+                        .makeText(
+                            context,
+                            "Error: Inicia sesión antes de unirte",
+                            Toast.LENGTH_LONG,
+                        ).show()
                     return
                 }
 
@@ -174,18 +176,21 @@ class ListaCasas : Fragment() {
                         val response = repositoryCasa.joinCasa(token, casaId, request)
 
                         if (response.isSuccessful) {
-                            Toast.makeText(context, "¡Te has unido al piso!", Toast.LENGTH_LONG)
+                            Toast
+                                .makeText(context, "¡Te has unido al piso!", Toast.LENGTH_LONG)
                                 .show()
                             // TODO: Recargar la lista de pisos
                         } else {
-                            Toast.makeText(
-                                context,
-                                "Error al unirse: ${response.errorBody()?.string()}",
-                                Toast.LENGTH_LONG
-                            ).show()
+                            Toast
+                                .makeText(
+                                    context,
+                                    "Error al unirse: ${response.errorBody()?.string()}",
+                                    Toast.LENGTH_LONG,
+                                ).show()
                         }
                     } catch (e: Exception) {
-                        Toast.makeText(context, "Error de red: ${e.message}", Toast.LENGTH_LONG)
+                        Toast
+                            .makeText(context, "Error de red: ${e.message}", Toast.LENGTH_LONG)
                             .show()
                     }
                 }

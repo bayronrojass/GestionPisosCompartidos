@@ -21,8 +21,7 @@ class TareasAdapter(
     private val onDeleteClick: (Tarea) -> Unit,
     private val onEditClick: (Tarea) -> Unit,
 ) : RecyclerView.Adapter<TareasAdapter.TareaViewHolder>() {
-    override fun getItemViewType(position: Int): Int =
-        if (tareas[position].completado) VIEW_TYPE_COMPLETED else VIEW_TYPE_PENDING
+    override fun getItemViewType(position: Int): Int = if (tareas[position].completado) VIEW_TYPE_COMPLETED else VIEW_TYPE_PENDING
 
     override fun onCreateViewHolder(
         parent: ViewGroup,
@@ -63,18 +62,19 @@ class TareasAdapter(
                 binding.taskTitle.setTextColor(
                     ContextCompat.getColor(
                         context,
-                        R.color.black_alpha_60
-                    )
+                        R.color.black_alpha_60,
+                    ),
                 )
 
                 val asignado = tarea.asignadoA?.nombre ?: "Alguien"
                 var fechaFormateada = ""
 
                 try {
-                    val fechaCompletada = LocalDateTime.parse(
-                        LocalDateTime.now().toString(),
-                        DateTimeFormatter.ISO_LOCAL_DATE_TIME
-                    )
+                    val fechaCompletada =
+                        LocalDateTime.parse(
+                            LocalDateTime.now().toString(),
+                            DateTimeFormatter.ISO_LOCAL_DATE_TIME,
+                        )
 
                     val formatter =
                         DateTimeFormatter
@@ -89,8 +89,8 @@ class TareasAdapter(
                 binding.taskAssignee.setTextColor(
                     ContextCompat.getColor(
                         context,
-                        R.color.black_alpha_60
-                    )
+                        R.color.black_alpha_60,
+                    ),
                 )
                 // ------------------------------------------
 
@@ -98,20 +98,20 @@ class TareasAdapter(
                 binding.taskStatusIcon.setColorFilter(
                     ContextCompat.getColor(
                         context,
-                        R.color.black_alpha_60
-                    )
+                        R.color.black_alpha_60,
+                    ),
                 )
                 binding.taskDeleteButton.setColorFilter(
                     ContextCompat.getColor(
                         context,
-                        R.color.black_alpha_60
-                    )
+                        R.color.black_alpha_60,
+                    ),
                 )
                 binding.taskEditButton.setColorFilter(
                     ContextCompat.getColor(
                         context,
-                        R.color.black_alpha_60
-                    )
+                        R.color.black_alpha_60,
+                    ),
                 )
             } else {
                 binding.root.setBackgroundResource(R.drawable.bg_task_pending)
@@ -126,20 +126,20 @@ class TareasAdapter(
                 binding.taskStatusIcon.setColorFilter(
                     ContextCompat.getColor(
                         context,
-                        R.color.white
-                    )
+                        R.color.white,
+                    ),
                 )
                 binding.taskDeleteButton.setColorFilter(
                     ContextCompat.getColor(
                         context,
-                        R.color.white
-                    )
+                        R.color.white,
+                    ),
                 )
                 binding.taskEditButton.setColorFilter(
                     ContextCompat.getColor(
                         context,
-                        R.color.white
-                    )
+                        R.color.white,
+                    ),
                 )
             }
 

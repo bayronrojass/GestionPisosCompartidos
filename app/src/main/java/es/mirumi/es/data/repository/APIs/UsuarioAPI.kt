@@ -21,6 +21,12 @@ interface UsuarioAPI {
         @Body usuario: UsuarioDTO,
     ): Response<Usuario>
 
+    @PUT("usuarios/{id}/token")
+    suspend fun updateUsuarioToken(
+        @Path("id") id: Long,
+        @Body token: String,
+    ): Response<Void>
+
     @DELETE("usuarios/{id}")
     suspend fun deleteUsuario(
         @Path("id") id: Long,

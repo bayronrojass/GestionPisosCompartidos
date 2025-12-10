@@ -65,8 +65,7 @@ fun PrincipalInicioCarga(
                     .offset(
                         x = 27.dp,
                         y = 4.dp,
-                    )
-                    .requiredWidth(width = 343.dp)
+                    ).requiredWidth(width = 343.dp)
                     .requiredHeight(height = 40.dp),
         ) {
         }
@@ -80,8 +79,7 @@ fun PrincipalInicioCarga(
                     .offset(
                         x = 143.43.dp,
                         y = 340.dp,
-                    )
-                    .requiredWidth(width = 104.dp)
+                    ).requiredWidth(width = 104.dp)
                     .requiredHeight(height = 93.dp),
         )
         Text(
@@ -99,8 +97,7 @@ fun PrincipalInicioCarga(
                     .offset(
                         x = 0.dp,
                         y = 453.dp,
-                    )
-                    .requiredWidth(width = 130.dp)
+                    ).requiredWidth(width = 130.dp)
                     .requiredHeight(height = 40.dp),
         )
     }

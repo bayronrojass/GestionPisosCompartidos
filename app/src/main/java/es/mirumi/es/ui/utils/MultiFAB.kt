@@ -206,19 +206,21 @@ fun PreviewMultiFabExpanded() {
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     MiniFabItem(
-                        item = FabActionItem(
-                            Icons.Default.NoteAdd,
-                            "Crear Post-it",
-                            FabActionType.POST_IT
-                        ),
+                        item =
+                            FabActionItem(
+                                Icons.Default.NoteAdd,
+                                "Crear Post-it",
+                                FabActionType.POST_IT,
+                            ),
                         onFabItemClick = { isExpanded = false },
                     )
                     MiniFabItem(
-                        item = FabActionItem(
-                            Icons.Default.Edit,
-                            "Crear Tarea",
-                            FabActionType.OTHER
-                        ),
+                        item =
+                            FabActionItem(
+                                Icons.Default.Edit,
+                                "Crear Tarea",
+                                FabActionType.OTHER,
+                            ),
                         onFabItemClick = { isExpanded = false },
                     )
                 }
@@ -232,7 +234,7 @@ fun PreviewMultiFabExpanded() {
                     Icons.Default.Add,
                     "Abrir menú",
                     modifier = Modifier.rotate(rotation),
-                    tint = Color.White
+                    tint = Color.White,
                 )
             }
         }

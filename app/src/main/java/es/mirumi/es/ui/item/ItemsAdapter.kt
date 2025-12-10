@@ -56,21 +56,21 @@ class ItemsAdapter(
                 binding.tvNombreElemento.setTextColor(
                     ContextCompat.getColor(
                         context,
-                        R.color.black_alpha_60
-                    )
+                        R.color.black_alpha_60,
+                    ),
                 )
                 binding.btnCompletado.setImageResource(R.drawable.ic_check_circle) // Icono check
                 binding.btnCompletado.setColorFilter(
                     ContextCompat.getColor(
                         context,
-                        R.color.black_alpha_60
-                    )
+                        R.color.black_alpha_60,
+                    ),
                 )
                 binding.btnBorrarElemento.setColorFilter(
                     ContextCompat.getColor(
                         context,
-                        R.color.black_alpha_60
-                    )
+                        R.color.black_alpha_60,
+                    ),
                 )
             } else {
                 binding.root.setBackgroundResource(R.drawable.bg_task_pending) // Fondo morado
@@ -79,16 +79,16 @@ class ItemsAdapter(
                 binding.tvNombreElemento.setTextColor(
                     ContextCompat.getColor(
                         context,
-                        R.color.white
-                    )
+                        R.color.white,
+                    ),
                 )
                 binding.btnCompletado.setImageResource(R.drawable.ic_circle_outline) // Icono círculo
                 binding.btnCompletado.setColorFilter(ContextCompat.getColor(context, R.color.white))
                 binding.btnBorrarElemento.setColorFilter(
                     ContextCompat.getColor(
                         context,
-                        R.color.white
-                    )
+                        R.color.white,
+                    ),
                 )
             }
 

@@ -53,8 +53,7 @@ fun Tareas(modifier: Modifier = Modifier) {
                     .offset(
                         x = 27.dp,
                         y = 4.dp,
-                    )
-                    .fillMaxSize(),
+                    ).fillMaxSize(),
         ) {
         }
         Text(
@@ -76,8 +75,7 @@ fun Tareas(modifier: Modifier = Modifier) {
                     .offset(
                         x = 65.dp,
                         y = 143.dp,
-                    )
-                    .requiredWidth(width = 260.dp)
+                    ).requiredWidth(width = 260.dp)
                     .requiredHeight(height = 24.dp),
         ) {
             Box(
@@ -87,16 +85,14 @@ fun Tareas(modifier: Modifier = Modifier) {
                         .offset(
                             x = 0.dp,
                             y = 0.dp,
-                        )
-                        .requiredWidth(width = 260.dp)
+                        ).requiredWidth(width = 260.dp)
                         .requiredHeight(height = 24.dp)
                         .clip(shape = RoundedCornerShape(26.dp))
                         .background(color = Color.White)
                         .border(
                             border = BorderStroke(3.dp, Color.White),
                             shape = RoundedCornerShape(26.dp),
-                        )
-                        .shadow(
+                        ).shadow(
                             elevation = 4.dp,
                             shape = RoundedCornerShape(26.dp),
                         ),
@@ -108,8 +104,7 @@ fun Tareas(modifier: Modifier = Modifier) {
                         .offset(
                             x = (-65).dp,
                             y = 0.dp,
-                        )
-                        .requiredWidth(width = 130.dp)
+                        ).requiredWidth(width = 130.dp)
                         .requiredHeight(height = 24.dp)
                         .clip(shape = RoundedCornerShape(26.dp))
                         .background(color = Color(0xffddc1fb)),
@@ -128,8 +123,7 @@ fun Tareas(modifier: Modifier = Modifier) {
                         .offset(
                             x = 22.dp,
                             y = 2.09.dp,
-                        )
-                        .requiredWidth(width = 86.dp)
+                        ).requiredWidth(width = 86.dp)
                         .requiredHeight(height = 20.dp),
             )
             Text(
@@ -146,8 +140,7 @@ fun Tareas(modifier: Modifier = Modifier) {
                         .offset(
                             x = 144.dp,
                             y = 2.09.dp,
-                        )
-                        .requiredWidth(width = 102.dp)
+                        ).requiredWidth(width = 102.dp)
                         .requiredHeight(height = 20.dp),
             )
         }
@@ -164,8 +157,7 @@ fun Tareas(modifier: Modifier = Modifier) {
                     .offset(
                         x = 20.dp,
                         y = 210.dp,
-                    )
-                    .requiredWidth(width = 210.dp)
+                    ).requiredWidth(width = 210.dp)
                     .requiredHeight(height = 20.dp),
         )
         AsignacinMensual(
@@ -190,8 +182,7 @@ fun Tareas(modifier: Modifier = Modifier) {
                     .offset(
                         x = 20.dp,
                         y = 360.dp,
-                    )
-                    .requiredWidth(width = 198.dp)
+                    ).requiredWidth(width = 198.dp)
                     .requiredHeight(height = 20.dp),
         )
         Property1tuya(
@@ -234,8 +225,7 @@ fun Tareas(modifier: Modifier = Modifier) {
                     .offset(
                         x = 20.dp,
                         y = 762.dp,
-                    )
-                    .requiredWidth(width = 198.dp)
+                    ).requiredWidth(width = 198.dp)
                     .requiredHeight(height = 23.dp),
         )
         Property1otras(
@@ -287,8 +277,7 @@ fun AsignacinMensual(modifier: Modifier = Modifier) {
                     .padding(
                         horizontal = 10.dp,
                         vertical = 7.dp,
-                    )
-                    .shadow(
+                    ).shadow(
                         elevation = 4.dp,
                         shape = RoundedCornerShape(7.5.dp),
                     ),
@@ -585,8 +574,7 @@ fun Property1cerrado(modifier: Modifier = Modifier) {
                     .offset(
                         x = 0.dp,
                         y = 110.dp,
-                    )
-                    .requiredWidth(width = 60.dp)
+                    ).requiredWidth(width = 60.dp)
                     .requiredHeight(height = 60.dp)
                     .clip(shape = RoundedCornerShape(30.dp))
                     .rotate(degrees = 180f)

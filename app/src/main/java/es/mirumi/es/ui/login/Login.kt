@@ -27,7 +27,7 @@ fun LoginDestination(
         viewModel(
             factory =
                 LoginViewModelFactory(
-                    RepositoryLogin(NetworkModule.loginApiService),
+                    RepositoryLogin(NetworkModule.loginApiService, LocalContext.current),
                 ),
         )
 

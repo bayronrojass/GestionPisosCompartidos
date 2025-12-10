@@ -75,14 +75,14 @@ fun NuevoGastoDialog(
                             Icons.Default.Edit,
                             contentDescription = "Editar",
                             tint = ColorTextoGris,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(20.dp),
                         )
                     }
                     IconButton(onClick = onDismiss) {
                         Icon(
                             Icons.Default.Close,
                             contentDescription = "Cerrar",
-                            tint = ColorTextoGris
+                            tint = ColorTextoGris,
                         )
                     }
                 }
@@ -125,7 +125,7 @@ fun NuevoGastoDialog(
                         Icon(
                             Icons.Default.DateRange,
                             contentDescription = null,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(18.dp),
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("18 de noviembre", color = ColorTextoGris)
@@ -154,11 +154,13 @@ fun NuevoGastoDialog(
                     AssistChip(
                         onClick = {},
                         label = { Text("Daniel") },
-                        leadingIcon = { Icon(Icons.Default.Check, null) })
+                        leadingIcon = { Icon(Icons.Default.Check, null) },
+                    )
                     AssistChip(
                         onClick = {},
                         label = { Text("Raquel") },
-                        leadingIcon = { Icon(Icons.Default.Add, null) })
+                        leadingIcon = { Icon(Icons.Default.Add, null) },
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))

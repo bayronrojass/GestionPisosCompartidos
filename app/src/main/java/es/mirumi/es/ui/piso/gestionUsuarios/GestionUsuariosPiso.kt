@@ -79,11 +79,12 @@ class GestionUsuariosPiso : Fragment() {
         android.util.Log.d("GestionPiso", "ID del piso cargado: $pisoId")
 
         if (pisoId == 0L) {
-            Toast.makeText(
-                requireContext(),
-                "Error FATAL: ID de piso no encontrado",
-                Toast.LENGTH_LONG
-            ).show()
+            Toast
+                .makeText(
+                    requireContext(),
+                    "Error FATAL: ID de piso no encontrado",
+                    Toast.LENGTH_LONG,
+                ).show()
         } else {
             viewModel.loadData(pisoId)
         }
@@ -116,11 +117,12 @@ class GestionUsuariosPiso : Fragment() {
         buttonInviteQr.setOnClickListener {
             val pisoId = 1L // arguments?.getLong("PISO_ID") ?: 1L
             if (pisoId == 0L) {
-                Toast.makeText(
-                    requireContext(),
-                    "Error: No se ha cargado el ID del piso",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast
+                    .makeText(
+                        requireContext(),
+                        "Error: No se ha cargado el ID del piso",
+                        Toast.LENGTH_SHORT,
+                    ).show()
                 return@setOnClickListener
             }
 
@@ -176,11 +178,12 @@ class GestionUsuariosPiso : Fragment() {
                 if (email.isNotBlank()) {
                     viewModel.enviarInvitacion(email)
                 } else {
-                    Toast.makeText(
-                        requireContext(),
-                        "El email no puede estar vacío",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast
+                        .makeText(
+                            requireContext(),
+                            "El email no puede estar vacío",
+                            Toast.LENGTH_SHORT,
+                        ).show()
                 }
             }.show()
     }
