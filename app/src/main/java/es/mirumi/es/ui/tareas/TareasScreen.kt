@@ -80,6 +80,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -101,11 +102,10 @@ import java.util.concurrent.TimeUnit
 @Composable
 fun TareasScreen(
     viewModel: TareasViewModel,
-    casaNombre: String,
     casaId: Long,
+    userId: Long,
 ) {
     val tareas by viewModel.tareas.observeAsState(emptyList())
-    val isLoading by viewModel.isLoading.observeAsState(false)
     val error by viewModel.error.observeAsState()
     val miembros by viewModel.miembros.observeAsState(emptyList())
 
@@ -344,6 +344,7 @@ fun TareasScreen(
                                     TaskCardOtra(
                                         tarea = tarea,
                                         onEdit = { taskToEdit = tarea },
+                                        notificar = { viewModel.notificar(tarea) },
                                         modifier = Modifier.fillMaxWidth(),
                                     )
                                 } else {
@@ -508,6 +509,7 @@ fun TareasScreen(
                         fechaFin,
                         frecuencia,
                         prioridad,
+                        userId,
                     )
                     showCreateDialog = false
                 } else {
@@ -532,6 +534,7 @@ fun TareasScreen(
                         fechaFin,
                         frecuencia,
                         prioridad,
+                        userId,
                     )
                     taskToEdit = null
                 } else {
@@ -808,6 +811,7 @@ fun TaskCardPendiente(
 fun TaskCardOtra(
     tarea: Tarea,
     onEdit: () -> Unit,
+    notificar: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // Determinar colores según prioridad para la hora
@@ -891,12 +895,11 @@ fun TaskCardOtra(
                     )
                 }
 
-                // Enlace "Recordar" arriba a la derecha
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier =
                         Modifier
-                            .clickable { /* TODO: Lógica recordatorio */ }
+                            .clickable { notificar() }
                             .padding(vertical = 4.dp),
                 ) {
                     Text(
@@ -2158,4 +2161,16 @@ fun UserSelectionItem(
             )
         }
     }
+}
+
+@Preview
+@Composable
+fun previewTareas() {
+    TareasScreen(viewModel = viewModel(), 0, 0)
+}
+
+@Preview
+@Composable
+fun previewOtras() {
+    TaskCardOtra(tarea = Tarea(1, "Tarea 1", null, false, null, null, false, null, null), {}, {})
 }

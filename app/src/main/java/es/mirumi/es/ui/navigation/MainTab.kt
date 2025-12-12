@@ -95,7 +95,7 @@ fun MainScreenWithNavigation(
 
     val tareasViewModel: TareasViewModel =
         viewModel(
-            factory = TareasViewModelFactory(casaId),
+            factory = TareasViewModelFactory(casaId, userId = sessionManager.fetchCurrentUserId()),
         )
 
     val gastosViewModel: GastosViewModel =
@@ -124,7 +124,7 @@ fun MainScreenWithNavigation(
             savedStateHandle.SaveableStateProvider(selectedTab) {
                 when (selectedTab) {
                     0 -> GastosScreen(viewModel = gastosViewModel, casaId = casaId)
-                    1 -> TareasScreen(tareasViewModel, casaNombre, casaId = casaId)
+                    1 -> TareasScreen(tareasViewModel, casaId = casaId, userId = sessionManager.fetchCurrentUserId())
                     2 ->
                         HomeScreen(
                             viewModel = homeViewModel,

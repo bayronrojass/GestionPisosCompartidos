@@ -17,6 +17,11 @@ class RepositoryTarea(
         }
     }
 
+    suspend fun notificarTarea(tareaId: Long) {
+        apiService.notificarTarea(tareaId)
+        return
+    }
+
     suspend fun crearTarea(
         casaId: Long,
         request: TareaRequest,

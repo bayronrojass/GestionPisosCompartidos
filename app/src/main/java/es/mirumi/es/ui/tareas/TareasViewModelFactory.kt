@@ -5,11 +5,12 @@ import androidx.lifecycle.ViewModelProvider
 
 class TareasViewModelFactory(
     private val casaId: Long,
+    private val userId: Long,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(TareasViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return TareasViewModel(casaId) as T
+            return TareasViewModel(casaId, userId) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

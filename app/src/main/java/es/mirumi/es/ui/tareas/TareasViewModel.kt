@@ -18,6 +18,7 @@ import java.util.Locale
 
 class TareasViewModel(
     private val casaId: Long,
+    private val userId: Long,
 ) : ViewModel() {
     private val repository = RepositoryTarea(NetworkModule.tareaApiService)
     private val repositoryCasa = RepositoryCasa(NetworkModule.casaApiService)
@@ -54,6 +55,12 @@ class TareasViewModel(
         }
     }
 
+    fun notificar(tarea: Tarea) {
+        viewModelScope.launch {
+            repository.notificarTarea(tarea.id)
+        }
+    }
+
     fun crearTarea(
         nombre: String,
         descripcion: String?,
@@ -61,6 +68,7 @@ class TareasViewModel(
         fechaFin: String?,
         frecuencia: String?,
         prioridad: String?,
+        creadoPor: Long?,
     ) {
         _isLoading.value = true
         viewModelScope.launch {
@@ -76,6 +84,7 @@ class TareasViewModel(
                         esPeriodica,
                         asignadoAId,
                         prioridad,
+                        creadoPor,
                     )
                 repository.crearTarea(casaId, request)
                 cargarTareas()
@@ -106,6 +115,7 @@ class TareasViewModel(
                     tarea.periodica,
                     tarea.asignadoA?.id,
                     tarea.prioridad,
+                    userId,
                 )
             try {
                 repository.actualizarTarea(tarea.id, request)
@@ -137,6 +147,7 @@ class TareasViewModel(
         nuevaFechaFin: String?,
         nuevaFrecuencia: String?,
         nuevaPrioridad: String?,
+        creadoPor: Long?,
     ) {
         viewModelScope.launch {
             // Si asignadoAId es null, enviamos -1L, de lo contrario enviamos el ID real
@@ -152,6 +163,7 @@ class TareasViewModel(
                     esPeriodica,
                     idParaEnviar,
                     nuevaPrioridad,
+                    creadoPor,
                 )
             try {
                 repository.actualizarTarea(tarea.id, request)

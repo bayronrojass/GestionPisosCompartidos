@@ -216,14 +216,14 @@ fun TopBar(onBackClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth(),
     ) {
-      Image(
-          painter = painterResource(id = R.drawable.icono_atr_s),
-          contentDescription = "Back",
-          modifier =
+        Image(
+            painter = painterResource(id = R.drawable.icono_atr_s),
+            contentDescription = "Back",
+            modifier =
                 Modifier
                     .size(24.dp)
                     .clickable { onBackClick() },
-       )
+        )
 
         Spacer(modifier = Modifier.weight(1f))
 

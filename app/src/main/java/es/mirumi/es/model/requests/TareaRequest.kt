@@ -9,4 +9,5 @@ data class TareaRequest(
     val periodica: Boolean?,
     val asignadoAId: Long?,
     val prioridad: String?,
+    val creadoPor: Long?,
 )
