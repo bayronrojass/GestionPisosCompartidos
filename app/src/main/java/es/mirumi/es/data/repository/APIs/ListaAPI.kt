@@ -19,7 +19,7 @@ interface ListaAPI {
     suspend fun crearListaEnCasa(
         @Path("casaId") casaId: Long,
         @Body nuevaLista: ListaRequest,
-    ): Response<Lista> // Devuelve la lista creada (con ID)
+    ): Response<Lista>
 
     @DELETE("listas/{listaId}")
     suspend fun borrarLista(

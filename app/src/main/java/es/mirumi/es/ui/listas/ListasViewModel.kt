@@ -6,7 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.mirumi.es.data.remote.NetworkModule
 import es.mirumi.es.data.repository.repositories.RepositoryLista
+import es.mirumi.es.data.repository.repositories.RepositoryCasa
 import es.mirumi.es.model.Lista
+import es.mirumi.es.model.Usuario
 import es.mirumi.es.model.requests.ListaRequest
 import kotlinx.coroutines.launch
 
@@ -14,6 +16,7 @@ class ListasViewModel(
     private val casaId: Long,
 ) : ViewModel() {
     private val repository = RepositoryLista(NetworkModule.listaApiService)
+    private val repositoryCasa = RepositoryCasa(NetworkModule.casaApiService)
 
     private val _listas = MutableLiveData<List<Lista>>()
     val listas: LiveData<List<Lista>> = _listas
@@ -24,6 +27,8 @@ class ListasViewModel(
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
+    private val _miembros = MutableLiveData<List<Usuario>>()
+    val miembros: LiveData<List<Usuario>> = _miembros
     // private val _mostrarMensajeVacio = MutableLiveData<Boolean>()
     // val mostrarMensajeVacio: LiveData<Boolean> = _mostrarMensajeVacio
 
@@ -52,19 +57,19 @@ class ListasViewModel(
     fun crearLista(
         nombre: String,
         descripcion: String?,
+        participantesIds: List<Long>,
     ) {
         _isLoading.value = true
         _error.value = null
         viewModelScope.launch {
             try {
-                val request = ListaRequest(nombre, descripcion)
+                // Si la lista está vacía, enviamos null o lista vacía
+                val request = ListaRequest(nombre, descripcion, participantesIds)
                 val nuevaLista = repository.crearListaEnCasa(casaId, request)
 
-                // Añade la nueva lista a la lista existente y notifica a la UI
+                // Actualizar UI
                 val listasActuales = _listas.value ?: emptyList()
                 _listas.value = listasActuales + nuevaLista
-                // Opcionalmente, recarga todo desde el servidor
-                // cargarListas()
             } catch (e: Exception) {
                 _error.value = e.message ?: "Error al crear la lista"
             } finally {
@@ -88,6 +93,22 @@ class ListasViewModel(
                 _error.value = e.message ?: "Error al borrar la lista"
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    fun cargarMiembros(token: String) {
+        viewModelScope.launch {
+            try {
+                // Asumiendo que repositoryCasa.getPisoMiembros devuelve Response<List<Usuario>>
+                val response = repositoryCasa.getPisoMiembros(token, casaId)
+                if (response.isSuccessful) {
+                    _miembros.value = response.body() ?: emptyList()
+                } else {
+                    // Manejar error si es necesario
+                }
+            } catch (e: Exception) {
+                // Manejar excepción
             }
         }
     }

@@ -9,8 +9,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.NoteAdd
@@ -51,6 +53,7 @@ fun ListaScreen(
     val listas by viewModel.listas.observeAsState(emptyList())
     val isLoading by viewModel.isLoading.observeAsState(false)
     val error by viewModel.error.observeAsState()
+    val miembros by viewModel.miembros.observeAsState(emptyList())
 
     // Estados locales
     var selectedTab by remember { mutableIntStateOf(0) } // 0: Mis listas, 1: Compartidas
@@ -58,6 +61,7 @@ fun ListaScreen(
     var showDeleteDialog by remember { mutableStateOf<Lista?>(null) }
     var createListName by remember { mutableStateOf("") }
     var createListDescription by remember { mutableStateOf("") }
+    var selectedParticipants by remember { mutableStateOf<List<Long>>(emptyList()) }
 
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
@@ -65,6 +69,10 @@ fun ListaScreen(
 
     LaunchedEffect(Unit) {
         viewModel.cargarListas()
+        val token = sessionManager.fetchAuthToken()
+        if (token != null) {
+            viewModel.cargarMiembros(token)
+        }
     }
 
     LaunchedEffect(error) {
@@ -73,20 +81,16 @@ fun ListaScreen(
         }
     }
 
-    // --- LÓGICA DE FILTRADO CORREGIDA ---
+    // --- LÓGICA DE FILTRADO ---
     val filteredListas =
         remember(listas, selectedTab, currentUserId) {
             val allListas = listas ?: emptyList()
 
             // 1. PRIMER FILTRO: ¿Pertenezco a esta lista?
-            // (Ya sea como propietario o como participante en la lista)
             val listasDondeEstoy =
                 allListas.filter { lista ->
                     val soyPropietario = lista.propietario?.id == currentUserId
                     val soyParticipante = lista.participantes.any { it.id == currentUserId }
-
-                    // Si el backend añade automáticamente al creador a participantes,
-                    // basta con chequear participantes, pero chequeamos ambos por seguridad.
                     soyPropietario || soyParticipante
                 }
 
@@ -94,12 +98,10 @@ fun ListaScreen(
             when (selectedTab) {
                 0 -> {
                     // Pestaña "Mis Listas" (Individuales)
-                    // Son aquellas donde estoy yo, y NO hay nadie más (participantes <= 1)
                     listasDondeEstoy.filter { it.participantes.size <= 1 }
                 }
                 1 -> {
                     // Pestaña "Compartidas"
-                    // Son aquellas donde estoy yo, y HAY más gente (participantes > 1)
                     listasDondeEstoy.filter { it.participantes.size > 1 }
                 }
                 else -> emptyList()
@@ -251,10 +253,19 @@ fun ListaScreen(
     // Diálogo Crear Lista
     if (showCreateDialog) {
         AlertDialog(
-            onDismissRequest = { showCreateDialog = false },
+            onDismissRequest = {
+                showCreateDialog = false
+                selectedParticipants = emptyList() // Limpiar selección al cerrar
+            },
             title = { Text("Crear Nueva Lista") },
             text = {
-                Column {
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            // Hacemos scroll si hay muchos usuarios
+                            .verticalScroll(rememberScrollState()),
+                ) {
                     OutlinedTextField(
                         value = createListName,
                         onValueChange = { createListName = it },
@@ -269,23 +280,56 @@ fun ListaScreen(
                         modifier = Modifier.fillMaxWidth(),
                         maxLines = 3,
                     )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Compartir con:",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 8.dp),
+                    )
+
+                    // Componente de Selección Múltiple
+                    UserMultiSelection(
+                        miembros = miembros ?: emptyList(),
+                        selectedIds = selectedParticipants,
+                        currentUserId = currentUserId ?: -1,
+                        onSelectionChanged = { selectedParticipants = it },
+                    )
+
+                    if (selectedParticipants.isEmpty()) {
+                        Text(
+                            text = "Lista individual (solo para ti)",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    }
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
                         if (createListName.isNotBlank()) {
-                            viewModel.crearLista(createListName, createListDescription.ifBlank { null })
+                            viewModel.crearLista(
+                                createListName,
+                                createListDescription.ifBlank { null },
+                                selectedParticipants, // Pasamos la lista de IDs
+                            )
                             showCreateDialog = false
                             createListName = ""
                             createListDescription = ""
+                            selectedParticipants = emptyList()
                         }
                     },
                     enabled = createListName.isNotBlank(),
                 ) { Text("Crear") }
             },
             dismissButton = {
-                TextButton(onClick = { showCreateDialog = false }) { Text("Cancelar") }
+                TextButton(onClick = {
+                    showCreateDialog = false
+                    selectedParticipants = emptyList()
+                }) { Text("Cancelar") }
             },
         )
     }
@@ -450,5 +494,93 @@ fun formatDate(dateString: String?): String {
         }
     } catch (e: Exception) {
         dateString
+    }
+}
+
+@Composable
+fun UserMultiSelection(
+    miembros: List<Usuario>,
+    selectedIds: List<Long>,
+    currentUserId: Long,
+    onSelectionChanged: (List<Long>) -> Unit,
+) {
+    // Filtramos para no mostrar al usuario actual (ya es propietario por defecto)
+    val usersToDisplay =
+        remember(miembros) {
+            miembros.filter { it.id != currentUserId }
+        }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (usersToDisplay.isEmpty()) {
+            Text("No hay otros miembros en la casa", color = Color.Gray)
+        } else {
+            usersToDisplay.forEach { usuario ->
+                val isSelected = selectedIds.contains(usuario.id)
+                UserCheckboxItem(
+                    usuario = usuario,
+                    isChecked = isSelected,
+                    onCheckedChange = { checked ->
+                        val newSelection = selectedIds.toMutableList()
+                        if (checked) {
+                            newSelection.add(usuario.id)
+                        } else {
+                            newSelection.remove(usuario.id)
+                        }
+                        onSelectionChanged(newSelection)
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun UserCheckboxItem(
+    usuario: Usuario,
+    isChecked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .clickable { onCheckedChange(!isChecked) }
+                .background(if (isChecked) Color(0xffddc1fb).copy(alpha = 0.2f) else Color.Transparent)
+                .border(
+                    width = 1.dp,
+                    color = if (isChecked) Color(0xffddc1fb) else Color.LightGray,
+                    shape = RoundedCornerShape(8.dp),
+                ).padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // Avatar
+            Image(
+                painter = painterResource(id = R.drawable.ic_user),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier =
+                    Modifier
+                        .size(30.dp)
+                        .clip(CircleShape)
+                        .border(1.dp, Color.Gray, CircleShape),
+                colorFilter = ColorFilter.tint(Color.Gray),
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = usuario.nombre,
+                style = TextStyle(fontSize = 14.sp),
+            )
+        }
+        Checkbox(
+            checked = isChecked,
+            onCheckedChange = onCheckedChange,
+            colors =
+                CheckboxDefaults.colors(
+                    checkedColor = Color(0xff8061a2),
+                ),
+        )
     }
 }
