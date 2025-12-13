@@ -314,7 +314,8 @@ fun ListaScreen(
                             viewModel.crearLista(
                                 createListName,
                                 createListDescription.ifBlank { null },
-                                selectedParticipants, // Pasamos la lista de IDs
+                                selectedParticipants,
+                                currentUserId ?: -1L,
                             )
                             showCreateDialog = false
                             createListName = ""
