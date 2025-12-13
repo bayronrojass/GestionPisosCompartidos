@@ -1729,7 +1729,7 @@ fun UserSelectionChips(
 }
 
 // ----------------------------------------------------------------
-// DIÁLOGOS ANTIGUOS (para editar tareas)
+// DIÁLOGOS ANTIGUOS
 // ----------------------------------------------------------------
 
 @Composable
