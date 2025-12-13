@@ -37,6 +37,8 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
@@ -73,6 +75,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.mirumi.es.R
 import es.mirumi.es.model.Evento
+import es.mirumi.es.model.Tarea
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -92,9 +95,11 @@ fun CalendarioScreen(
     LaunchedEffect(Unit) {
         viewModel.cargarEventos()
         viewModel.cargarEventosDelMes()
+        viewModel.cargarTareas() // Aseguramos cargar tareas también
     }
 
     val eventosDelMes by viewModel.eventosDelMes.collectAsStateWithLifecycle()
+    val tareas by viewModel.tareasDelUsuario.collectAsStateWithLifecycle()
 
     val date = LocalDateTime.now()
 
@@ -131,6 +136,7 @@ fun CalendarioScreen(
 
         CalendarGrid(
             eventos = eventosDelMes,
+            tareas = tareas,
             viewModel = viewModel,
             month = date.month,
             year = date.year,
@@ -138,8 +144,10 @@ fun CalendarioScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        EventsSection(
+        // Sección combinada de Eventos y Tareas
+        EventsAndTasksSection(
             eventos = eventosDelMes,
+            tareas = tareas,
             viewModel = viewModel,
             date = date,
             onEditEvent = { event ->
@@ -244,6 +252,7 @@ fun TopBar(onBackClick: () -> Unit) {
 @Composable
 fun CalendarGrid(
     eventos: List<Evento>,
+    tareas: List<Tarea>,
     viewModel: HomeViewModel,
     month: Month,
     year: Int,
@@ -297,10 +306,16 @@ fun CalendarGrid(
                         viewModel.parseFechaSegura(it.fechaInicio) == fechaDelDia
                     }
 
+                val hasTask =
+                    tareas.any {
+                        !it.fechaFin.isNullOrEmpty() && viewModel.parseFechaSegura(it.fechaFin) == fechaDelDia
+                    }
+
                 CalendarDay(
                     day = day,
                     isToday = fechaDelDia == hoy,
                     hasEvent = hasEvent,
+                    hasTask = hasTask,
                 )
             }
 
@@ -321,6 +336,7 @@ fun CalendarDay(
     day: Int,
     isToday: Boolean,
     hasEvent: Boolean,
+    hasTask: Boolean,
 ) {
     val bg = if (isToday) Color(0xfffeee91) else Color.White
 
@@ -344,84 +360,125 @@ fun CalendarDay(
             )
         }
 
-        if (hasEvent) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(10.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xffff5686))
-                        .align(Alignment.TopEnd)
-                        .offset(x = 4.dp, y = (-4).dp),
-            )
+        // Indicadores (Puntos)
+        Row(
+            modifier =
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 0.dp, y = (-4).dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            if (hasEvent) {
+                Box(
+                    modifier =
+                        Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xffff5686)), // Rosa para Eventos
+                )
+            }
+            if (hasTask) {
+                Box(
+                    modifier =
+                        Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFDDC1FB)), // Morado para Tareas
+                )
+            }
         }
     }
 }
 
 @Composable
-fun EventsSection(
+fun EventsAndTasksSection(
     eventos: List<Evento>,
+    tareas: List<Tarea>,
     viewModel: HomeViewModel,
     date: LocalDateTime,
     onEditEvent: (Evento) -> Unit,
 ) {
     Column {
         Text(
-            text = "EVENTOS",
+            text = "AGENDA DEL MES",
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        val agrupados =
-            eventos
-                .groupBy {
-                    viewModel.parseFechaSegura(it.fechaInicio)
-                }.toSortedMap()
+        // Filtramos tareas para que sean del mes actual visualizado en 'date'
+        val tareasDelMes =
+            tareas.filter {
+                val fechaTarea = viewModel.parseFechaSegura(it.fechaFin)
+                fechaTarea.month == date.month && fechaTarea.year == date.year
+            }
 
-        if (agrupados.isNotEmpty()) {
-            var previousMonth: Month? = null
-
-            agrupados.keys.forEach { fecha ->
-                val currentMonth = fecha.month
-
-                if (previousMonth != currentMonth) {
-                    Text(
-                        text = viewModel.mesesTraducidos(currentMonth.toString()),
-                        color = Color.Black,
-                        style =
-                            TextStyle(
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Medium,
-                            ),
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    previousMonth = currentMonth
+        val combinedList =
+            (eventos + tareasDelMes).sortedBy {
+                when (it) {
+                    is Evento -> viewModel.parseFechaSegura(it.fechaInicio)
+                    is Tarea -> viewModel.parseFechaSegura(it.fechaFin)
+                    else -> LocalDate.MAX
                 }
             }
+
+        val agrupados =
+            combinedList
+                .groupBy {
+                    when (it) {
+                        is Evento -> viewModel.parseFechaSegura(it.fechaInicio)
+                        is Tarea -> viewModel.parseFechaSegura(it.fechaFin)
+                        else -> LocalDate.MAX
+                    }
+                }.toSortedMap()
+
+        if (agrupados.isEmpty()) {
+            Text(
+                text = "No hay eventos ni tareas este mes.",
+                fontSize = 14.sp,
+                color = Color.Gray,
+                modifier = Modifier.padding(8.dp),
+            )
         }
 
-        agrupados.forEach { (fecha, eventosDia) ->
-            val today = date.toLocalDate()
+        agrupados.forEach { (fecha, listaItems) ->
+            val today = LocalDate.now()
+
+            val isToday = fecha == today
+            val headerTitle =
+                when {
+                    fecha == today -> "Hoy"
+                    fecha == today.plusDays(1) -> "Mañana"
+                    else -> "${viewModel.diasTraducidos(fecha.dayOfWeek)} ${fecha.dayOfMonth}"
+                }
 
             Text(
-                text = "${viewModel.diasTraducidos(fecha.dayOfWeek)} ${fecha.dayOfMonth}",
+                text = headerTitle,
                 fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
+                fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium,
+                color = if (isToday) Color(0xffff5686) else Color.Black,
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            eventosDia.forEach { evento ->
-                val fechaEvento = viewModel.parseFechaSegura(evento.fechaInicio)
-                EventItem(
-                    text = evento.nombre,
-                    highlighted = fechaEvento == today,
-                    event = evento,
-                    viewModel = viewModel,
-                    onEditClick = { onEditEvent(evento) },
-                )
+            listaItems.forEach { item ->
+                val isHighlighted = fecha == today // O puedes usar la lógica de selectedDate si la pasas
+
+                if (item is Evento) {
+                    EventItem(
+                        text = item.nombre,
+                        highlighted = isHighlighted,
+                        event = item,
+                        viewModel = viewModel,
+                        onEditClick = { onEditEvent(item) },
+                    )
+                } else if (item is Tarea) {
+                    TimelineTaskItem(
+                        tarea = item,
+                        highlighted = isHighlighted,
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -499,6 +556,70 @@ fun EventItem(
             showDeleteDialog = false
         },
     )
+}
+
+@Composable
+fun TimelineTaskItem(
+    tarea: Tarea,
+    highlighted: Boolean,
+) {
+    // Definimos el color del indicador de prioridad
+    val priorityColor =
+        when (tarea.prioridad) {
+            "Alta" -> Color(0xFFFF6490)
+            "Media" -> Color(0xFFDDC1FB)
+            else -> Color(0xFFA9E6A8)
+        }
+
+    val background = if (highlighted) Color(0xfffff8cf) else Color.White
+
+    Card(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+        shape = RoundedCornerShape(10.dp),
+        colors = CardDefaults.cardColors(containerColor = background),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), // Plano para parecerse a EventItem
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // Indicador Morado para diferenciar que es una Tarea
+            Box(
+                modifier =
+                    Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFDDC1FB)),
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = tarea.nombre,
+                    style = TextStyle(fontSize = 15.sp, color = Color.Black),
+                )
+                Text(
+                    text = "Asignado a: ${tarea.asignadoA?.nombre ?: "Sin asignar"}",
+                    style = TextStyle(fontSize = 12.sp, color = Color.Gray),
+                )
+            }
+
+            // Etiqueta de prioridad pequeña
+            Text(
+                text = tarea.prioridad ?: "",
+                style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray),
+                modifier =
+                    Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(priorityColor)
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
+            )
+        }
+    }
 }
 
 @Composable
@@ -601,7 +722,7 @@ fun EventDialog(
     var eventName by remember { mutableStateOf(event?.nombre ?: "") }
     var eventDescription by remember { mutableStateOf(event?.descripcion ?: "") }
     var nameError by remember { mutableStateOf(false) }
-    var dateError by remember { mutableStateOf(false) } // New error state for dates
+    var dateError by remember { mutableStateOf(false) }
 
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }

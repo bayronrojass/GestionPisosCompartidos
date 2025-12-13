@@ -1,5 +1,6 @@
 package es.mirumi.es.ui.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
@@ -48,6 +50,7 @@ import es.mirumi.es.ui.eventos.EventosViewModel
 import es.mirumi.es.ui.gastos.GastosScreen
 import es.mirumi.es.ui.gastos.GastosViewModel
 import es.mirumi.es.ui.gastos.GastosViewModelFactory
+import es.mirumi.es.ui.home.CalendarioScreen
 import es.mirumi.es.ui.home.HomeScreen
 import es.mirumi.es.ui.home.HomeViewModel
 import es.mirumi.es.ui.home.HomeViewModelFactory
@@ -65,9 +68,11 @@ fun MainScreenWithNavigation(
     casaNombre: String,
     onNavigateToItem: (Long, String) -> Unit,
     onLogout: (String) -> Unit,
-    onNavigateToMonthlyView: () -> Unit, // Add this parameter
+    // Eliminamos onNavigateToMonthlyView de los parámetros porque lo manejamos internamente
 ) {
     var selectedTab by remember { mutableIntStateOf(2) }
+    var showCalendar by remember { mutableStateOf(false) } // Estado para controlar la vista del calendario
+
     val savedStateHandle = rememberSaveableStateHolder()
     val context = LocalContext.current.applicationContext
 
@@ -103,36 +108,51 @@ fun MainScreenWithNavigation(
             factory = GastosViewModelFactory(repositoryCasa, sessionManager, casaId),
         )
 
-    Scaffold(
-        bottomBar = {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 20.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                NavigationBar(
-                    selectedTab = selectedTab,
-                    onTabSelected = { selectedTab = it },
-                    // No need for onNavigateToMonthlyView here
-                )
-            }
-        },
-    ) { padding ->
-        Box(modifier = Modifier.padding(padding)) {
-            savedStateHandle.SaveableStateProvider(selectedTab) {
-                when (selectedTab) {
-                    0 -> GastosScreen(viewModel = gastosViewModel, casaId = casaId)
-                    1 -> TareasScreen(tareasViewModel, casaId = casaId, userId = sessionManager.fetchCurrentUserId())
-                    2 ->
-                        HomeScreen(
-                            viewModel = homeViewModel,
-                            onNavigateToMonthlyView = onNavigateToMonthlyView, // Pass it here
-                        )
+    // Lógica para mostrar el calendario a pantalla completa o el Scaffold normal
+    if (showCalendar) {
+        // Manejamos el botón "Atrás" del sistema para cerrar el calendario
+        BackHandler { showCalendar = false }
 
-                    3 -> ListaScreen(listaViewModel, onNavigateToItem, casaId = casaId)
-                    4 -> PerfilScreen(sessionManager, onLogout)
+        CalendarioScreen(
+            onNavigateBack = { showCalendar = false },
+            viewModel = homeViewModel,
+        )
+    } else {
+        Scaffold(
+            bottomBar = {
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 20.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    NavigationBar(
+                        selectedTab = selectedTab,
+                        onTabSelected = { selectedTab = it },
+                    )
+                }
+            },
+        ) { padding ->
+            Box(modifier = Modifier.padding(padding)) {
+                savedStateHandle.SaveableStateProvider(selectedTab) {
+                    when (selectedTab) {
+                        0 -> GastosScreen(viewModel = gastosViewModel, casaId = casaId)
+                        1 ->
+                            TareasScreen(
+                                tareasViewModel,
+                                casaId = casaId,
+                                userId = sessionManager.fetchCurrentUserId(),
+                            )
+                        2 ->
+                            HomeScreen(
+                                casaId = casaId,
+                                viewModel = homeViewModel,
+                                onNavigateToMonthlyView = { showCalendar = true },
+                            )
+                        3 -> ListaScreen(listaViewModel, onNavigateToItem, casaId = casaId)
+                        4 -> PerfilScreen(sessionManager, onLogout)
+                    }
                 }
             }
         }
@@ -271,6 +291,5 @@ fun MainScreenWithNavigationPreview() {
         casaNombre = "Casa de prueba",
         onNavigateToItem = { _, _ -> },
         onLogout = {},
-        onNavigateToMonthlyView = {},
     )
 }

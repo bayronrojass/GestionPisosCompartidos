@@ -1,5 +1,6 @@
 package es.mirumi.es.ui.home
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -19,11 +20,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,13 +51,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.mirumi.es.R
+import es.mirumi.es.model.Evento
+import es.mirumi.es.model.Tarea
+import es.mirumi.es.ui.pizarra.postits.DraggableViewModel
+import es.mirumi.es.ui.pizarra.postits.DraggableViewModelFactory
+import es.mirumi.es.ui.pizarra.postits.PizarraScreen
+import es.mirumi.es.ui.utils.FabActionItem
+import es.mirumi.es.ui.utils.FabActionType
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
+    casaId: Long,
     viewModel: HomeViewModel,
     onNavigateToMonthlyView: () -> Unit,
 ) {
@@ -60,6 +75,9 @@ fun HomeScreen(
     val houseName by viewModel.currentHouse.collectAsStateWithLifecycle()
     val selectedDate by viewModel.fechaSeleccionada.collectAsStateWithLifecycle()
     val next7days = viewModel.next7days()
+
+    val eventos by viewModel.eventos.collectAsStateWithLifecycle()
+    val tareas by viewModel.tareasDelUsuario.collectAsStateWithLifecycle()
 
     val scrollState = rememberScrollState()
     val isFloatingButtonVisible =
@@ -80,28 +98,33 @@ fun HomeScreen(
         }
     }
 
-    Box(
-        modifier = Modifier.fillMaxSize(),
-    ) {
-        HomeContent(
-            modifier = modifier,
-            viewModel = viewModel,
-            userName = userName,
-            houseName = houseName,
-            selectedDate = selectedDate,
-            next7days = next7days,
-            scrollState = scrollState,
-            onNavigateToMonthlyView = onNavigateToMonthlyView,
-        )
+    Scaffold {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            HomeContent(
+                modifier = modifier,
+                viewModel = viewModel,
+                userName = userName,
+                houseName = houseName,
+                selectedDate = selectedDate,
+                next7days = next7days,
+                scrollState = scrollState,
+                onNavigateToMonthlyView = onNavigateToMonthlyView,
+                eventos = eventos,
+                tareas = tareas,
+                casaId = casaId,
+            )
 
-        ScrollToTopFloatingButton(
-            isVisible = isFloatingButtonVisible.value,
-            onClick = {
-                coroutineScope.launch {
-                    scrollState.animateScrollTo(0)
-                }
-            },
-        )
+            ScrollToTopFloatingButton(
+                isVisible = isFloatingButtonVisible.value,
+                onClick = {
+                    coroutineScope.launch {
+                        scrollState.animateScrollTo(0)
+                    }
+                },
+            )
+        }
     }
 }
 
@@ -115,6 +138,9 @@ private fun HomeContent(
     next7days: List<LocalDateTime>,
     scrollState: androidx.compose.foundation.ScrollState,
     onNavigateToMonthlyView: () -> Unit,
+    eventos: List<Evento>,
+    tareas: List<Tarea>,
+    casaId: Long,
 ) {
     Column(
         modifier =
@@ -136,11 +162,17 @@ private fun HomeContent(
             onDateSelected = { date -> viewModel.seleccionarFecha(date) },
             viewModel = viewModel,
             onNavigateToMonthlyView = onNavigateToMonthlyView,
+            eventos = eventos,
+            tareas = tareas,
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        WeeklyEvents(viewModel)
+        WeeklyEvents(
+            viewModel = viewModel,
+            tareas = tareas,
+            selectedDate = selectedDate ?: LocalDate.now(),
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -162,6 +194,34 @@ private fun HomeContent(
 
         Spacer(modifier = Modifier.height(80.dp))
     }
+
+    // FAB Pizarra (opcional, si lo quieres mantener)
+    val pizarraFabActions =
+        listOf(
+            FabActionItem(
+                icon = Icons.Default.NoteAdd,
+                label = "Crear Post-it",
+                action = FabActionType.POST_IT,
+            ),
+        )
+    val model =
+        androidx.lifecycle.viewmodel.compose.viewModel<DraggableViewModel>(
+            key = "Home",
+            factory = DraggableViewModelFactory("Home", casaId),
+        )
+
+    PizarraScreen(
+        model,
+        fabActions = pizarraFabActions,
+        onFabActionSelected = { action ->
+            when (action.action) {
+                FabActionType.POST_IT -> {
+                    model.addNewPostIt()
+                }
+                else -> {}
+            }
+        },
+    )
 }
 
 @Composable
@@ -266,6 +326,8 @@ fun CalendarSection(
     onDateSelected: (LocalDate) -> Unit,
     viewModel: HomeViewModel,
     onNavigateToMonthlyView: () -> Unit,
+    eventos: List<Evento>,
+    tareas: List<Tarea>,
 ) {
     Column(
         modifier =
@@ -300,13 +362,20 @@ fun CalendarSection(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             list.forEachIndexed { index, ldt ->
-                val isSelected = selectedDate?.let { it == ldt.toLocalDate() } ?: false
+                val date = ldt.toLocalDate()
+                val isSelected = selectedDate?.let { it == date } ?: false
+
+                val hasEvent = eventos.any { viewModel.parseFechaSegura(it.fechaInicio) == date }
+                val hasTask = tareas.any { !it.fechaFin.isNullOrEmpty() && viewModel.parseFechaSegura(it.fechaFin) == date }
+
                 DayItem(
                     day = ldt.dayOfMonth.toString(),
                     dayName = viewModel.diasTraducidos(ldt.dayOfWeek),
                     isToday = index == 0,
                     isSelected = isSelected,
-                    onClick = { onDateSelected(ldt.toLocalDate()) },
+                    hasEvent = hasEvent,
+                    hasTask = hasTask,
+                    onClick = { onDateSelected(date) },
                 )
             }
         }
@@ -319,6 +388,8 @@ fun DayItem(
     dayName: String,
     isToday: Boolean = false,
     isSelected: Boolean = false,
+    hasEvent: Boolean = false,
+    hasTask: Boolean = false,
     onClick: () -> Unit,
 ) {
     Column(
@@ -352,6 +423,31 @@ fun DayItem(
                     text = dayName,
                     style = TextStyle(fontSize = 12.sp),
                 )
+
+                // Indicadores
+                if (hasEvent || hasTask) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                        if (hasEvent) {
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .size(4.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xffff5686)),
+                            )
+                        }
+                        if (hasTask) {
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .size(4.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFDDC1FB)),
+                            )
+                        }
+                    }
+                }
             }
         }
 
@@ -368,22 +464,65 @@ fun DayItem(
 }
 
 @Composable
-fun WeeklyEvents(viewModel: HomeViewModel) {
+fun WeeklyEvents(
+    viewModel: HomeViewModel,
+    tareas: List<Tarea>,
+    selectedDate: LocalDate,
+) {
     val eventosDelDia by viewModel.eventosDelDia.collectAsStateWithLifecycle()
-    val sortedList = viewModel.sortEvents(eventosDelDia)
+
+    val tareasFiltradas =
+        remember(tareas, selectedDate) {
+            val limit = selectedDate.plusDays(6)
+            tareas.filter {
+                if (it.fechaFin.isNullOrEmpty()) return@filter false
+                val fecha = viewModel.parseFechaSegura(it.fechaFin)
+                !fecha.isBefore(selectedDate) && !fecha.isAfter(limit)
+            }
+        }
+
+    val combinedList =
+        remember(eventosDelDia, tareasFiltradas) {
+            (eventosDelDia + tareasFiltradas).sortedBy {
+                when (it) {
+                    is Evento -> viewModel.parseFechaSegura(it.fechaInicio)
+                    is Tarea -> viewModel.parseFechaSegura(it.fechaFin)
+                    else -> LocalDate.MAX
+                }
+            }
+        }
+
     Column(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
     ) {
-        if (sortedList.isNotEmpty()) {
-            for (i in sortedList.indices) {
-                val prev = if (i == 0) null else sortedList[i - 1]
-                val day = sortedList[i]
-                if (i == 0 || !viewModel.areSameDay(prev!!.fechaInicio, day.fechaInicio)) {
+        if (combinedList.isNotEmpty()) {
+            for (i in combinedList.indices) {
+                val item = combinedList[i]
+                val itemDate =
+                    when (item) {
+                        is Evento -> viewModel.parseFechaSegura(item.fechaInicio)
+                        is Tarea -> viewModel.parseFechaSegura(item.fechaFin)
+                        else -> LocalDate.now()
+                    }
+
+                // Lógica de Cabeceras (Día de la semana)
+                val prevItemDate =
+                    if (i > 0) {
+                        when (val prev = combinedList[i - 1]) {
+                            is Evento -> viewModel.parseFechaSegura(prev.fechaInicio)
+                            is Tarea -> viewModel.parseFechaSegura(prev.fechaFin)
+                            else -> LocalDate.MIN
+                        }
+                    } else {
+                        null
+                    }
+
+                if (i == 0 || (prevItemDate != null && prevItemDate != itemDate)) {
                     Text(
-                        text = viewModel.diasTraducidos(viewModel.parseFechaSegura(day.fechaInicio).dayOfWeek),
+                        text = viewModel.diasTraducidos(itemDate.dayOfWeek),
                         color = Color.Black,
                         style =
                             TextStyle(
@@ -394,12 +533,23 @@ fun WeeklyEvents(viewModel: HomeViewModel) {
                     Spacer(modifier = Modifier.height(12.dp))
                 }
 
-                EventItem(
-                    title = day.nombre,
-                    color = Color(0xfffff8cf),
-                    creadoPor = day.creadoPor,
-                    viewModel = viewModel,
-                )
+                // COLOR: Amarillo si es el día seleccionado, Blanco si no
+                val isSelectedDay = itemDate == selectedDate
+                val cardColor = if (isSelectedDay) Color(0xfffff8cf) else Color.White
+
+                if (item is Evento) {
+                    EventItem(
+                        title = item.nombre,
+                        color = cardColor,
+                        creadoPor = item.creadoPor,
+                        viewModel = viewModel,
+                    )
+                } else if (item is Tarea) {
+                    TimelineTaskItem(
+                        tarea = item,
+                        color = cardColor,
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -455,6 +605,62 @@ fun EventItem(
                 text = "Creado por: ${creadorName ?: "Cargando..."}",
                 style = TextStyle(fontSize = 12.sp),
                 modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+fun TimelineTaskItem(
+    tarea: Tarea,
+    color: Color,
+) {
+    val priorityColor =
+        when (tarea.prioridad) {
+            "Alta" -> Color(0xFFFF6490)
+            "Media" -> Color(0xFFDDC1FB)
+            else -> Color(0xFFA9E6A8)
+        }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.small,
+        colors = CardDefaults.cardColors(containerColor = color),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .size(8.dp)
+                        .clip(MaterialTheme.shapes.small)
+                        .background(Color(0xFFDDC1FB)),
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = tarea.nombre,
+                    style = TextStyle(fontSize = 15.sp),
+                )
+                Text(
+                    text = "Asignado a: ${tarea.asignadoA?.nombre ?: "Sin asignar"}",
+                    style = TextStyle(fontSize = 12.sp, color = Color.Gray),
+                )
+            }
+
+            Text(
+                text = tarea.prioridad ?: "",
+                style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray),
+                modifier =
+                    Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(priorityColor)
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
             )
         }
     }
@@ -553,7 +759,7 @@ fun PendingTasksSection(viewModel: HomeViewModel) {
                     else -> Pair(Color(0xFFA9E6A8), Color(0xFF2D5C2C))
                 }
 
-            val date = viewModel.parseFechaSegura(tarea.fechaFin!!)
+            val date = viewModel.parseFechaSegura(tarea.fechaFin)
             val taskDate = "${viewModel.diasTraducidos(date.dayOfWeek)}. ${date.dayOfMonth}"
 
             PendingTaskItem(
