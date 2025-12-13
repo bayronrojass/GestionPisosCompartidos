@@ -3,46 +3,20 @@ package es.mirumi.es.ui.item
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,13 +24,22 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import es.mirumi.es.model.Elemento
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import androidx.compose.ui.text.input.ImeAction
 
 @Composable
 fun ItemScreen(
+    navController: NavController,
     listaId: Long,
     listaNombre: String,
     casaNombre: String,
@@ -71,7 +54,20 @@ fun ItemScreen(
     var showCreateDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf<Elemento?>(null) }
     var showDeleteDialog by remember { mutableStateOf<Elemento?>(null) }
-    var showDetailDialog by remember { mutableStateOf<Elemento?>(null) }
+
+    // Estado para el nuevo item
+    var nuevoItemNombre by remember { mutableStateOf("") }
+    // Estado para cantidades
+    val cantidades = remember { mutableStateMapOf<Long, String>() }
+
+    LaunchedEffect(items) {
+        // Asegurar que cada item tenga una cantidad inicial
+        items.forEach { item ->
+            if (item.id != null && !cantidades.containsKey(item.id)) {
+                cantidades[item.id] = "1"
+            }
+        }
+    }
 
     LaunchedEffect(error) {
         error?.let {
@@ -80,13 +76,65 @@ fun ItemScreen(
     }
 
     Scaffold(
+        topBar = {
+            // Barra superior
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(100.dp)
+                        .background(Color.White)
+                        .shadow(elevation = 1.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                // Botón de retroceso
+                Box(
+                    modifier =
+                        Modifier
+                            .padding(start = 16.dp, top = 50.dp)
+                            .size(56.dp)
+                            .clickable { navController.navigateUp() },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Default.ArrowBack,
+                        contentDescription = "Volver atrás",
+                        tint = Color(0xff6c6c6c),
+                        modifier = Modifier.size(32.dp),
+                    )
+                }
+
+                // Título "Lista" alineado a la derecha
+                Text(
+                    text = "Lista",
+                    color = Color(0xff6c6c6c),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(end = 72.dp, top = 50.dp),
+                    textAlign = TextAlign.End,
+                )
+            }
+        },
         floatingActionButton = {
+            // Botón flotante verde
             FloatingActionButton(
                 onClick = { showCreateDialog = true },
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                containerColor = Color(0xFF4A7A4A),
+                modifier =
+                    Modifier
+                        .size(60.dp)
+                        .padding(bottom = 16.dp, end = 16.dp),
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Añadir Item")
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = "Añadir Item",
+                    tint = Color.White,
+                    modifier = Modifier.size(30.dp),
+                )
             }
         },
     ) { paddingValues ->
@@ -95,25 +143,102 @@ fun ItemScreen(
                 Modifier
                     .fillMaxSize()
                     .background(Color(0xfff8f8f8))
-                    .padding(paddingValues)
-                    .padding(horizontal = 20.dp),
+                    .padding(paddingValues),
         ) {
-            Spacer(modifier = Modifier.height(20.dp))
+            // Título de la lista y fecha
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                val nombreLimpio = listaNombre.replace("+", " ").trim()
+                Text(
+                    text = nombreLimpio,
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
+                    textAlign = TextAlign.Center,
+                    fontSize = 28.sp,
+                )
 
-            Text(
-                text = casaNombre,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black,
-            )
+                Text(
+                    text = obtenerFechaActual(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xff6c6c6c),
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
 
-            Text(
-                text = listaNombre,
-                style = MaterialTheme.typography.titleLarge,
-                color = Color(0xFF6C6C6C),
-                modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
-            )
+            // Campo para añadir nuevo ítem
+            Card(
+                modifier =
+                    Modifier
+                        .padding(horizontal = 20.dp, vertical = 16.dp)
+                        .fillMaxWidth()
+                        .shadow(
+                            elevation = 4.dp,
+                            shape = RoundedCornerShape(15.dp),
+                        ),
+                shape = RoundedCornerShape(15.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+            ) {
+                Row(
+                    modifier =
+                        Modifier
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    // Campo "Nuevo"
+                    OutlinedTextField(
+                        value = nuevoItemNombre,
+                        onValueChange = { nuevoItemNombre = it },
+                        placeholder = {
+                            Text(
+                                "Nuevo",
+                                color = Color(0xff6c6c6c),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontSize = 18.sp,
+                            )
+                        },
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .padding(end = 12.dp),
+                        singleLine = true,
+                        textStyle =
+                            MaterialTheme.typography.bodyLarge.copy(
+                                fontSize = 18.sp,
+                            ),
+                    )
 
+                    // Botón + para añadir
+                    IconButton(
+                        onClick = {
+                            if (nuevoItemNombre.isNotBlank()) {
+                                viewModel.crearElemento(nuevoItemNombre, null)
+                                nuevoItemNombre = ""
+                            }
+                        },
+                        modifier = Modifier.size(40.dp),
+                        colors =
+                            IconButtonDefaults.iconButtonColors(
+                                containerColor = Color(0xFF4CAF50),
+                                contentColor = Color.White,
+                            ),
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "Añadir",
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+                }
+            }
+
+            // Lista de elementos
             Box(modifier = Modifier.fillMaxSize()) {
                 when {
                     isLoading -> {
@@ -121,34 +246,61 @@ fun ItemScreen(
                     }
 
                     items.isEmpty() -> {
-                        Text(
-                            text = "No hay elementos en esta lista",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = Color.Gray,
-                            modifier = Modifier.align(Alignment.Center),
-                        )
+                        Column(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 40.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(
+                                text = "No tienes más artículos",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = Color(0xff6c6c6c),
+                                fontSize = 16.sp,
+                            )
+                        }
                     }
 
                     else -> {
                         LazyColumn(
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 20.dp, vertical = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp),
-                            contentPadding = PaddingValues(bottom = 80.dp),
+                            contentPadding = PaddingValues(bottom = 100.dp),
                         ) {
                             items(items, key = { it.id ?: it.hashCode() }) { item ->
-                                Box(
-                                    Modifier.animateItem(
-                                        fadeInSpec = null,
-                                        fadeOutSpec = null,
-                                    ),
-                                ) {
-                                    ItemRow(
-                                        item = item,
-                                        onItemClick = { showDetailDialog = item },
-                                        onCheckClick = { viewModel.toggleItemCompletado(item) },
-                                        onEditClick = { showEditDialog = item },
-                                        onDeleteClick = { showDeleteDialog = item },
-                                    )
-                                }
+                                ItemRowEstiloLista(
+                                    item = item,
+                                    cantidad = cantidades[item.id] ?: "1",
+                                    onCantidadChange = { nuevaCantidad ->
+                                        if (item.id != null) {
+                                            // Validar que sea un número positivo
+                                            if (nuevaCantidad.matches(Regex("\\d+")) || nuevaCantidad.isEmpty()) {
+                                                cantidades[item.id] = nuevaCantidad
+                                            }
+                                        }
+                                    },
+                                    onIncreaseClick = {
+                                        if (item.id != null) {
+                                            val current = cantidades[item.id]?.toIntOrNull() ?: 1
+                                            cantidades[item.id] = (current + 1).toString()
+                                        }
+                                    },
+                                    onDecreaseClick = {
+                                        if (item.id != null) {
+                                            val current = cantidades[item.id]?.toIntOrNull() ?: 1
+                                            if (current > 1) {
+                                                cantidades[item.id] = (current - 1).toString()
+                                            }
+                                        }
+                                    },
+                                    onCheckClick = { viewModel.toggleItemCompletado(item) },
+                                    onEditClick = { showEditDialog = item },
+                                    onDeleteClick = { showDeleteDialog = item },
+                                )
                             }
                         }
                     }
@@ -157,6 +309,7 @@ fun ItemScreen(
         }
     }
 
+    // Diálogos
     if (showCreateDialog) {
         ItemDialog(
             title = "Añadir Nuevo Item",
@@ -201,34 +354,15 @@ fun ItemScreen(
             },
         )
     }
-
-    showDetailDialog?.let { item ->
-        AlertDialog(
-            onDismissRequest = { showDetailDialog = null },
-            title = { Text(item.nombre) },
-            text = {
-                val desc = item.descripcion
-                Text(
-                    if (desc.isNullOrBlank()) {
-                        "Sin descripción."
-                    } else {
-                        desc
-                    },
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { showDetailDialog = null }) {
-                    Text("Cerrar")
-                }
-            },
-        )
-    }
 }
 
 @Composable
-fun ItemRow(
+fun ItemRowEstiloLista(
     item: Elemento,
-    onItemClick: () -> Unit,
+    cantidad: String,
+    onCantidadChange: (String) -> Unit,
+    onIncreaseClick: () -> Unit,
+    onDecreaseClick: () -> Unit,
     onCheckClick: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
@@ -237,68 +371,116 @@ fun ItemRow(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .shadow(2.dp, RoundedCornerShape(12.dp))
-                .clip(RoundedCornerShape(12.dp))
-                .clickable { onItemClick() },
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+                .shadow(
+                    elevation = 4.dp,
+                    shape = RoundedCornerShape(15.dp),
+                ).clip(RoundedCornerShape(15.dp)),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = if (item.completado) Color(0xFFE8F5E9) else Color.White,
+            ),
     ) {
         Row(
             modifier =
                 Modifier
-                    .padding(12.dp)
+                    .padding(horizontal = 20.dp, vertical = 16.dp)
                     .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            IconButton(onClick = onCheckClick) {
-                Icon(
-                    imageVector = if (item.completado) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
-                    contentDescription = if (item.completado) "Marcar como pendiente" else "Marcar como completado",
-                    tint = if (item.completado) Color(0xFF4CAF50) else Color.Gray,
-                )
-            }
-
-            Column(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .padding(horizontal = 8.dp),
+            // Checkbox a la izquierda
+            IconButton(
+                onClick = onCheckClick,
+                modifier = Modifier.size(32.dp),
+                colors =
+                    IconButtonDefaults.iconButtonColors(
+                        containerColor = Color.Transparent,
+                        contentColor = if (item.completado) Color(0xFF4CAF50) else Color(0xff6c6c6c),
+                    ),
             ) {
-                Text(
-                    text = item.nombre,
-                    style =
-                        MaterialTheme.typography.bodyLarge.copy(
-                            textDecoration = if (item.completado) TextDecoration.LineThrough else TextDecoration.None,
-                        ),
-                    color = if (item.completado) Color.Gray else Color.Black,
-                )
-
-                item.descripcion?.let { desc ->
-                    if (desc.isNotBlank()) {
-                        Text(
-                            text = desc,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray,
-                            maxLines = 1,
-                        )
-                    }
-                }
-            }
-
-            Row {
-                IconButton(onClick = onEditClick, modifier = Modifier.size(36.dp)) {
+                if (item.completado) {
                     Icon(
-                        Icons.Default.Edit,
-                        contentDescription = "Editar",
-                        tint = Color(0xFF1976D2),
-                        modifier = Modifier.size(20.dp),
+                        Icons.Default.CheckCircle,
+                        contentDescription = "Completado",
+                        modifier = Modifier.size(28.dp),
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.RadioButtonUnchecked,
+                        contentDescription = "Pendiente",
+                        modifier = Modifier.size(28.dp),
                     )
                 }
-                IconButton(onClick = onDeleteClick, modifier = Modifier.size(36.dp)) {
+            }
+
+            // Nombre del producto (se expande)
+            Text(
+                text = item.nombre,
+                style =
+                    MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 18.sp,
+                        textDecoration = if (item.completado) TextDecoration.LineThrough else TextDecoration.None,
+                    ),
+                color = if (item.completado) Color(0xff6c6c6c) else Color.Black,
+                modifier = Modifier.weight(1f),
+            )
+
+            // Controles de cantidad (como en la imagen)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                // Botón -
+                IconButton(
+                    onClick = onDecreaseClick,
+                    modifier = Modifier.size(32.dp),
+                    colors =
+                        IconButtonDefaults.iconButtonColors(
+                            containerColor = Color(0xFFE0E0E0),
+                            contentColor = Color(0xff6c6c6c),
+                        ),
+                ) {
                     Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Borrar",
-                        tint = Color(0xFFE53935),
-                        modifier = Modifier.size(20.dp),
+                        Icons.Default.Remove,
+                        contentDescription = "Disminuir cantidad",
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+
+                // Campo de cantidad
+                OutlinedTextField(
+                    value = cantidad,
+                    onValueChange = onCantidadChange,
+                    modifier = Modifier.width(60.dp),
+                    textStyle =
+                        androidx.compose.ui.text.TextStyle(
+                            textAlign = TextAlign.Center,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                        ),
+                    singleLine = true,
+                    // CORREGIDO: Usando KeyboardOptions directamente
+                    keyboardOptions =
+                        KeyboardOptions.Default.copy(
+                            keyboardType = KeyboardType.Number,
+                        ),
+                )
+
+                // Botón +
+                IconButton(
+                    onClick = onIncreaseClick,
+                    modifier = Modifier.size(32.dp),
+                    colors =
+                        IconButtonDefaults.iconButtonColors(
+                            containerColor = Color(0xFF4CAF50),
+                            contentColor = Color.White,
+                        ),
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = "Aumentar cantidad",
+                        modifier = Modifier.size(18.dp),
                     )
                 }
             }
@@ -333,6 +515,11 @@ fun ItemDialog(
                     singleLine = true,
                     isError = isError,
                     modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions =
+                        KeyboardOptions.Default.copy(
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Next,
+                        ),
                 )
                 if (isError) {
                     Text(
@@ -349,6 +536,11 @@ fun ItemDialog(
                     label = { Text("Descripción (opcional)") },
                     maxLines = 3,
                     modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions =
+                        KeyboardOptions.Default.copy(
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Done,
+                        ),
                 )
             }
         },
@@ -371,4 +563,14 @@ fun ItemDialog(
             }
         },
     )
+}
+
+// Función auxiliar para obtener la fecha actual formateada en español
+@Composable
+fun obtenerFechaActual(): String {
+    val calendar = Calendar.getInstance()
+    val fecha = SimpleDateFormat("EEEE, d 'de' MMMM", Locale("es", "ES"))
+    return fecha.format(calendar.time).replaceFirstChar {
+        it.titlecase(Locale("es", "ES"))
+    }
 }
