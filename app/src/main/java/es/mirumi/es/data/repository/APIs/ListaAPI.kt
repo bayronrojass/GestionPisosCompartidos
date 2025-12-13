@@ -10,12 +10,12 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface ListaAPI {
-    @GET("casas/{casaId}/listas")
+    @GET("listas/casa/{casaId}")
     suspend fun getListasByCasaId(
         @Path("casaId") casaId: Long,
     ): Response<List<Lista>>
 
-    @POST("casas/{casaId}/listas")
+    @POST("listas/casa/{casaId}")
     suspend fun crearListaEnCasa(
         @Path("casaId") casaId: Long,
         @Body nuevaLista: ListaRequest,

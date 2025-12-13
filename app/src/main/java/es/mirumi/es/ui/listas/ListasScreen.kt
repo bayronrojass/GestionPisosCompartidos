@@ -1,63 +1,36 @@
 package es.mirumi.es.ui.listas
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredHeight
-import androidx.compose.foundation.layout.requiredWidth
-import androidx.compose.foundation.layout.size
+import android.widget.Toast
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.NoteAdd
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
+import es.mirumi.es.R
+import es.mirumi.es.data.SessionManager
 import es.mirumi.es.model.Lista
+import es.mirumi.es.model.Usuario
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModel
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModelFactory
 import es.mirumi.es.ui.pizarra.postits.PizarraScreen
@@ -70,9 +43,8 @@ fun ListaScreen(
     onNavigateToItem: (Long, String) -> Unit = { _, _ -> },
     casaId: Long,
 ) {
-    // Estados del ViewModel
-    val listas by viewModel.listas.observeAsState()
-    val isLoading by viewModel.isLoading.observeAsState()
+    val listas by viewModel.listas.observeAsState(emptyList())
+    val isLoading by viewModel.isLoading.observeAsState(false)
     val error by viewModel.error.observeAsState()
 
     // Estados locales
@@ -83,6 +55,8 @@ fun ListaScreen(
     var createListDescription by remember { mutableStateOf("") }
 
     val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context) }
+    val currentUserId = remember { sessionManager.fetchCurrentUserId() }
 
     LaunchedEffect(Unit) {
         viewModel.cargarListas()
@@ -90,18 +64,29 @@ fun ListaScreen(
 
     LaunchedEffect(error) {
         error?.let {
-            android.widget.Toast
-                .makeText(context, it, android.widget.Toast.LENGTH_LONG)
-                .show()
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
         }
     }
 
-    // Filtrar listas según la pestaña seleccionada
+    // LÓGICA DE FILTRADO
     val filteredListas =
-        when (selectedTab) {
-            0 -> listas?.filter { it.nombre !in listOf("Cena del sábado 1") } ?: emptyList()
-            1 -> listas?.filter { it.nombre in listOf("Cena del sábado 1") } ?: emptyList()
-            else -> emptyList()
+        remember(listas, selectedTab, currentUserId) {
+            when (selectedTab) {
+                0 -> {
+                    // Mis Listas: Soy el propietario
+                    listas.filter {
+                        it.propietario?.id == currentUserId ||
+                            (it.propietario == null) // Para listas antiguas sin propietario
+                    }
+                }
+                1 -> {
+                    // Compartidas: Soy participante pero NO propietario
+                    listas.filter {
+                        it.propietario != null && it.propietario.id != currentUserId
+                    }
+                }
+                else -> emptyList()
+            }
         }
 
     Scaffold(
@@ -125,14 +110,14 @@ fun ListaScreen(
                         .offset(x = 20.dp, y = 25.dp),
             )
 
-            // Selector de pestañas
+            // Selector de Pestañas
             Box(
                 modifier =
                     Modifier
                         .align(Alignment.TopStart)
                         .offset(x = 65.dp, y = 105.dp)
-                        .requiredWidth(width = 260.dp)
-                        .requiredHeight(height = 24.dp),
+                        .requiredWidth(260.dp)
+                        .requiredHeight(24.dp),
             ) {
                 // Fondo blanco
                 Box(
@@ -144,7 +129,7 @@ fun ListaScreen(
                             .shadow(4.dp, RoundedCornerShape(26.dp)),
                 )
 
-                // Fondo morado (Selector)
+                // Fondo morado (Selección)
                 Box(
                     modifier =
                         Modifier
@@ -180,29 +165,21 @@ fun ListaScreen(
                 )
             }
 
-            // Contenido principal - Listas
+            // Lista de Elementos
             when {
                 isLoading == true -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
                 }
-
                 filteredListas.isEmpty() -> {
                     Text(
                         text = "No tienes más listas",
                         color = Color.Black,
                         fontSize = 14.sp,
-                        modifier =
-                            Modifier
-                                .align(Alignment.TopCenter)
-                                .offset(y = 400.dp),
+                        modifier = Modifier.align(Alignment.TopCenter).offset(y = 400.dp),
                     )
                 }
-
                 else -> {
                     LazyColumn(
                         modifier =
@@ -211,36 +188,20 @@ fun ListaScreen(
                                 .offset(y = 160.dp)
                                 .fillMaxSize()
                                 .padding(horizontal = 20.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(20.dp),
                         contentPadding = PaddingValues(bottom = 150.dp),
                     ) {
                         items(filteredListas.size) { index ->
                             val lista = filteredListas[index]
-                            val dateText =
-                                when (lista.nombre) {
-                                    "Compra semanal" -> "Editada el 11 de Nov"
-                                    "Compra Ikea" -> "Creada el 13 de Nov"
-                                    "Limpieza" -> "Creada el 13 de Nov"
-                                    "Cosas hamster" -> "Creada el 13 de Nov"
-                                    "Galletas caseras" -> "Editada el 23 de Oct"
-                                    "Cena del sábado 1" -> "Creada el 13 de Nov"
-                                    else -> "Creada el NA"
-                                }
-
-                            val participantCount =
-                                when (lista.nombre) {
-                                    "Compra Ikea" -> 1
-                                    "Cena del sábado 1" -> 3
-                                    else -> -1
-                                }
+                            // Determinar si mostrar múltiples avatares
+                            val isSharedView = selectedTab == 1 || lista.participantes.size > 1
 
                             ShoppingListItemCard(
-                                title = lista.nombre,
-                                date = dateText,
-                                participantCount = participantCount,
+                                lista = lista,
+                                isShared = isSharedView,
+                                currentUserId = currentUserId ?: -1,
                                 onItemClick = { onNavigateToItem(lista.id, lista.nombre) },
-                                onDeleteClick = { showDeleteDialog = lista },
-                                modifier = Modifier.fillMaxWidth(),
+                                onLongClick = { showDeleteDialog = lista }, // Borrar con pulsación larga
                             )
                         }
                     }
@@ -249,45 +210,27 @@ fun ListaScreen(
         }
     }
 
-    // Configuración del FAB y pizarra
+    // Lógica del FAB y Pizarra (Post-its)
     val pizarraFabActions =
         listOf(
-            FabActionItem(
-                icon = Icons.Default.NoteAdd,
-                label = "Crear Post-it",
-                action = FabActionType.POST_IT,
-            ),
-            FabActionItem(
-                icon = Icons.Default.Add,
-                label = "Crear Lista",
-                action = FabActionType.CREAR_LISTA,
-            ),
+            FabActionItem(Icons.Default.NoteAdd, "Crear Post-it", FabActionType.POST_IT),
+            FabActionItem(Icons.Default.Add, "Crear Lista", FabActionType.CREAR_LISTA),
         )
-    val model =
-        viewModel<DraggableViewModel>(
-            key = "Lista",
-            factory = DraggableViewModelFactory("Lista", casaId),
-        )
+    val model = viewModel<DraggableViewModel>(key = "Lista", factory = DraggableViewModelFactory("Lista", casaId))
 
     PizarraScreen(
         model,
         fabActions = pizarraFabActions,
         onFabActionSelected = { action ->
             when (action.action) {
-                FabActionType.POST_IT -> {
-                    model.addNewPostIt()
-                }
-
-                FabActionType.CREAR_LISTA -> {
-                    showCreateDialog = true
-                }
-
+                FabActionType.POST_IT -> model.addNewPostIt()
+                FabActionType.CREAR_LISTA -> showCreateDialog = true
                 else -> {}
             }
         },
     )
 
-    // Diálogo de creación de lista
+    // Diálogo Crear Lista
     if (showCreateDialog) {
         AlertDialog(
             onDismissRequest = { showCreateDialog = false },
@@ -314,29 +257,22 @@ fun ListaScreen(
                 Button(
                     onClick = {
                         if (createListName.isNotBlank()) {
-                            viewModel.crearLista(
-                                createListName,
-                                createListDescription.ifBlank { null },
-                            )
+                            viewModel.crearLista(createListName, createListDescription.ifBlank { null })
                             showCreateDialog = false
                             createListName = ""
                             createListDescription = ""
                         }
                     },
                     enabled = createListName.isNotBlank(),
-                ) {
-                    Text("Crear")
-                }
+                ) { Text("Crear") }
             },
             dismissButton = {
-                TextButton(onClick = { showCreateDialog = false }) {
-                    Text("Cancelar")
-                }
+                TextButton(onClick = { showCreateDialog = false }) { Text("Cancelar") }
             },
         )
     }
 
-    // Diálogo de confirmación de borrado
+    // Diálogo Borrar Lista
     showDeleteDialog?.let { lista ->
         AlertDialog(
             onDismissRequest = { showDeleteDialog = null },
@@ -348,132 +284,151 @@ fun ListaScreen(
                         viewModel.borrarLista(lista)
                         showDeleteDialog = null
                     },
-                ) {
-                    Text("Borrar")
-                }
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                ) { Text("Borrar") }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = null }) {
-                    Text("Cancelar")
-                }
+                TextButton(onClick = { showDeleteDialog = null }) { Text("Cancelar") }
             },
         )
     }
 }
 
-// ShoppingListItem usando Card como las tareas
+// --- NUEVO COMPONENTE DE TARJETA ---
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ShoppingListItemCard(
-    title: String,
-    date: String,
-    participantCount: Int,
+    lista: Lista,
+    isShared: Boolean,
+    currentUserId: Long,
     onItemClick: () -> Unit,
-    onDeleteClick: () -> Unit,
+    onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Texto de fecha inteligente
+    val dateText =
+        remember(lista) {
+            if (!lista.fechaEdicion.isNullOrBlank()) {
+                "Editada el ${formatDate(lista.fechaEdicion)}"
+            } else if (!lista.fechaCreacion.isNullOrBlank()) {
+                "Creada el ${formatDate(lista.fechaCreacion)}"
+            } else {
+                "Fecha desconocida"
+            }
+        }
+
     Card(
-        colors =
-            CardDefaults.cardColors(
-                containerColor = Color.White,
-            ),
-        elevation =
-            CardDefaults.cardElevation(
-                defaultElevation = 4.dp, // Sombra sutil como las tareas
-            ),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = RoundedCornerShape(15.dp),
-        modifier = modifier.clickable(onClick = onItemClick),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .combinedClickable(
+                    onClick = onItemClick,
+                    onLongClick = onLongClick,
+                ),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .padding(all = 20.dp),
         ) {
-            // Información de la lista
+            // Info Izquierda
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(7.dp),
             ) {
                 Text(
-                    text = title,
+                    text = lista.nombre,
                     color = Color.Black,
-                    style =
-                        TextStyle(
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Medium,
-                        ),
+                    style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Medium),
                 )
                 Text(
-                    text = date,
+                    text = dateText,
                     color = Color(0xff6c6c6c),
                     style = TextStyle(fontSize = 13.sp),
                 )
             }
 
-            // Avatares de participantes y botón de eliminar
+            // Avatares Derecha
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.End,
+                modifier = Modifier.width(IntrinsicSize.Min),
             ) {
-                // Mostrar avatares solo si hay participantes
-                if (participantCount > 0) {
-                    ParticipantAvatars(count = participantCount)
-                }
-
-                // Botón de eliminar
-                IconButton(
-                    onClick = onDeleteClick,
-                    modifier = Modifier.size(24.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Eliminar lista",
-                        tint = Color.Red,
-                    )
+                if (isShared) {
+                    // Mostrar hasta 3 participantes si es compartida
+                    val participants = lista.participantes.take(3)
+                    ParticipantAvatars(participants)
+                } else {
+                    // Mostrar solo propietario si es individual
+                    val owner = lista.propietario ?: Usuario(id = currentUserId, nombre = "Yo", correo = "")
+                    UserAvatar(user = owner, size = 30.dp)
                 }
             }
         }
     }
 }
 
-// Componente para los avatares de participantes - Mejorado
 @Composable
-fun ParticipantAvatars(count: Int) {
-    Row {
-        val avatarColors =
-            listOf(
-                Color(0xFFE57373), // Rojo claro
-                Color(0xFF81C784), // Verde claro
-                Color(0xFF64B5F6), // Azul claro
-                Color(0xFFBA68C8), // Púrpura claro
-            )
-
-        repeat(minOf(count, avatarColors.size)) { index ->
-            Box(
+fun ParticipantAvatars(participants: List<Usuario>) {
+    Box(contentAlignment = Alignment.CenterEnd) {
+        participants.forEachIndexed { index, user ->
+            UserAvatar(
+                user = user,
+                size = 30.dp,
                 modifier =
                     Modifier
-                        .size(30.dp)
-                        .clip(CircleShape)
-                        .background(avatarColors[index])
-                        .border(
-                            width = 2.dp,
-                            color = Color.White,
-                            shape = CircleShape,
-                        ).then(
-                            if (index > 0) {
-                                Modifier.offset(x = (-8 * index).dp)
-                            } else {
-                                Modifier
-                            },
-                        ),
+                        .offset(x = (-20 * index).dp) // Efecto de superposición
+                        .zIndex((participants.size - index).toFloat()),
             )
         }
     }
 }
 
-@Preview(widthDp = 390, heightDp = 844)
 @Composable
-private fun ShoppingListScreenPreview() {
-    ListaScreen(viewModel(), { _, _ -> }, 0)
+fun UserAvatar(
+    user: Usuario,
+    size: androidx.compose.ui.unit.Dp,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier =
+            modifier
+                .size(size)
+                .clip(CircleShape)
+                .background(Color.LightGray)
+                .border(2.dp, Color.White, CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        // Aquí puedes cargar la imagen real si tienes la URL en el objeto Usuario
+        Image(
+            painter = painterResource(id = R.drawable.ic_user),
+            contentDescription = user.nombre,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+            colorFilter = ColorFilter.tint(Color.DarkGray),
+        )
+    }
+}
+
+fun formatDate(dateString: String?): String {
+    if (dateString.isNullOrBlank()) return ""
+    return try {
+        // Asume formato ISO "2023-11-13T..."
+        val parts = dateString.split("T")[0].split("-")
+        if (parts.size == 3) {
+            val months = listOf("Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")
+            "${parts[2]} de ${months[parts[1].toInt() - 1]}"
+        } else {
+            dateString
+        }
+    } catch (e: Exception) {
+        dateString
+    }
 }
