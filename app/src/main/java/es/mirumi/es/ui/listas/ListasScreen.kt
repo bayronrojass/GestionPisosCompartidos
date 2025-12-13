@@ -1,7 +1,12 @@
 package es.mirumi.es.ui.listas
 
 import android.widget.Toast
-import androidx.compose.foundation.*
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -68,22 +73,34 @@ fun ListaScreen(
         }
     }
 
-    // LÓGICA DE FILTRADO
+    // --- LÓGICA DE FILTRADO CORREGIDA ---
     val filteredListas =
         remember(listas, selectedTab, currentUserId) {
+            val allListas = listas ?: emptyList()
+
+            // 1. PRIMER FILTRO: ¿Pertenezco a esta lista?
+            // (Ya sea como propietario o como participante en la lista)
+            val listasDondeEstoy =
+                allListas.filter { lista ->
+                    val soyPropietario = lista.propietario?.id == currentUserId
+                    val soyParticipante = lista.participantes.any { it.id == currentUserId }
+
+                    // Si el backend añade automáticamente al creador a participantes,
+                    // basta con chequear participantes, pero chequeamos ambos por seguridad.
+                    soyPropietario || soyParticipante
+                }
+
+            // 2. SEGUNDO FILTRO: Según la pestaña seleccionada
             when (selectedTab) {
                 0 -> {
-                    // Mis Listas: Soy el propietario
-                    listas.filter {
-                        it.propietario?.id == currentUserId ||
-                            (it.propietario == null) // Para listas antiguas sin propietario
-                    }
+                    // Pestaña "Mis Listas" (Individuales)
+                    // Son aquellas donde estoy yo, y NO hay nadie más (participantes <= 1)
+                    listasDondeEstoy.filter { it.participantes.size <= 1 }
                 }
                 1 -> {
-                    // Compartidas: Soy participante pero NO propietario
-                    listas.filter {
-                        it.propietario != null && it.propietario.id != currentUserId
-                    }
+                    // Pestaña "Compartidas"
+                    // Son aquellas donde estoy yo, y HAY más gente (participantes > 1)
+                    listasDondeEstoy.filter { it.participantes.size > 1 }
                 }
                 else -> emptyList()
             }
@@ -174,7 +191,7 @@ fun ListaScreen(
                 }
                 filteredListas.isEmpty() -> {
                     Text(
-                        text = "No tienes más listas",
+                        text = "No tienes listas en esta sección",
                         color = Color.Black,
                         fontSize = 14.sp,
                         modifier = Modifier.align(Alignment.TopCenter).offset(y = 400.dp),
@@ -193,15 +210,16 @@ fun ListaScreen(
                     ) {
                         items(filteredListas.size) { index ->
                             val lista = filteredListas[index]
-                            // Determinar si mostrar múltiples avatares
-                            val isSharedView = selectedTab == 1 || lista.participantes.size > 1
+
+                            // Determinar visualización de avatares
+                            val isSharedView = selectedTab == 1
 
                             ShoppingListItemCard(
                                 lista = lista,
                                 isShared = isSharedView,
                                 currentUserId = currentUserId ?: -1,
                                 onItemClick = { onNavigateToItem(lista.id, lista.nombre) },
-                                onLongClick = { showDeleteDialog = lista }, // Borrar con pulsación larga
+                                onLongClick = { showDeleteDialog = lista },
                             )
                         }
                     }
@@ -294,7 +312,7 @@ fun ListaScreen(
     }
 }
 
-// --- NUEVO COMPONENTE DE TARJETA ---
+// --- COMPONENTES VISUALES ---
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -355,7 +373,7 @@ fun ShoppingListItemCard(
                 )
             }
 
-            // Avatares Derecha
+            // Avatares Derecha (Reemplaza botón borrar)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.End,
@@ -367,6 +385,7 @@ fun ShoppingListItemCard(
                     ParticipantAvatars(participants)
                 } else {
                     // Mostrar solo propietario si es individual
+                    // Si el propietario es null (listas legacy), mostramos un placeholder genérico
                     val owner = lista.propietario ?: Usuario(id = currentUserId, nombre = "Yo", correo = "")
                     UserAvatar(user = owner, size = 30.dp)
                 }
@@ -406,7 +425,8 @@ fun UserAvatar(
                 .border(2.dp, Color.White, CircleShape),
         contentAlignment = Alignment.Center,
     ) {
-        // Aquí puedes cargar la imagen real si tienes la URL en el objeto Usuario
+        // Carga la imagen si existe, sino un placeholder
+        // NOTA: Para producción usar Coil/Glide. Aquí usamos un drawable local.
         Image(
             painter = painterResource(id = R.drawable.ic_user),
             contentDescription = user.nombre,
