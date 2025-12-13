@@ -1,5 +1,6 @@
 package es.mirumi.es.ui.listas
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -11,6 +12,7 @@ import es.mirumi.es.model.Lista
 import es.mirumi.es.model.Usuario
 import es.mirumi.es.model.requests.ListaRequest
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 
 class ListasViewModel(
     private val casaId: Long,
@@ -58,20 +60,32 @@ class ListasViewModel(
         nombre: String,
         descripcion: String?,
         participantesIds: List<Long>,
+        propietarioId: Long,
     ) {
         _isLoading.value = true
         _error.value = null
         viewModelScope.launch {
             try {
-                // Si la lista está vacía, enviamos null o lista vacía
-                val request = ListaRequest(nombre, descripcion, participantesIds)
+                // Log para ver qué estamos enviando exactamente
+                Log.d("DEBUG_LISTA", "Enviando -> Nombre: '$nombre', Desc: '$descripcion', Parts: $participantesIds")
+
+                val request = ListaRequest(nombre, descripcion, participantesIds, propietarioId)
                 val nuevaLista = repository.crearListaEnCasa(casaId, request)
 
-                // Actualizar UI
                 val listasActuales = _listas.value ?: emptyList()
                 _listas.value = listasActuales + nuevaLista
             } catch (e: Exception) {
-                _error.value = e.message ?: "Error al crear la lista"
+                // --- AQUÍ ESTÁ LA CLAVE PARA EL DEBUG ---
+                if (e is HttpException) {
+                    // Leemos el cuerpo del error que envía Spring Boot
+                    val errorBody = e.response()?.errorBody()?.string()
+                    Log.e("DEBUG_LISTA", "Error HTTP ${e.code()}: $errorBody")
+                    _error.value = "Error del servidor: $errorBody"
+                } else {
+                    Log.e("DEBUG_LISTA", "Error genérico: ${e.message}", e)
+                    _error.value = e.message ?: "Error al crear la lista"
+                }
+                // ----------------------------------------
             } finally {
                 _isLoading.value = false
             }
