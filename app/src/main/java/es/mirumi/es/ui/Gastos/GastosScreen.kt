@@ -24,12 +24,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.RestaurantMenu
@@ -48,6 +49,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -74,13 +76,14 @@ import es.mirumi.es.ui.pizarra.postits.DraggableViewModelFactory
 import es.mirumi.es.ui.pizarra.postits.PizarraScreen
 import es.mirumi.es.ui.utils.FabActionItem
 import es.mirumi.es.ui.utils.FabActionType
+import es.mirumi.es.utils.Deuda
 
 val ColorFondo = Color(0xFFF8F8F8)
 val ColorLila = Color(0xFFDDC1FB)
 val ColorLilaClaroTarjeta = Color(0xFFE8D5FC)
 val ColorLilaSelected = Color(0xFFDDC1FB)
-val ColorVerdeSaldo = Color(0xFF4CAF50)
-val ColorRojoSaldo = Color(0xFFE57373)
+val ColorVerdeSaldo = Color(0xFF00C853)
+val ColorRojoSaldo = Color(0xFFFF1744)
 val ColorTextoGris = Color(0xFF6C6C6C)
 val ColorMoradoOscuro = Color(0xFF58337F)
 
@@ -92,6 +95,7 @@ fun GastosScreen(
     val gastos by viewModel.gastos.collectAsState()
     val stats by viewModel.stats.collectAsState()
     val saldos by viewModel.saldos.collectAsState()
+    val planDePagos by viewModel.planDePagos.collectAsState()
     val mostrarEstadisticas by viewModel.mostrarEstadisticas.collectAsState()
     val filtroActual by viewModel.filtroCategoria.collectAsState()
 
@@ -99,6 +103,7 @@ fun GastosScreen(
     var tabSeleccionado by remember { mutableIntStateOf(0) }
 
     var showDialog by remember { mutableStateOf(false) }
+    var showDebtDialog by remember { mutableStateOf(false) }
     var isEditing by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -205,24 +210,41 @@ fun GastosScreen(
                             viewModel = viewModel,
                         )
                     } else {
-                        VistaSaldosContent(saldos)
+                        VistaSaldosContent(
+                            saldos = saldos,
+                            onSaldarDeudasClick = {
+                                viewModel.calcularPlanPagos()
+                                showDebtDialog = true
+                            },
+                        )
                     }
                 }
             }
 
             if (showDialog) {
+                val usuariosCasa by viewModel.usuariosDetectados.collectAsState()
+
                 NuevoGastoDialog(
                     onDismiss = { showDialog = false },
                     gastoEditar = if (isEditing) gastoSeleccionado else null,
-                    onConfirm = { nombre, importe, categoria ->
+                    miembrosCasa = usuariosCasa,
+                    onConfirm = { nombre, importe, categoria, beneficiarios ->
                         if (isEditing && gastoSeleccionado != null) {
                             // Lógica de editar futura
                         } else {
-                            viewModel.crearGasto(nombre, importe, categoria)
+                            viewModel.crearGasto(nombre, importe, categoria, beneficiarios)
                         }
                         showDialog = false
                         if (isEditing) gastoSeleccionado = null
                     },
+                )
+            }
+
+            if (showDebtDialog) {
+                DialogPlanPagos(
+                    plan = planDePagos,
+                    onDismiss = { showDebtDialog = false },
+                    viewModel = viewModel,
                 )
             }
         }
@@ -336,7 +358,10 @@ fun VistaListaGastosContent(
 }
 
 @Composable
-fun VistaSaldosContent(saldos: List<SaldoUsuario>) {
+fun VistaSaldosContent(
+    saldos: List<SaldoUsuario>,
+    onSaldarDeudasClick: () -> Unit,
+) {
     Column {
         Card(
             colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -369,8 +394,20 @@ fun VistaSaldosContent(saldos: List<SaldoUsuario>) {
                         color = ColorTextoGris,
                     )
                 }
-                Icon(Icons.Default.KeyboardArrowRight, null)
             }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = onSaldarDeudasClick,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = ColorLila),
+            shape = RoundedCornerShape(12.dp),
+        ) {
+            Icon(Icons.Default.Calculate, contentDescription = null, tint = ColorMoradoOscuro)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Saldar Deudas", color = ColorMoradoOscuro, fontWeight = FontWeight.Bold)
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -387,6 +424,89 @@ fun VistaSaldosContent(saldos: List<SaldoUsuario>) {
             }
         }
     }
+}
+
+@Composable
+fun DialogPlanPagos(
+    plan: List<Deuda>,
+    onDismiss: () -> Unit,
+    viewModel: GastosViewModel,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                "Plan de Pagos",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                if (plan.isEmpty()) {
+                    Text("¡No hay deudas pendientes! Todo está saldado.", color = ColorVerdeSaldo)
+                } else {
+                    Text(
+                        "Para ajustar cuentas, haced estos pagos:",
+                        fontSize = 14.sp,
+                        color = ColorTextoGris,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(plan) { deuda ->
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = ColorFondo),
+                                shape = RoundedCornerShape(8.dp),
+                            ) {
+                                Row(
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        AvatarConInicial(
+                                            deuda.de,
+                                            viewModel.getColorPorNombreDinamico(deuda.de),
+                                            30.dp,
+                                        )
+                                        Icon(
+                                            Icons.Default.ArrowForward,
+                                            contentDescription = "Paga a",
+                                            modifier = Modifier.padding(horizontal = 8.dp).size(16.dp),
+                                            tint = ColorTextoGris,
+                                        )
+                                        AvatarConInicial(
+                                            deuda.para,
+                                            viewModel.getColorPorNombreDinamico(deuda.para),
+                                            30.dp,
+                                        )
+                                    }
+                                    Text(
+                                        "${String.format("%.2f", deuda.cantidad)}€",
+                                        fontWeight = FontWeight.Bold,
+                                        color = ColorMoradoOscuro,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Entendido", color = ColorMoradoOscuro)
+            }
+        },
+        containerColor = Color.White,
+    )
 }
 
 @Composable

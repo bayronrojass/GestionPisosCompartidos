@@ -9,13 +9,16 @@ import es.mirumi.es.data.SessionManager
 import es.mirumi.es.data.repository.repositories.RepositoryCasa
 import es.mirumi.es.model.Gasto
 import es.mirumi.es.model.requests.GastoRequest
+import es.mirumi.es.utils.DebtCalculator
+import es.mirumi.es.utils.Deuda
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
-// Modelos de datos compartidos (Definidos AQUÍ solamente)
+
 data class PieChartData(
     val categoria: String,
     val porcentaje: Float,
@@ -51,6 +54,9 @@ class GastosViewModel(
     private val _saldos = MutableStateFlow<List<SaldoUsuario>>(emptyList())
     val saldos: StateFlow<List<SaldoUsuario>> = _saldos.asStateFlow()
 
+    private val _planDePagos = MutableStateFlow<List<Deuda>>(emptyList())
+    val planDePagos: StateFlow<List<Deuda>> = _planDePagos.asStateFlow()
+
     private val _usuariosDetectados = MutableStateFlow<List<String>>(emptyList())
     val usuariosDetectados: StateFlow<List<String>> = _usuariosDetectados.asStateFlow()
 
@@ -60,17 +66,19 @@ class GastosViewModel(
     private val _filtroCategoria = MutableStateFlow("TODOS")
     val filtroCategoria: StateFlow<String> = _filtroCategoria.asStateFlow()
 
+
     private val colorPalette =
         listOf(
-            Color(0xFFB1395B),
-            Color(0xFF8061A2),
-            Color(0xFF93BBEC),
-            Color(0xFF61995F),
-            Color(0xFFFFD54F),
-            Color(0xFFFF8A65),
-            Color(0xFF90A4AE),
-            Color(0xFF7986CB),
-            Color(0xFF4DB6AC),
+            Color(0xFF536DFE), // Azul eléctrico
+            Color(0xFFFF4081), // Rosa fuerte
+            Color(0xFF00E676), // Verde neón
+            Color(0xFFFFD740), // Amarillo sol
+            Color(0xFF7C4DFF), // Violeta profundo
+            Color(0xFFFF6E40), // Naranja coral
+            Color(0xFF18FFFF), // Cian brillante
+            Color(0xFFFFAB40), // Naranja suave
+            Color(0xFFE040FB), // Magenta
+            Color(0xFF69F0AE), // Menta
         )
 
     init {
@@ -98,6 +106,10 @@ class GastosViewModel(
                 if (response.isSuccessful) {
                     val lista = response.body() ?: emptyList()
                     listaCompleta = lista
+
+                    val usuarios = lista.mapNotNull { it.pagadoPorNombre }.distinct()
+                    _usuariosDetectados.value = usuarios
+
                     aplicarFiltro(_filtroCategoria.value)
                     calcularEstadisticas(lista)
                     calcularSaldos(lista)
@@ -114,6 +126,7 @@ class GastosViewModel(
         nombre: String,
         importe: String,
         categoria: String,
+        beneficiarios: List<String>,
     ) {
         viewModelScope.launch {
             val token = sessionManager.fetchAuthToken() ?: return@launch
@@ -138,6 +151,50 @@ class GastosViewModel(
             } catch (e: Exception) {
                 Log.e("GASTOS", "Excepción creando gasto: ${e.message}")
             }
+        }
+    }
+
+    /**
+     * Calcula quién debe a quién basándose en los gastos.
+     * Soporta que un gasto sea para personas específicas (si el modelo Gasto lo tuviera).
+     */
+    fun calcularPlanPagos() {
+        viewModelScope.launch(Dispatchers.Default) {
+            val gastosActuales = listaCompleta
+            val todosLosUsuarios = _usuariosDetectados.value
+
+            if (todosLosUsuarios.isEmpty() || gastosActuales.isEmpty()) {
+                _planDePagos.value = emptyList()
+                return@launch
+            }
+
+            val deudasBrutas = mutableListOf<Deuda>()
+
+            gastosActuales.forEach { gasto ->
+                val pagador = gasto.pagadoPorNombre ?: return@forEach
+
+                val beneficiarios = todosLosUsuarios // gasto.beneficiarios ?: todosLosUsuarios
+
+                val numBeneficiarios = beneficiarios.size
+                if (numBeneficiarios == 0) return@forEach
+
+                val importePorPersona = gasto.importe / numBeneficiarios
+
+                beneficiarios.forEach { usuario ->
+                    if (usuario != pagador) {
+                        deudasBrutas.add(
+                            Deuda(
+                                de = usuario,
+                                para = pagador,
+                                cantidad = importePorPersona,
+                            ),
+                        )
+                    }
+                }
+            }
+
+            val planOptimizado = DebtCalculator.simplificar(deudasBrutas)
+            _planDePagos.value = planOptimizado
         }
     }
 
@@ -179,11 +236,11 @@ class GastosViewModel(
         }
 
         val totalGastado = lista.sumOf { it.importe }
-
         val usuarios = lista.mapNotNull { it.pagadoPorNombre }.distinct()
         _usuariosDetectados.value = usuarios
 
         val numUsuarios = if (usuarios.isEmpty()) 1 else usuarios.size
+
         val mediaPorPersona = totalGastado / numUsuarios
 
         val saldosCalculados =
