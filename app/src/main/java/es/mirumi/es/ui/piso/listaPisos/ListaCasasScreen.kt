@@ -77,7 +77,6 @@ fun ListaCasasScreen(
             intentResult.contents?.let {
                 handleQrResult(it, sessionManager, repositoryCasa, context)
             } ?: run {
-                // Solo mostramos toast si no hay resultado y no fue un back simple
                 if (result.resultCode != Activity.RESULT_CANCELED) {
                     Toast.makeText(context, "Escaneo cancelado", Toast.LENGTH_SHORT).show()
                 }
@@ -126,7 +125,7 @@ fun ListaCasasScreen(
                 // Botón Invitaciones
                 ActionButton(
                     text = "Invitaciones",
-                    iconRes = R.drawable.ic_email, // Asegúrate de tener este icono o usa uno por defecto
+                    iconRes = R.drawable.ic_email,
                     modifier = Modifier.weight(1f),
                     onClick = { navController.navigate(Route.Invitaciones.route) },
                 )
@@ -137,7 +136,6 @@ fun ListaCasasScreen(
                     iconVector = Icons.Default.QrCodeScanner,
                     modifier = Modifier.weight(1f),
                     onClick = {
-                        // --- SOLUCIÓN DEL CRASH: Pasamos el contexto para buscar la Activity ---
                         iniciarEscanerQr(context, qrScannerLauncher)
                     },
                 )
@@ -156,7 +154,7 @@ fun ListaCasasScreen(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Image(
-                            painter = painterResource(id = R.drawable.casita), // Icono placeholder
+                            painter = painterResource(id = R.drawable.casita),
                             contentDescription = null,
                             modifier = Modifier.size(80.dp).alpha(0.3f),
                             colorFilter = ColorFilter.tint(TextGray),
@@ -330,7 +328,7 @@ private fun CasaItemModern(
     }
 }
 
-// --- LÓGICA DEL QR CORREGIDA ---
+// --- LÓGICA DEL QR ---
 
 // 1. Función de extensión para encontrar la Activity de forma segura
 fun Context.findActivity(): Activity? =
@@ -340,7 +338,7 @@ fun Context.findActivity(): Activity? =
         else -> null
     }
 
-// 2. Nueva función de inicio de escáner que usa la Activity
+// 2. Función de inicio de escáner que usa la Activity
 private fun iniciarEscanerQr(
     context: Context,
     launcher: ActivityResultLauncher<Intent>,
@@ -368,7 +366,6 @@ private fun handleQrResult(
 ) {
     try {
         val json = JSONObject(qrData)
-        // Verificamos si tiene "action" o directamente los datos
         if (json.has("casaId")) {
             val casaId = json.getLong("casaId")
             val miId = sessionManager.fetchCurrentUserId()
