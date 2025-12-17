@@ -1,6 +1,8 @@
 package es.mirumi.es.ui.piso.listaPisos
 
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -22,8 +24,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
@@ -48,8 +52,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.drawWithContent
 
 // Colores del tema
 val PurplePrimary = Color(0xff8061a2)
@@ -74,13 +76,17 @@ fun ListaCasasScreen(
             val intentResult = IntentIntegrator.parseActivityResult(result.resultCode, result.data)
             intentResult.contents?.let {
                 handleQrResult(it, sessionManager, repositoryCasa, context)
-            } ?: Toast.makeText(context, "Escaneo cancelado", Toast.LENGTH_SHORT).show()
+            } ?: run {
+                // Solo mostramos toast si no hay resultado y no fue un back simple
+                if (result.resultCode != Activity.RESULT_CANCELED) {
+                    Toast.makeText(context, "Escaneo cancelado", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
 
     Scaffold(
         containerColor = BackgroundColor,
         floatingActionButton = {
-            // FAB Negro y redondo como en ItemScreen
             FloatingActionButton(
                 onClick = { navController.navigate(Route.CrearPiso.route) },
                 containerColor = Color.Black,
@@ -120,7 +126,7 @@ fun ListaCasasScreen(
                 // Botón Invitaciones
                 ActionButton(
                     text = "Invitaciones",
-                    iconRes = R.drawable.ic_email,
+                    iconRes = R.drawable.ic_email, // Asegúrate de tener este icono o usa uno por defecto
                     modifier = Modifier.weight(1f),
                     onClick = { navController.navigate(Route.Invitaciones.route) },
                 )
@@ -130,7 +136,10 @@ fun ListaCasasScreen(
                     text = "Escanear QR",
                     iconVector = Icons.Default.QrCodeScanner,
                     modifier = Modifier.weight(1f),
-                    onClick = { iniciarEscanerQr(qrScannerLauncher) },
+                    onClick = {
+                        // --- SOLUCIÓN DEL CRASH: Pasamos el contexto para buscar la Activity ---
+                        iniciarEscanerQr(context, qrScannerLauncher)
+                    },
                 )
             }
 
@@ -147,7 +156,7 @@ fun ListaCasasScreen(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Image(
-                            painter = painterResource(id = R.drawable.casita), // Icono de casa placeholder
+                            painter = painterResource(id = R.drawable.casita), // Icono placeholder
                             contentDescription = null,
                             modifier = Modifier.size(80.dp).alpha(0.3f),
                             colorFilter = ColorFilter.tint(TextGray),
@@ -163,7 +172,7 @@ fun ListaCasasScreen(
             } else {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(bottom = 100.dp), // Espacio para el FAB
+                    contentPadding = PaddingValues(bottom = 100.dp),
                 ) {
                     items(casas, key = { it.id }) { casa ->
                         CasaItemModern(
@@ -261,7 +270,6 @@ private fun CasaItemModern(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.weight(1f),
             ) {
-                // Icono del piso
                 Box(
                     modifier =
                         Modifier
@@ -280,10 +288,7 @@ private fun CasaItemModern(
 
                 Spacer(modifier = Modifier.width(16.dp))
 
-                // Textos
-                Column(
-                    verticalArrangement = Arrangement.Center,
-                ) {
+                Column(verticalArrangement = Arrangement.Center) {
                     Text(
                         text = casa.nombre,
                         style =
@@ -312,7 +317,6 @@ private fun CasaItemModern(
                 }
             }
 
-            // Flecha "Ir"
             Image(
                 painter = painterResource(id = R.drawable.vector19),
                 contentDescription = "Ir",
@@ -326,17 +330,34 @@ private fun CasaItemModern(
     }
 }
 
-// --- FUNCIONES AUXILIARES ---
+// --- LÓGICA DEL QR CORREGIDA ---
 
-private fun iniciarEscanerQr(launcher: ActivityResultLauncher<Intent>) {
-    val integrator =
-        IntentIntegrator.forSupportFragment(null).apply {
-            setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
-            setPrompt("Escanea el QR del piso para unirte")
-            setBeepEnabled(false)
-            setOrientationLocked(true)
-        }
-    launcher.launch(integrator.createScanIntent())
+// 1. Función de extensión para encontrar la Activity de forma segura
+fun Context.findActivity(): Activity? =
+    when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext.findActivity()
+        else -> null
+    }
+
+// 2. Nueva función de inicio de escáner que usa la Activity
+private fun iniciarEscanerQr(
+    context: Context,
+    launcher: ActivityResultLauncher<Intent>,
+) {
+    val activity = context.findActivity()
+    if (activity != null) {
+        val integrator =
+            IntentIntegrator(activity).apply {
+                setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
+                setPrompt("Escanea el QR del piso para unirte")
+                setBeepEnabled(false)
+                setOrientationLocked(true) // Nota: Si esto falla en algunos dispositivos, ponlo a false
+            }
+        launcher.launch(integrator.createScanIntent())
+    } else {
+        Toast.makeText(context, "Error: No se pudo acceder a la cámara", Toast.LENGTH_SHORT).show()
+    }
 }
 
 private fun handleQrResult(
@@ -347,6 +368,7 @@ private fun handleQrResult(
 ) {
     try {
         val json = JSONObject(qrData)
+        // Verificamos si tiene "action" o directamente los datos
         if (json.has("casaId")) {
             val casaId = json.getLong("casaId")
             val miId = sessionManager.fetchCurrentUserId()
@@ -360,32 +382,30 @@ private fun handleQrResult(
                 try {
                     val token = sessionManager.fetchAuthToken() ?: ""
                     val request = JoinCasaRequest(usuarioId = miId)
-
-                    // Llamada segura
                     val response = repositoryCasa.joinCasa(token, casaId, request)
 
                     if (response.isSuccessful) {
                         Toast.makeText(context, "¡Te has unido al piso con éxito!", Toast.LENGTH_LONG).show()
-                        // Opcional: Recargar la lista o navegar
                     } else {
-                        Toast.makeText(context, "No se pudo unir: ${response.code()}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, "Error al unirse: ${response.code()}", Toast.LENGTH_LONG).show()
                     }
                 } catch (e: Exception) {
                     Toast.makeText(context, "Error de red: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
         } else {
-            Toast.makeText(context, "QR no válido para unirse a una casa", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "QR no válido", Toast.LENGTH_SHORT).show()
         }
     } catch (e: Exception) {
-        Toast.makeText(context, "Error al procesar el QR", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "Error al leer el QR", Toast.LENGTH_SHORT).show()
     }
 }
 
+// Función auxiliar para opacidad
 fun Modifier.alpha(alpha: Float) =
     this.then(
         Modifier.drawWithContent {
             drawContent()
-            drawRect(Color.White.copy(alpha = 1f - alpha), blendMode = androidx.compose.ui.graphics.BlendMode.DstIn)
+            drawRect(Color.White.copy(alpha = 1f - alpha), blendMode = BlendMode.DstIn)
         },
     )
