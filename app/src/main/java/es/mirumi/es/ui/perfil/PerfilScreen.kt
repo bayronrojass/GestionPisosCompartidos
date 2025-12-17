@@ -53,14 +53,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import es.mirumi.es.R
 import es.mirumi.es.data.SessionManager
+import es.mirumi.es.ui.navigation.Route // Importante: Asegúrate de que este import existe
 import kotlinx.coroutines.launch
 
 @Composable
 fun PerfilScreen(
     sessionManager: SessionManager,
     onLogout: (String) -> Unit,
+    navController: NavController,
+    casaId: Long,
 ) {
     val viewModel: PerfilViewModel =
         viewModel(
@@ -106,7 +110,7 @@ fun PerfilScreen(
                     .background(color = Color(0xfff9f9f9))
                     .verticalScroll(rememberScrollState()),
         ) {
-            // 1. TÍTULO - Posición corregida
+            // 1. TÍTULO
             Text(
                 text = "Perfil usuario",
                 color = Color.Black,
@@ -117,7 +121,7 @@ fun PerfilScreen(
                         .offset(x = 20.dp, y = 25.dp),
             )
 
-            // 2. TARJETA DE DATOS DEL USUARIO - Diseño exacto como en la imagen
+            // 2. TARJETA DE DATOS DEL USUARIO
             Row(
                 horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
@@ -185,10 +189,8 @@ fun PerfilScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top),
                     modifier = Modifier.width(150.dp),
                 ) {
-                    // Ubicación - con valor en negrita
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top),
-                    ) {
+                    // Ubicación
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)) {
                         Text(
                             text = "Ubicación",
                             color = Color(0xff585858),
@@ -202,9 +204,7 @@ fun PerfilScreen(
                     }
 
                     // Activo desde
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top),
-                    ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)) {
                         Text(
                             text = "Activo desde",
                             color = Color(0xff585858),
@@ -218,9 +218,7 @@ fun PerfilScreen(
                     }
 
                     // Preferencia
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top),
-                    ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)) {
                         Text(
                             text = "Preferencia",
                             color = Color(0xff585858),
@@ -263,24 +261,18 @@ fun PerfilScreen(
                     iconId = R.drawable.frame,
                 )
 
-                // Separador
-                HorizontalDivider(
-                    color = Color(0xffe0e0e0),
-                    thickness = 1.dp,
-                )
+                HorizontalDivider(color = Color(0xffe0e0e0), thickness = 1.dp)
 
-                // Opción 2: Datos del piso
+                // Opción 2: Datos del piso (CONECTADA LA NAVEGACIÓN)
                 PerfilOptionRow(
                     text = "Datos del piso",
-                    onClick = {},
+                    onClick = {
+                        navController.navigate(Route.GestionUsuariosPiso.createRoute(casaId))
+                    },
                     iconId = R.drawable.iconopiso,
                 )
 
-                // Separador
-                HorizontalDivider(
-                    color = Color(0xffe0e0e0),
-                    thickness = 1.dp,
-                )
+                HorizontalDivider(color = Color(0xffe0e0e0), thickness = 1.dp)
 
                 // Opción 3: Estadísticas
                 PerfilOptionRow(
@@ -289,11 +281,7 @@ fun PerfilScreen(
                     iconId = R.drawable.iconoestadisticas,
                 )
 
-                // Separador
-                HorizontalDivider(
-                    color = Color(0xffe0e0e0),
-                    thickness = 1.dp,
-                )
+                HorizontalDivider(color = Color(0xffe0e0e0), thickness = 1.dp)
 
                 // Opción 4: Ajustes
                 PerfilOptionRow(
@@ -303,7 +291,7 @@ fun PerfilScreen(
                 )
             }
 
-            // 5. BOTÓN CERRAR SESIÓN - Posición corregida
+            // 5. BOTÓN CERRAR SESIÓN
             Button(
                 onClick = { showLogoutDialog = true },
                 modifier =
@@ -325,7 +313,7 @@ fun PerfilScreen(
                 )
             }
 
-            // 6. TEXTO ELIMINAR CUENTA - Posición corregida
+            // 6. TEXTO ELIMINAR CUENTA
             Text(
                 text = "Eliminar cuenta",
                 color = Color(0xff581327),
@@ -338,7 +326,6 @@ fun PerfilScreen(
                         .padding(12.dp),
             )
 
-            // Espacio extra al final para el scroll
             Spacer(
                 modifier =
                     Modifier
@@ -349,9 +336,8 @@ fun PerfilScreen(
         }
     }
 
-    // --- DIÁLOGOS (Misma lógica de negocio) ---
+    // --- DIÁLOGOS ---
 
-    // 1. Editar
     if (showEditDialog && usuario != null) {
         var nombre by remember { mutableStateOf(usuario!!.nombre) }
         var correo by remember { mutableStateOf(usuario!!.correo) }
@@ -392,7 +378,6 @@ fun PerfilScreen(
         )
     }
 
-    // 2. Cerrar Sesión
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
@@ -410,7 +395,6 @@ fun PerfilScreen(
         )
     }
 
-    // 3. Eliminar Cuenta
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
@@ -438,7 +422,7 @@ fun PerfilScreen(
 fun PerfilOptionRow(
     text: String,
     onClick: () -> Unit,
-    iconId: Int, // Añadimos el parámetro para el icono
+    iconId: Int,
 ) {
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -465,7 +449,6 @@ fun PerfilOptionRow(
                 style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
             )
         }
-        // Flecha
         Image(
             painter = painterResource(id = R.drawable.vector19),
             contentDescription = "Flecha",
