@@ -17,7 +17,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.outlined.Circle
@@ -26,11 +26,17 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -38,6 +44,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -63,7 +70,7 @@ fun ItemScreen(
     listaId: Long,
     listaNombre: String,
     casaNombre: String,
-    casaId: Long, // <--- NUEVO PARÁMETRO NECESARIO PARA LOS POST-ITS
+    casaId: Long,
     viewModel: ItemViewModel = viewModel(factory = ItemViewModelFactory(listaId)),
 ) {
     val context = LocalContext.current
@@ -74,7 +81,6 @@ fun ItemScreen(
     var showEditDialog by remember { mutableStateOf<Elemento?>(null) }
     var showDeleteDialog by remember { mutableStateOf<Elemento?>(null) }
 
-    // Ordenar lista para evitar saltos al editar
     val itemsOrdenados =
         remember(items) {
             items.sortedWith(
@@ -102,7 +108,6 @@ fun ItemScreen(
                 action = FabActionType.POST_IT,
             ),
         )
-    // -----------------------------------------------------
 
     Scaffold(
         containerColor = BackgroundGray,
@@ -120,9 +125,7 @@ fun ItemScreen(
                     .padding(paddingValues),
         ) {
             Column(
-                modifier =
-                    Modifier
-                        .fillMaxSize(),
+                modifier = Modifier.fillMaxSize(),
             ) {
                 // Título y Fecha
                 Column(
@@ -152,7 +155,7 @@ fun ItemScreen(
                     )
                 }
 
-                // Input para añadir nuevo elemento
+                // Input para añadir nuevo elemento (Botón y texto SEPARADOS)
                 AddItemRow(
                     modifier =
                         Modifier
@@ -258,67 +261,101 @@ fun AddItemRow(
     var text by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
 
-    Card(
-        modifier = modifier.shadow(elevation = 2.dp, shape = RoundedCornerShape(15.dp)),
-        shape = RoundedCornerShape(15.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+    // CORRECCIÓN: Usamos Row como contenedor principal para separar Texto y Botón
+    Row(
+        modifier = modifier, // El padding externo se aplica aquí
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
+        // 1. CAJA DE TEXTO (Con borde discontinuo)
+        // Ocupa todo el espacio disponible menos el del botón
+        Box(
             modifier =
                 Modifier
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-                    .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+                    .weight(1f)
+                    .height(50.dp) // Altura fija para buen aspecto visual
+                    .clip(RoundedCornerShape(15.dp))
+                    .background(Color.White)
+                    .dashedBorder(1.dp, GrayText, 15.dp) // Borde SOLO aquí
+                    .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.CenterStart,
         ) {
-            Box(modifier = Modifier.weight(1f)) {
-                if (text.isEmpty()) {
-                    Text(
-                        text = "Nuevo",
-                        color = GrayText.copy(alpha = 0.5f),
-                        fontSize = 16.sp,
-                    )
-                }
-                BasicTextField(
-                    value = text,
-                    onValueChange = { text = it },
-                    textStyle = TextStyle(fontSize = 16.sp, color = BlackText),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions =
-                        KeyboardActions(onDone = {
-                            if (text.isNotBlank()) {
-                                onAddItem(text)
-                                text = ""
-                                focusManager.clearFocus()
-                            }
-                        }),
-                    modifier = Modifier.fillMaxWidth(),
+            if (text.isEmpty()) {
+                Text(
+                    text = "Nuevo",
+                    color = GrayText.copy(alpha = 0.5f),
+                    fontSize = 16.sp,
                 )
             }
+            BasicTextField(
+                value = text,
+                onValueChange = { text = it },
+                textStyle = TextStyle(fontSize = 16.sp, color = BlackText),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions =
+                    KeyboardActions(onDone = {
+                        if (text.isNotBlank()) {
+                            onAddItem(text)
+                            text = ""
+                            focusManager.clearFocus()
+                        }
+                    }),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
 
-            Spacer(modifier = Modifier.width(10.dp))
+        Spacer(modifier = Modifier.width(12.dp)) // Separación visual
 
-            IconButton(
-                onClick = {
-                    if (text.isNotBlank()) {
-                        onAddItem(text)
-                        text = ""
-                        focusManager.clearFocus()
-                    }
-                },
-                modifier =
-                    Modifier
-                        .size(24.dp)
-                        .border(1.dp, GrayText, CircleShape),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = "Añadir",
-                    tint = GrayText,
-                    modifier = Modifier.size(14.dp),
+        // 2. BOTÓN DE AÑADIR (Fuera del borde, independiente)
+        // Usamos Box + clickable en lugar de IconButton para control total del tamaño
+        Box(
+            modifier =
+                Modifier
+                    .size(24.dp) // Tamaño fijo y pequeño (círculo exterior)
+                    .clip(CircleShape)
+                    .background(Color.White) // Fondo blanco para tapar líneas si las hubiera
+                    .border(1.dp, GrayText, CircleShape)
+                    .clickable {
+                        if (text.isNotBlank()) {
+                            onAddItem(text)
+                            text = ""
+                            focusManager.clearFocus()
+                        }
+                    },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = "Añadir",
+                tint = GrayText,
+                modifier = Modifier.size(14.dp),
+            )
+        }
+    }
+}
+
+// Función auxiliar para crear el borde discontinuo
+fun Modifier.dashedBorder(
+    strokeWidth: Dp,
+    color: Color,
+    cornerRadiusDp: Dp,
+) = composed {
+    val density = LocalDensity.current
+    val strokeWidthPx = density.run { strokeWidth.toPx() }
+    val cornerRadiusPx = density.run { cornerRadiusDp.toPx() }
+
+    this.drawWithCache {
+        onDrawBehind {
+            val stroke =
+                Stroke(
+                    width = strokeWidthPx,
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f),
                 )
-            }
+            drawRoundRect(
+                color = color,
+                style = stroke,
+                cornerRadius = CornerRadius(cornerRadiusPx),
+            )
         }
     }
 }
@@ -391,8 +428,8 @@ fun ItemRow(
                     modifier = Modifier.size(24.dp),
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Editar",
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Borra",
                         tint = GrayText,
                     )
                 }
