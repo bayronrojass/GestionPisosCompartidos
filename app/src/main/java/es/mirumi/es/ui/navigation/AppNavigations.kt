@@ -120,7 +120,7 @@ fun AppNavigation(
                     )
                 },
                 onLogout = {
-                    navController.navigate(Route.Login.route) {
+                    navController.navigate(Route.InicioPrincipal.route) {
                         popUpTo(0) { inclusive = true }
                     }
                 },
