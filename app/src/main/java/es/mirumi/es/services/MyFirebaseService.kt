@@ -10,6 +10,7 @@ import es.mirumi.es.R
 import es.mirumi.es.data.remote.NetworkModule
 import es.mirumi.es.data.repository.repositories.RepositoryUsuario
 import androidx.core.content.edit
+import androidx.annotation.VisibleForTesting
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
     val repository: RepositoryUsuario = RepositoryUsuario(NetworkModule.usuarioApiService)
@@ -25,7 +26,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         guardarTokenEnPreferencias(token)
     }
 
-    private fun guardarTokenEnPreferencias(token: String) {
+    @VisibleForTesting
+    internal fun guardarTokenEnPreferencias(token: String) {
         val sharedPreferences = getSharedPreferences("fcm_prefs", MODE_PRIVATE)
         sharedPreferences.edit { putString("fcm_token", token) }
         Log.d("FCM", "Token guardado en SharedPreferences.")
@@ -42,7 +44,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 
-    private fun mostrarNotificacion(
+    @VisibleForTesting
+    internal fun mostrarNotificacion(
         titulo: String,
         cuerpo: String,
     ) {

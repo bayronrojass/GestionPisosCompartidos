@@ -1,5 +1,6 @@
 package es.mirumi.es.ui.pizarra.postits
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredSize
@@ -29,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -105,6 +108,16 @@ fun ExpandedPostIt(
                 },
                 colors = chipColors,
                 border = null,
+            )
+            Image(
+                modifier =
+                    Modifier
+                        .offset(0.dp, 5.dp)
+                        .fillMaxWidth()
+                        .requiredHeight(35.dp),
+                painter = painterResource(id = R.drawable.cararosa),
+                alignment = Alignment.Center,
+                contentDescription = "Dibujo carita",
             )
         }
         val stroke =
