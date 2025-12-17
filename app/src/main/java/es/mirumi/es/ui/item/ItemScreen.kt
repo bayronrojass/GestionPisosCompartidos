@@ -87,7 +87,6 @@ fun ItemScreen(
         error?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
     }
 
-
     val postItKey = "Lista_$listaId"
     val draggableViewModel: DraggableViewModel =
         viewModel(

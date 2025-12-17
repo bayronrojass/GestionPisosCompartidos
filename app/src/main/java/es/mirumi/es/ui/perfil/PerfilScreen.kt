@@ -195,7 +195,7 @@ fun PerfilScreen(
                             style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
                         )
                         Text(
-                            text = "Calle Utiel,31",
+                            text = "Escultor José Capuz 29",
                             color = Color.Black,
                             style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold),
                         )

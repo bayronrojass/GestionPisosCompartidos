@@ -27,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -70,7 +71,7 @@ fun MainScreenWithNavigation(
     onLogout: (String) -> Unit,
     // Eliminamos onNavigateToMonthlyView de los parámetros porque lo manejamos internamente
 ) {
-    var selectedTab by remember { mutableIntStateOf(2) }
+    var selectedTab by rememberSaveable { mutableIntStateOf(2) }
     var showCalendar by remember { mutableStateOf(false) } // Estado para controlar la vista del calendario
 
     val savedStateHandle = rememberSaveableStateHolder()

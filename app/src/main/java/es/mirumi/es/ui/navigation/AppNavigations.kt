@@ -124,7 +124,6 @@ fun AppNavigation(
                         popUpTo(0) { inclusive = true }
                     }
                 },
-                // Eliminamos onNavigateToMonthlyView porque ya no es necesario pasarlo
             )
         }
 
