@@ -44,8 +44,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import es.mirumi.es.R
 import es.mirumi.es.model.Elemento
-import es.mirumi.es.ui.pizarra.postits.PizarraScreen
-import es.mirumi.es.ui.utils.FabActionType
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -71,14 +69,11 @@ fun ItemScreen(
     var showEditDialog by remember { mutableStateOf<Elemento?>(null) }
     var showDeleteDialog by remember { mutableStateOf<Elemento?>(null) }
 
-    // SOLUCIÓN 2: Ordenar la lista para que sea estable.
-    // Ordenamos primero por estado (completado abajo) y luego por ID (orden de creación).
-    // Al usar el ID como criterio de desempate, el elemento NO saltará al cambiar la cantidad.
     val itemsOrdenados =
         remember(items) {
             items.sortedWith(
-                compareBy<Elemento> { it.completado } // False (pendientes) primero
-                    .thenBy { it.id }, // ID para mantener posición fija
+                compareBy<Elemento> { it.completado }
+                    .thenBy { it.id },
             )
         }
 
@@ -128,7 +123,6 @@ fun ItemScreen(
                         .padding(vertical = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                // SOLUCIÓN 1: Quitar el '+' del nombre
                 Text(
                     text = listaNombre.replace("+", " "),
                     style =
@@ -177,7 +171,6 @@ fun ItemScreen(
                     fontSize = 14.sp,
                 )
             } else {
-                // Usamos itemsOrdenados en lugar de items
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
                     contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 100.dp),
@@ -234,7 +227,7 @@ fun ItemScreen(
 }
 
 // ==========================================
-// COMPONENTES UI (Mantienen el diseño previo)
+// COMPONENTES UI
 // ==========================================
 
 @Composable
