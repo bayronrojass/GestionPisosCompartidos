@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material3.*
@@ -31,7 +32,6 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -42,8 +42,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import es.mirumi.es.R
 import es.mirumi.es.model.Elemento
+import es.mirumi.es.ui.pizarra.postits.DraggableViewModel
+import es.mirumi.es.ui.pizarra.postits.DraggableViewModelFactory
+import es.mirumi.es.ui.pizarra.postits.PizarraScreen
+import es.mirumi.es.ui.utils.FabActionItem
+import es.mirumi.es.ui.utils.FabActionType
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -59,6 +63,7 @@ fun ItemScreen(
     listaId: Long,
     listaNombre: String,
     casaNombre: String,
+    casaId: Long, // <--- NUEVO PARÁMETRO NECESARIO PARA LOS POST-ITS
     viewModel: ItemViewModel = viewModel(factory = ItemViewModelFactory(listaId)),
 ) {
     val context = LocalContext.current
@@ -69,6 +74,7 @@ fun ItemScreen(
     var showEditDialog by remember { mutableStateOf<Elemento?>(null) }
     var showDeleteDialog by remember { mutableStateOf<Elemento?>(null) }
 
+    // Ordenar lista para evitar saltos al editar
     val itemsOrdenados =
         remember(items) {
             items.sortedWith(
@@ -81,6 +87,24 @@ fun ItemScreen(
         error?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
     }
 
+
+    val postItKey = "Lista_$listaId"
+    val draggableViewModel: DraggableViewModel =
+        viewModel(
+            key = postItKey,
+            factory = DraggableViewModelFactory(postItKey, casaId),
+        )
+
+    val pizarraFabActions =
+        listOf(
+            FabActionItem(
+                icon = Icons.Default.NoteAdd,
+                label = "Crear Post-it",
+                action = FabActionType.POST_IT,
+            ),
+        )
+    // -----------------------------------------------------
+
     Scaffold(
         containerColor = BackgroundGray,
         topBar = {
@@ -89,106 +113,103 @@ fun ItemScreen(
                 onBackClick = { navController.navigateUp() },
             )
         },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { /* Lógica de Post-it */ },
-                containerColor = Color.Black,
-                contentColor = Color.White,
-                shape = CircleShape,
-                modifier =
-                    Modifier
-                        .padding(16.dp)
-                        .size(60.dp),
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.iconoapp),
-                    contentDescription = "Post-its",
-                    modifier = Modifier.size(30.dp),
-                    tint = Color.White,
-                )
-            }
-        },
     ) { paddingValues ->
-        Column(
+        Box(
             modifier =
                 Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
         ) {
-            // Título y Fecha
             Column(
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                        .fillMaxSize(),
             ) {
-                Text(
-                    text = listaNombre.replace("+", " "),
-                    style =
-                        TextStyle(
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = BlackText,
-                        ),
-                )
-                Text(
-                    text = obtenerFechaActual(),
-                    style =
-                        TextStyle(
-                            fontSize = 14.sp,
-                            color = GrayText,
-                        ),
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-            }
-
-            // Input para añadir nuevo elemento
-            AddItemRow(
-                modifier =
-                    Modifier
-                        .padding(horizontal = 20.dp, vertical = 10.dp)
-                        .fillMaxWidth(),
-                onAddItem = { nombre ->
-                    viewModel.crearElemento(nombre, null)
-                },
-            )
-
-            // Lista de Elementos
-            if (isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color(0xFF581327))
-                }
-            } else if (itemsOrdenados.isEmpty()) {
-                Text(
-                    text = "No tienes más artículos",
+                // Título y Fecha
+                Column(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .padding(top = 40.dp),
-                    textAlign = TextAlign.Center,
-                    color = GrayText,
-                    fontSize = 14.sp,
-                )
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 100.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                            .padding(vertical = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    items(itemsOrdenados, key = { it.id ?: it.hashCode() }) { item ->
-                        ItemRow(
-                            item = item,
-                            onToggleComplete = { viewModel.toggleItemCompletado(item) },
-                            onQuantityChange = { newQty ->
-                                viewModel.actualizarCantidad(item, newQty)
-                            },
-                            onEditRequest = { showEditDialog = item },
-                            onDeleteRequest = { showDeleteDialog = item },
-                        )
+                    Text(
+                        text = listaNombre.replace("+", " "),
+                        style =
+                            TextStyle(
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = BlackText,
+                            ),
+                    )
+                    Text(
+                        text = obtenerFechaActual(),
+                        style =
+                            TextStyle(
+                                fontSize = 14.sp,
+                                color = GrayText,
+                            ),
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+
+                // Input para añadir nuevo elemento
+                AddItemRow(
+                    modifier =
+                        Modifier
+                            .padding(horizontal = 20.dp, vertical = 10.dp)
+                            .fillMaxWidth(),
+                    onAddItem = { nombre ->
+                        viewModel.crearElemento(nombre, null)
+                    },
+                )
+
+                // Lista de Elementos
+                if (isLoading) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Color(0xFF581327))
+                    }
+                } else if (itemsOrdenados.isEmpty()) {
+                    Text(
+                        text = "No tienes más artículos",
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(top = 40.dp),
+                        textAlign = TextAlign.Center,
+                        color = GrayText,
+                        fontSize = 14.sp,
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 100.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        items(itemsOrdenados, key = { it.id ?: it.hashCode() }) { item ->
+                            ItemRow(
+                                item = item,
+                                onToggleComplete = { viewModel.toggleItemCompletado(item) },
+                                onQuantityChange = { newQty ->
+                                    viewModel.actualizarCantidad(item, newQty)
+                                },
+                                onEditRequest = { showEditDialog = item },
+                                onDeleteRequest = { showDeleteDialog = item },
+                            )
+                        }
                     }
                 }
             }
+
+            PizarraScreen(
+                viewModel = draggableViewModel,
+                fabActions = pizarraFabActions,
+                onFabActionSelected = { action ->
+                    if (action.action == FabActionType.POST_IT) {
+                        draggableViewModel.addNewPostIt()
+                    }
+                },
+            )
         }
     }
 

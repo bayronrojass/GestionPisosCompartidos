@@ -116,7 +116,7 @@ fun AppNavigation(
                 casaNombre = casaNombre,
                 onNavigateToItem = { listaId, listaNombre ->
                     navController.navigate(
-                        Route.Item.createRoute(listaId, listaNombre, casaNombre),
+                        Route.Item.createRoute(listaId, listaNombre, casaNombre, casaId),
                     )
                 },
                 onLogout = {
@@ -161,17 +161,20 @@ fun AppNavigation(
                     navArgument("listaId") { type = NavType.LongType },
                     navArgument("listaNombre") { type = NavType.StringType },
                     navArgument("casaNombre") { type = NavType.StringType },
+                    navArgument("casaId") { type = NavType.LongType },
                 ),
         ) { backStackEntry ->
             val listaId = backStackEntry.arguments?.getLong("listaId") ?: 0L
             val listaNombre = backStackEntry.arguments?.getString("listaNombre") ?: ""
             val casaNombre = backStackEntry.arguments?.getString("casaNombre") ?: ""
+            val casaId = backStackEntry.arguments?.getLong("casaId") ?: 0L
 
             ItemScreen(
                 navController = navController,
                 listaId = listaId,
                 listaNombre = listaNombre,
                 casaNombre = casaNombre,
+                casaId = casaId,
             )
         }
     }
