@@ -9,5 +9,5 @@ data class Elemento(
     var nombre: String,
     var descripcion: String?,
     var completado: Boolean,
-    var cantidad: Int,
+    var cantidad: Int = 1,
 ) : Parcelable

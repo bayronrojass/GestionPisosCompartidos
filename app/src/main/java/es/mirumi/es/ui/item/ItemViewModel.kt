@@ -51,7 +51,7 @@ class ItemViewModel(
         _error.value = null
         viewModelScope.launch {
             try {
-                val request = ElementoRequest(nombre, descripcion, false)
+                val request = ElementoRequest(nombre, descripcion, false, 1)
                 repository.crearElementoEnLista(listaId, request)
                 cargarItems()
                 // Añade el nuevo elemento a la lista local
@@ -116,7 +116,6 @@ class ItemViewModel(
     ) {
         _error.value = null
         viewModelScope.launch {
-            // Creamos un request solo con los campos que queremos cambiar
             val request =
                 ElementoRequest(
                     nombre = nuevoNombre,
@@ -125,14 +124,38 @@ class ItemViewModel(
                 )
 
             try {
-                // Llamamos al repositorio, que llama al endpoint
                 if (elemento.id != null) {
                     repository.actualizarElemento(elemento.id, request)
                 }
-                // Recargamos la lista desde el servidor para ver los cambios
                 cargarItems()
             } catch (e: Exception) {
                 _error.value = e.message ?: "Error al actualizar item"
+            }
+        }
+    }
+
+    fun actualizarCantidad(
+        elemento: Elemento,
+        nuevaCantidad: Int,
+    ) {
+        if (nuevaCantidad < 1) return
+
+        viewModelScope.launch {
+            val request =
+                ElementoRequest(
+                    nombre = elemento.nombre,
+                    descripcion = elemento.descripcion,
+                    completado = elemento.completado,
+                    cantidad = nuevaCantidad,
+                )
+
+            try {
+                if (elemento.id != null) {
+                    repository.actualizarElemento(elemento.id, request)
+                }
+                cargarItems()
+            } catch (e: Exception) {
+                _error.value = "Error al actualizar cantidad"
             }
         }
     }

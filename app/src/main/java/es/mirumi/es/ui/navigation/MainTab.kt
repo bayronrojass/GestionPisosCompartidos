@@ -27,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -42,6 +43,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import es.mirumi.es.R
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.data.remote.NetworkModule
@@ -66,11 +69,12 @@ import es.mirumi.es.ui.tareas.TareasViewModelFactory
 fun MainScreenWithNavigation(
     casaId: Long,
     casaNombre: String,
+    navController: NavController,
     onNavigateToItem: (Long, String) -> Unit,
     onLogout: (String) -> Unit,
     // Eliminamos onNavigateToMonthlyView de los parámetros porque lo manejamos internamente
 ) {
-    var selectedTab by remember { mutableIntStateOf(2) }
+    var selectedTab by rememberSaveable { mutableIntStateOf(2) }
     var showCalendar by remember { mutableStateOf(false) } // Estado para controlar la vista del calendario
 
     val savedStateHandle = rememberSaveableStateHolder()
@@ -151,7 +155,7 @@ fun MainScreenWithNavigation(
                                 onNavigateToMonthlyView = { showCalendar = true },
                             )
                         3 -> ListaScreen(listaViewModel, onNavigateToItem, casaId = casaId)
-                        4 -> PerfilScreen(sessionManager, onLogout)
+                        4 -> PerfilScreen(sessionManager, onLogout, navController, casaId)
                     }
                 }
             }
@@ -289,6 +293,7 @@ fun MainScreenWithNavigationPreview() {
     MainScreenWithNavigation(
         casaId = 1L,
         casaNombre = "Casa de prueba",
+        navController = rememberNavController(),
         onNavigateToItem = { _, _ -> },
         onLogout = {},
     )

@@ -2,40 +2,67 @@ package es.mirumi.es.ui.item
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import es.mirumi.es.model.Elemento
+import es.mirumi.es.ui.pizarra.postits.DraggableViewModel
+import es.mirumi.es.ui.pizarra.postits.DraggableViewModelFactory
+import es.mirumi.es.ui.pizarra.postits.PizarraScreen
+import es.mirumi.es.ui.utils.FabActionItem
+import es.mirumi.es.ui.utils.FabActionType
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-import androidx.compose.ui.text.input.ImeAction
+
+// Definición de colores del diseño
+val GrayText = Color(0xFF6C6C6C)
+val BackgroundGray = Color(0xFFF8F8F8)
+val BlackText = Color.Black
 
 @Composable
 fun ItemScreen(
@@ -43,284 +70,152 @@ fun ItemScreen(
     listaId: Long,
     listaNombre: String,
     casaNombre: String,
+    casaId: Long,
     viewModel: ItemViewModel = viewModel(factory = ItemViewModelFactory(listaId)),
 ) {
     val context = LocalContext.current
-
     val items by viewModel.items.observeAsState(emptyList())
     val isLoading by viewModel.isLoading.observeAsState(false)
     val error by viewModel.error.observeAsState()
 
-    var showCreateDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf<Elemento?>(null) }
     var showDeleteDialog by remember { mutableStateOf<Elemento?>(null) }
 
-    // Estado para el nuevo item
-    var nuevoItemNombre by remember { mutableStateOf("") }
-    // Estado para cantidades
-    val cantidades = remember { mutableStateMapOf<Long, String>() }
-
-    LaunchedEffect(items) {
-        // Asegurar que cada item tenga una cantidad inicial
-        items.forEach { item ->
-            if (item.id != null && !cantidades.containsKey(item.id)) {
-                cantidades[item.id] = "1"
-            }
+    val itemsOrdenados =
+        remember(items) {
+            items.sortedWith(
+                compareBy<Elemento> { it.completado }
+                    .thenBy { it.id },
+            )
         }
-    }
 
     LaunchedEffect(error) {
-        error?.let {
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-        }
+        error?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
     }
 
-    Scaffold(
-        topBar = {
-            // Barra superior
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(100.dp)
-                        .background(Color.White)
-                        .shadow(elevation = 1.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                // Botón de retroceso
-                Box(
-                    modifier =
-                        Modifier
-                            .padding(start = 16.dp, top = 50.dp)
-                            .size(56.dp)
-                            .clickable { navController.navigateUp() },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        Icons.Default.ArrowBack,
-                        contentDescription = "Volver atrás",
-                        tint = Color(0xff6c6c6c),
-                        modifier = Modifier.size(32.dp),
-                    )
-                }
+    val postItKey = "Lista_$listaId"
+    val draggableViewModel: DraggableViewModel =
+        viewModel(
+            key = postItKey,
+            factory = DraggableViewModelFactory(postItKey, casaId),
+        )
 
-                // Título "Lista" alineado a la derecha
-                Text(
-                    text = "Lista",
-                    color = Color(0xff6c6c6c),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(end = 72.dp, top = 50.dp),
-                    textAlign = TextAlign.End,
-                )
-            }
-        },
-        floatingActionButton = {
-            // Botón flotante verde
-            FloatingActionButton(
-                onClick = { showCreateDialog = true },
-                containerColor = Color(0xFF4A7A4A),
-                modifier =
-                    Modifier
-                        .size(60.dp)
-                        .padding(bottom = 16.dp, end = 16.dp),
-            ) {
-                Icon(
-                    Icons.Default.Add,
-                    contentDescription = "Añadir Item",
-                    tint = Color.White,
-                    modifier = Modifier.size(30.dp),
-                )
-            }
+    val pizarraFabActions =
+        listOf(
+            FabActionItem(
+                icon = Icons.Default.NoteAdd,
+                label = "Crear Post-it",
+                action = FabActionType.POST_IT,
+            ),
+        )
+
+    Scaffold(
+        containerColor = BackgroundGray,
+        topBar = {
+            CustomTopBar(
+                title = "Lista",
+                onBackClick = { navController.navigateUp() },
+            )
         },
     ) { paddingValues ->
-        Column(
+        Box(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(Color(0xfff8f8f8))
                     .padding(paddingValues),
         ) {
-            // Título de la lista y fecha
             Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxSize(),
             ) {
-                val nombreLimpio = listaNombre.replace("+", " ").trim()
-                Text(
-                    text = nombreLimpio,
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black,
-                    textAlign = TextAlign.Center,
-                    fontSize = 28.sp,
-                )
-
-                Text(
-                    text = obtenerFechaActual(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xff6c6c6c),
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-
-            // Campo para añadir nuevo ítem
-            Card(
-                modifier =
-                    Modifier
-                        .padding(horizontal = 20.dp, vertical = 16.dp)
-                        .fillMaxWidth()
-                        .shadow(
-                            elevation = 4.dp,
-                            shape = RoundedCornerShape(15.dp),
-                        ),
-                shape = RoundedCornerShape(15.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-            ) {
-                Row(
+                // Título y Fecha
+                Column(
                     modifier =
                         Modifier
-                            .padding(horizontal = 16.dp, vertical = 12.dp)
-                            .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
+                            .fillMaxWidth()
+                            .padding(vertical = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    // Campo "Nuevo"
-                    OutlinedTextField(
-                        value = nuevoItemNombre,
-                        onValueChange = { nuevoItemNombre = it },
-                        placeholder = {
-                            Text(
-                                "Nuevo",
-                                color = Color(0xff6c6c6c),
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontSize = 18.sp,
-                            )
-                        },
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .padding(end = 12.dp),
-                        singleLine = true,
-                        textStyle =
-                            MaterialTheme.typography.bodyLarge.copy(
-                                fontSize = 18.sp,
+                    Text(
+                        text = listaNombre.replace("+", " "),
+                        style =
+                            TextStyle(
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = BlackText,
                             ),
                     )
-
-                    // Botón + para añadir
-                    IconButton(
-                        onClick = {
-                            if (nuevoItemNombre.isNotBlank()) {
-                                viewModel.crearElemento(nuevoItemNombre, null)
-                                nuevoItemNombre = ""
-                            }
-                        },
-                        modifier = Modifier.size(40.dp),
-                        colors =
-                            IconButtonDefaults.iconButtonColors(
-                                containerColor = Color(0xFF4CAF50),
-                                contentColor = Color.White,
+                    Text(
+                        text = obtenerFechaActual(),
+                        style =
+                            TextStyle(
+                                fontSize = 14.sp,
+                                color = GrayText,
                             ),
-                    ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = "Añadir",
-                            modifier = Modifier.size(24.dp),
-                        )
-                    }
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
                 }
-            }
 
-            // Lista de elementos
-            Box(modifier = Modifier.fillMaxSize()) {
-                when {
-                    isLoading -> {
-                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                // Input para añadir nuevo elemento (Botón y texto SEPARADOS)
+                AddItemRow(
+                    modifier =
+                        Modifier
+                            .padding(horizontal = 20.dp, vertical = 10.dp)
+                            .fillMaxWidth(),
+                    onAddItem = { nombre ->
+                        viewModel.crearElemento(nombre, null)
+                    },
+                )
+
+                // Lista de Elementos
+                if (isLoading) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Color(0xFF581327))
                     }
-
-                    items.isEmpty() -> {
-                        Column(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 40.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Text(
-                                text = "No tienes más artículos",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = Color(0xff6c6c6c),
-                                fontSize = 16.sp,
+                } else if (itemsOrdenados.isEmpty()) {
+                    Text(
+                        text = "No tienes más artículos",
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(top = 40.dp),
+                        textAlign = TextAlign.Center,
+                        color = GrayText,
+                        fontSize = 14.sp,
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 100.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        items(itemsOrdenados, key = { it.id ?: it.hashCode() }) { item ->
+                            ItemRow(
+                                item = item,
+                                onToggleComplete = { viewModel.toggleItemCompletado(item) },
+                                onQuantityChange = { newQty ->
+                                    viewModel.actualizarCantidad(item, newQty)
+                                },
+                                onEditRequest = { showEditDialog = item },
+                                onDeleteRequest = { showDeleteDialog = item },
                             )
                         }
                     }
-
-                    else -> {
-                        LazyColumn(
-                            modifier =
-                                Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = 20.dp, vertical = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            contentPadding = PaddingValues(bottom = 100.dp),
-                        ) {
-                            items(items, key = { it.id ?: it.hashCode() }) { item ->
-                                ItemRowEstiloLista(
-                                    item = item,
-                                    cantidad = cantidades[item.id] ?: "1",
-                                    onCantidadChange = { nuevaCantidad ->
-                                        if (item.id != null) {
-                                            // Validar que sea un número positivo
-                                            if (nuevaCantidad.matches(Regex("\\d+")) || nuevaCantidad.isEmpty()) {
-                                                cantidades[item.id] = nuevaCantidad
-                                            }
-                                        }
-                                    },
-                                    onIncreaseClick = {
-                                        if (item.id != null) {
-                                            val current = cantidades[item.id]?.toIntOrNull() ?: 1
-                                            cantidades[item.id] = (current + 1).toString()
-                                        }
-                                    },
-                                    onDecreaseClick = {
-                                        if (item.id != null) {
-                                            val current = cantidades[item.id]?.toIntOrNull() ?: 1
-                                            if (current > 1) {
-                                                cantidades[item.id] = (current - 1).toString()
-                                            }
-                                        }
-                                    },
-                                    onCheckClick = { viewModel.toggleItemCompletado(item) },
-                                    onEditClick = { showEditDialog = item },
-                                    onDeleteClick = { showDeleteDialog = item },
-                                )
-                            }
-                        }
-                    }
                 }
             }
+
+            PizarraScreen(
+                viewModel = draggableViewModel,
+                fabActions = pizarraFabActions,
+                onFabActionSelected = { action ->
+                    if (action.action == FabActionType.POST_IT) {
+                        draggableViewModel.addNewPostIt()
+                    }
+                },
+            )
         }
     }
 
-    // Diálogos
-    if (showCreateDialog) {
-        ItemDialog(
-            title = "Añadir Nuevo Item",
-            onDismiss = { showCreateDialog = false },
-            onConfirm = { nombre, descripcion ->
-                viewModel.crearElemento(nombre, descripcion)
-                showCreateDialog = false
-            },
-        )
-    }
-
+    // --- DIÁLOGOS ---
     showEditDialog?.let { item ->
         ItemDialog(
             title = "Editar Item",
@@ -340,152 +235,338 @@ fun ItemScreen(
             title = { Text("Borrar Item") },
             text = { Text("¿Seguro que quieres borrar '${item.nombre}'?") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.borrarElemento(item)
-                        showDeleteDialog = null
-                    },
-                ) { Text("Borrar", color = Color.Red) }
+                TextButton(onClick = {
+                    viewModel.borrarElemento(item)
+                    showDeleteDialog = null
+                }) {
+                    Text("Borrar", color = Color.Red)
+                }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = null }) {
-                    Text("Cancelar")
-                }
+                TextButton(onClick = { showDeleteDialog = null }) { Text("Cancelar") }
             },
         )
     }
 }
 
+// ==========================================
+// COMPONENTES UI
+// ==========================================
+
 @Composable
-fun ItemRowEstiloLista(
-    item: Elemento,
-    cantidad: String,
-    onCantidadChange: (String) -> Unit,
-    onIncreaseClick: () -> Unit,
-    onDecreaseClick: () -> Unit,
-    onCheckClick: () -> Unit,
-    onEditClick: () -> Unit,
-    onDeleteClick: () -> Unit,
+fun AddItemRow(
+    modifier: Modifier = Modifier,
+    onAddItem: (String) -> Unit,
 ) {
+    var text by remember { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
+
+    // CORRECCIÓN: Usamos Row como contenedor principal para separar Texto y Botón
+    Row(
+        modifier = modifier, // El padding externo se aplica aquí
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // 1. CAJA DE TEXTO (Con borde discontinuo)
+        // Ocupa todo el espacio disponible menos el del botón
+        Box(
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .height(50.dp) // Altura fija para buen aspecto visual
+                    .clip(RoundedCornerShape(15.dp))
+                    .background(Color.White)
+                    .dashedBorder(1.dp, GrayText, 15.dp) // Borde SOLO aquí
+                    .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            if (text.isEmpty()) {
+                Text(
+                    text = "Nuevo",
+                    color = GrayText.copy(alpha = 0.5f),
+                    fontSize = 16.sp,
+                )
+            }
+            BasicTextField(
+                value = text,
+                onValueChange = { text = it },
+                textStyle = TextStyle(fontSize = 16.sp, color = BlackText),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions =
+                    KeyboardActions(onDone = {
+                        if (text.isNotBlank()) {
+                            onAddItem(text)
+                            text = ""
+                            focusManager.clearFocus()
+                        }
+                    }),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
+        Spacer(modifier = Modifier.width(12.dp)) // Separación visual
+
+        // 2. BOTÓN DE AÑADIR (Fuera del borde, independiente)
+        // Usamos Box + clickable en lugar de IconButton para control total del tamaño
+        Box(
+            modifier =
+                Modifier
+                    .size(24.dp) // Tamaño fijo y pequeño (círculo exterior)
+                    .clip(CircleShape)
+                    .background(Color.White) // Fondo blanco para tapar líneas si las hubiera
+                    .border(1.dp, GrayText, CircleShape)
+                    .clickable {
+                        if (text.isNotBlank()) {
+                            onAddItem(text)
+                            text = ""
+                            focusManager.clearFocus()
+                        }
+                    },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = "Añadir",
+                tint = GrayText,
+                modifier = Modifier.size(14.dp),
+            )
+        }
+    }
+}
+
+// Función auxiliar para crear el borde discontinuo
+fun Modifier.dashedBorder(
+    strokeWidth: Dp,
+    color: Color,
+    cornerRadiusDp: Dp,
+) = composed {
+    val density = LocalDensity.current
+    val strokeWidthPx = density.run { strokeWidth.toPx() }
+    val cornerRadiusPx = density.run { cornerRadiusDp.toPx() }
+
+    this.drawWithCache {
+        onDrawBehind {
+            val stroke =
+                Stroke(
+                    width = strokeWidthPx,
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f),
+                )
+            drawRoundRect(
+                color = color,
+                style = stroke,
+                cornerRadius = CornerRadius(cornerRadiusPx),
+            )
+        }
+    }
+}
+
+@Composable
+fun ItemRow(
+    item: Elemento,
+    onToggleComplete: () -> Unit,
+    onQuantityChange: (Int) -> Unit,
+    onEditRequest: () -> Unit,
+    onDeleteRequest: () -> Unit,
+) {
+    val backgroundColor = if (item.completado) Color(0xFFE8F5E9) else Color.White
+    val textColor = if (item.completado) GrayText else BlackText
+
     Card(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .shadow(
-                    elevation = 4.dp,
-                    shape = RoundedCornerShape(15.dp),
-                ).clip(RoundedCornerShape(15.dp)),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = if (item.completado) Color(0xFFE8F5E9) else Color.White,
-            ),
+                .shadow(elevation = 2.dp, shape = RoundedCornerShape(15.dp))
+                .clickable { onEditRequest() },
+        shape = RoundedCornerShape(15.dp),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
     ) {
         Row(
             modifier =
                 Modifier
-                    .padding(horizontal = 20.dp, vertical = 16.dp)
+                    .padding(horizontal = 16.dp, vertical = 16.dp)
                     .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            // Checkbox a la izquierda
-            IconButton(
-                onClick = onCheckClick,
-                modifier = Modifier.size(32.dp),
-                colors =
-                    IconButtonDefaults.iconButtonColors(
-                        containerColor = Color.Transparent,
-                        contentColor = if (item.completado) Color(0xFF4CAF50) else Color(0xff6c6c6c),
-                    ),
-            ) {
-                if (item.completado) {
-                    Icon(
-                        Icons.Default.CheckCircle,
-                        contentDescription = "Completado",
-                        modifier = Modifier.size(28.dp),
-                    )
-                } else {
-                    Icon(
-                        Icons.Default.RadioButtonUnchecked,
-                        contentDescription = "Pendiente",
-                        modifier = Modifier.size(28.dp),
-                    )
-                }
-            }
-
-            // Nombre del producto (se expande)
-            Text(
-                text = item.nombre,
-                style =
-                    MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 18.sp,
-                        textDecoration = if (item.completado) TextDecoration.LineThrough else TextDecoration.None,
-                    ),
-                color = if (item.completado) Color(0xff6c6c6c) else Color.Black,
-                modifier = Modifier.weight(1f),
-            )
-
-            // Controles de cantidad (como en la imagen)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.weight(1f),
             ) {
-                // Botón -
-                IconButton(
-                    onClick = onDecreaseClick,
-                    modifier = Modifier.size(32.dp),
-                    colors =
-                        IconButtonDefaults.iconButtonColors(
-                            containerColor = Color(0xFFE0E0E0),
-                            contentColor = Color(0xff6c6c6c),
-                        ),
-                ) {
-                    Icon(
-                        Icons.Default.Remove,
-                        contentDescription = "Disminuir cantidad",
-                        modifier = Modifier.size(18.dp),
-                    )
-                }
-
-                // Campo de cantidad
-                OutlinedTextField(
-                    value = cantidad,
-                    onValueChange = onCantidadChange,
-                    modifier = Modifier.width(60.dp),
-                    textStyle =
-                        androidx.compose.ui.text.TextStyle(
-                            textAlign = TextAlign.Center,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium,
-                        ),
-                    singleLine = true,
-                    // CORREGIDO: Usando KeyboardOptions directamente
-                    keyboardOptions =
-                        KeyboardOptions.Default.copy(
-                            keyboardType = KeyboardType.Number,
-                        ),
+                Icon(
+                    imageVector = if (item.completado) Icons.Default.CheckCircle else Icons.Outlined.Circle,
+                    contentDescription = null,
+                    tint = if (item.completado) Color(0xFF4A7A4A) else GrayText,
+                    modifier =
+                        Modifier
+                            .size(24.dp)
+                            .clickable { onToggleComplete() },
                 )
 
-                // Botón +
-                IconButton(
-                    onClick = onIncreaseClick,
-                    modifier = Modifier.size(32.dp),
-                    colors =
-                        IconButtonDefaults.iconButtonColors(
-                            containerColor = Color(0xFF4CAF50),
-                            contentColor = Color.White,
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Text(
+                    text = item.nombre,
+                    style =
+                        TextStyle(
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            textDecoration = if (item.completado) TextDecoration.LineThrough else null,
                         ),
+                    color = textColor,
+                    maxLines = 1,
+                )
+            }
+
+            if (!item.completado) {
+                QuantityController(
+                    quantity = item.cantidad,
+                    onQuantityChange = onQuantityChange,
+                )
+            } else {
+                IconButton(
+                    onClick = onDeleteRequest,
+                    modifier = Modifier.size(24.dp),
                 ) {
                     Icon(
-                        Icons.Default.Add,
-                        contentDescription = "Aumentar cantidad",
-                        modifier = Modifier.size(18.dp),
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Borra",
+                        tint = GrayText,
                     )
                 }
             }
         }
     }
+}
+
+@Composable
+fun QuantityController(
+    quantity: Int,
+    onQuantityChange: (Int) -> Unit,
+) {
+    var textValue by remember(quantity) { mutableStateOf(quantity.toString()) }
+    val focusManager = LocalFocusManager.current
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .size(28.dp)
+                    .border(1.dp, GrayText, CircleShape)
+                    .clip(CircleShape)
+                    .clickable { if (quantity > 1) onQuantityChange(quantity - 1) },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Default.Remove, "Menos", tint = GrayText, modifier = Modifier.size(16.dp))
+        }
+
+        Box(
+            modifier =
+                Modifier
+                    .width(40.dp)
+                    .border(1.dp, GrayText.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                    .padding(vertical = 2.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            BasicTextField(
+                value = textValue,
+                onValueChange = { newValue ->
+                    if (newValue.all { it.isDigit() }) textValue = newValue
+                },
+                textStyle =
+                    TextStyle(
+                        fontSize = 16.sp,
+                        textAlign = TextAlign.Center,
+                        color = GrayText,
+                        fontWeight = FontWeight.Medium,
+                    ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                keyboardActions =
+                    KeyboardActions(onDone = {
+                        val intValue = textValue.toIntOrNull() ?: 1
+                        if (intValue > 0) onQuantityChange(intValue) else textValue = quantity.toString()
+                        focusManager.clearFocus()
+                    }),
+                singleLine = true,
+                modifier =
+                    Modifier
+                        .wrapContentWidth()
+                        .onFocusChanged { focusState ->
+                            if (!focusState.isFocused) {
+                                val intValue = textValue.toIntOrNull() ?: 1
+                                if (intValue != quantity && intValue > 0) {
+                                    onQuantityChange(intValue)
+                                }
+                            }
+                        },
+            )
+        }
+
+        Box(
+            modifier =
+                Modifier
+                    .size(28.dp)
+                    .border(1.dp, GrayText, CircleShape)
+                    .clip(CircleShape)
+                    .clickable { onQuantityChange(quantity + 1) },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Default.Add, "Más", tint = GrayText, modifier = Modifier.size(16.dp))
+        }
+    }
+}
+
+@Composable
+fun CustomTopBar(
+    title: String,
+    onBackClick: () -> Unit,
+) {
+    Box(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(100.dp)
+                .background(BackgroundGray)
+                .padding(top = 40.dp, start = 20.dp, end = 20.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .align(Alignment.CenterStart)
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { onBackClick() },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Default.ArrowBack,
+                contentDescription = "Atrás",
+                tint = GrayText,
+            )
+        }
+
+        Text(
+            text = title,
+            style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Medium, color = GrayText),
+            modifier = Modifier.align(Alignment.CenterEnd),
+        )
+
+        Divider(
+            color = GrayText.copy(alpha = 0.3f),
+            thickness = 1.dp,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
+    }
+}
+
+@Composable
+fun obtenerFechaActual(): String {
+    val calendar = Calendar.getInstance()
+    val fecha = SimpleDateFormat("EEEE, d 'de' MMMM", Locale("es", "ES"))
+    return fecha.format(calendar.time).replaceFirstChar { it.titlecase(Locale("es", "ES")) }
 }
 
 @Composable
@@ -498,79 +579,20 @@ fun ItemDialog(
 ) {
     var nombre by remember { mutableStateOf(initialName) }
     var descripcion by remember { mutableStateOf(initialDescription) }
-    var isError by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
             Column {
-                OutlinedTextField(
-                    value = nombre,
-                    onValueChange = {
-                        nombre = it
-                        isError = false
-                    },
-                    label = { Text("Nombre del item") },
-                    singleLine = true,
-                    isError = isError,
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions =
-                        KeyboardOptions.Default.copy(
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Next,
-                        ),
-                )
-                if (isError) {
-                    Text(
-                        "El nombre no puede estar vacío",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(start = 16.dp),
-                    )
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = descripcion,
-                    onValueChange = { descripcion = it },
-                    label = { Text("Descripción (opcional)") },
-                    maxLines = 3,
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions =
-                        KeyboardOptions.Default.copy(
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Done,
-                        ),
-                )
+                OutlinedTextField(value = nombre, onValueChange = { nombre = it }, label = { Text("Nombre") })
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(value = descripcion, onValueChange = { descripcion = it }, label = { Text("Descripción") })
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    if (nombre.isNotBlank()) {
-                        onConfirm(nombre, descripcion.ifBlank { null })
-                    } else {
-                        isError = true
-                    }
-                },
-            ) {
-                Text("Guardar")
-            }
+            Button(onClick = { if (nombre.isNotBlank()) onConfirm(nombre, descripcion) }) { Text("Guardar") }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
-        },
+        dismissButton = { Button(onClick = onDismiss) { Text("Cancelar") } },
     )
-}
-
-// Función auxiliar para obtener la fecha actual formateada en español
-@Composable
-fun obtenerFechaActual(): String {
-    val calendar = Calendar.getInstance()
-    val fecha = SimpleDateFormat("EEEE, d 'de' MMMM", Locale("es", "ES"))
-    return fecha.format(calendar.time).replaceFirstChar {
-        it.titlecase(Locale("es", "ES"))
-    }
 }

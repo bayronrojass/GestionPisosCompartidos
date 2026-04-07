@@ -21,6 +21,7 @@ import es.mirumi.es.ui.invitaciones.InvitacionesScreen
 import es.mirumi.es.ui.item.ItemScreen
 import es.mirumi.es.ui.login.LoginDestination
 import es.mirumi.es.ui.piso.crearPiso.CrearCasaScreen
+import es.mirumi.es.ui.piso.gestionUsuarios.GestionUsuariosPiso
 import es.mirumi.es.ui.piso.listaPisos.ListaCasasScreen
 import kotlinx.serialization.json.Json
 
@@ -60,6 +61,22 @@ fun AppNavigation(
             LoginDestination(
                 navController = navController,
                 sessionManager = sessionManager,
+            )
+        }
+
+        // GESTIÓN DE USUARIOS
+        composable(
+            route = Route.GestionUsuariosPiso.route,
+            arguments =
+                listOf(
+                    navArgument("piso_id") { type = NavType.LongType },
+                ),
+        ) { backStackEntry ->
+            val pisoId = backStackEntry.arguments?.getLong("piso_id") ?: 0L
+
+            GestionUsuariosPiso(
+                navController = navController,
+                pisoId = pisoId,
             )
         }
 
@@ -114,17 +131,17 @@ fun AppNavigation(
             MainScreenWithNavigation(
                 casaId = casaId,
                 casaNombre = casaNombre,
+                navController = navController,
                 onNavigateToItem = { listaId, listaNombre ->
                     navController.navigate(
-                        Route.Item.createRoute(listaId, listaNombre, casaNombre),
+                        Route.Item.createRoute(listaId, listaNombre, casaNombre, casaId),
                     )
                 },
                 onLogout = {
-                    navController.navigate(Route.Login.route) {
+                    navController.navigate(Route.InicioPrincipal.route) {
                         popUpTo(0) { inclusive = true }
                     }
                 },
-                // Eliminamos onNavigateToMonthlyView porque ya no es necesario pasarlo
             )
         }
 
@@ -161,17 +178,20 @@ fun AppNavigation(
                     navArgument("listaId") { type = NavType.LongType },
                     navArgument("listaNombre") { type = NavType.StringType },
                     navArgument("casaNombre") { type = NavType.StringType },
+                    navArgument("casaId") { type = NavType.LongType },
                 ),
         ) { backStackEntry ->
             val listaId = backStackEntry.arguments?.getLong("listaId") ?: 0L
             val listaNombre = backStackEntry.arguments?.getString("listaNombre") ?: ""
             val casaNombre = backStackEntry.arguments?.getString("casaNombre") ?: ""
+            val casaId = backStackEntry.arguments?.getLong("casaId") ?: 0L
 
             ItemScreen(
                 navController = navController,
                 listaId = listaId,
                 listaNombre = listaNombre,
                 casaNombre = casaNombre,
+                casaId = casaId,
             )
         }
     }
