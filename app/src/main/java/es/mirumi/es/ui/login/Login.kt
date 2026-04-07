@@ -3,9 +3,7 @@ package es.mirumi.es.ui.login
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -31,9 +29,11 @@ fun LoginDestination(
                 ),
         )
 
+    /*
+
     val isLoading by viewModel.isLoading.observeAsState(false)
-    val errorMessage by viewModel.error.observeAsState()
-    val loginResult by viewModel.loginResult.observeAsState()
+    //val errorMessage by viewModel.error.observeAsState()
+    //val loginResult by viewModel.loginResult.observeAsState()
 
     val context = LocalContext.current
 
@@ -67,6 +67,8 @@ fun LoginDestination(
             Toast.makeText(context, "Recuperar contraseña", Toast.LENGTH_SHORT).show()
         },
     )
+
+     */
 }
 
 @OptIn(ExperimentalSerializationApi::class)

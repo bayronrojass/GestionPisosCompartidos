@@ -5,9 +5,6 @@ import java.net.URLEncoder
 sealed class Route(
     val route: String,
 ) {
-    // Autenticación
-    object Login : Route("login")
-
     // Pantallas Principales
     object ListaCasas : Route("lista_casas?casas={casas}") {
         fun createRoute(casas: String = "") = "lista_casas?casas=$casas"

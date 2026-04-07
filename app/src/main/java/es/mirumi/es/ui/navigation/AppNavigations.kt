@@ -19,7 +19,6 @@ import es.mirumi.es.ui.home.PrincipalInicioCarga
 import es.mirumi.es.ui.home.PrincipalInicioSesin
 import es.mirumi.es.ui.invitaciones.InvitacionesScreen
 import es.mirumi.es.ui.item.ItemScreen
-import es.mirumi.es.ui.login.LoginDestination
 import es.mirumi.es.ui.piso.crearPiso.CrearCasaScreen
 import es.mirumi.es.ui.piso.gestionUsuarios.GestionUsuariosPiso
 import es.mirumi.es.ui.piso.listaPisos.ListaCasasScreen
@@ -42,26 +41,16 @@ fun AppNavigation(
         navController = navController,
         startDestination = startDestination,
     ) {
-        // 1. PANTALLA DE CARGA
         composable(Route.InicioCarga.route) {
             PrincipalInicioCarga(navController)
         }
 
-        // 2. PANTALLA PRINCIPAL (LANDING)
         composable(Route.InicioPrincipal.route) {
             PrincipalInicio(navController)
         }
 
-        // 3. PANTALLA DE INICIO DE SESIÓN
         composable(Route.InicioSesion.route) {
             PrincipalInicioSesin(navController, sessionManager)
-        }
-        // LOGIN
-        composable(Route.Login.route) {
-            LoginDestination(
-                navController = navController,
-                sessionManager = sessionManager,
-            )
         }
 
         // GESTIÓN DE USUARIOS
@@ -111,7 +100,10 @@ fun AppNavigation(
         // INVITACIONES:
         composable(route = Route.Invitaciones.route) {
             val sessionManager = rememberSessionManager()
-            InvitacionesScreen(sessionManager = sessionManager)
+            InvitacionesScreen(
+                sessionManager = sessionManager,
+                navController = navController,
+            )
         }
 
         // HOME/DASHBOARD DE CASA
@@ -138,7 +130,7 @@ fun AppNavigation(
                     )
                 },
                 onLogout = {
-                    navController.navigate(Route.InicioPrincipal.route) {
+                    navController.navigate(Route.InicioSesion.route) {
                         popUpTo(0) { inclusive = true }
                     }
                 },

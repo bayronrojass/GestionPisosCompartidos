@@ -35,8 +35,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -57,7 +57,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -69,8 +68,10 @@ import es.mirumi.es.data.remote.NetworkModule
 import es.mirumi.es.data.repository.repositories.RepositoryLogin
 import es.mirumi.es.model.Casa
 import es.mirumi.es.model.responses.LoginResponse
+import es.mirumi.es.ui.login.LoginUiState
 import es.mirumi.es.ui.login.LoginViewModel
 import es.mirumi.es.ui.login.LoginViewModelFactory
+import es.mirumi.es.ui.navigation.Route
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ArraySerializer
 import kotlinx.serialization.json.Json
@@ -89,34 +90,29 @@ fun PrincipalInicioSesin(
                 ),
         )
 
-    val isLoading by viewModel.isLoading.observeAsState(false)
-    val errorMessage by viewModel.error.observeAsState()
-    val loginResult by viewModel.loginResult.observeAsState()
-
+    val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    // Variables de estado para los campos
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    // Manejo de errores
-    LaunchedEffect(errorMessage) {
-        errorMessage?.let { error ->
-            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
-        }
-    }
-
-    // Manejo de éxito de login
-    LaunchedEffect(loginResult) {
-        loginResult?.let { response ->
-            handleLoginSuccess(
-                context = context,
-                response = response,
-                sessionManager = sessionManager,
-                navController = navController,
-            )
-            viewModel.clearLoginResult()
+    LaunchedEffect(uiState) {
+        when (val state = uiState) {
+            is LoginUiState.Error -> {
+                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+                viewModel.resetState() // Limpiamos para no volver a mostrarlo al rotar la pantalla
+            }
+            is LoginUiState.Success -> {
+                handleLoginSuccess(
+                    context = context,
+                    response = state.response,
+                    sessionManager = sessionManager,
+                    navController = navController,
+                )
+                viewModel.resetState()
+            }
+            else -> {} // Idle o Loading, no hacemos nada especial aquí
         }
     }
 
@@ -126,22 +122,19 @@ fun PrincipalInicioSesin(
         username = username,
         password = password,
         passwordVisible = passwordVisible,
-        isLoading = isLoading,
+        isLoading = uiState is LoginUiState.Loading, // Extraemos isLoading del estado
         onUsernameChange = { username = it },
         onPasswordChange = { password = it },
         onPasswordVisibilityToggle = { passwordVisible = !passwordVisible },
         onLoginClick = { viewModel.login(username.trim(), password.trim()) },
         onRegisterClick = {
             Toast.makeText(context, "Ir a Registro", Toast.LENGTH_SHORT).show()
-            // navController.navigate("register") // Descomentar cuando tengas la ruta
         },
         onForgotPasswordClick = {
             Toast.makeText(context, "Recuperar contraseña", Toast.LENGTH_SHORT).show()
-            // navController.navigate("forgot_password") // Descomentar cuando tengas la ruta
         },
         onSocialLogin = { provider ->
             Toast.makeText(context, "Iniciar sesión con $provider", Toast.LENGTH_SHORT).show()
-            // Implementar lógica de login social aquí
         },
     )
 }
@@ -173,20 +166,16 @@ fun LoginScreenUI(
             modifier =
                 Modifier
                     .align(alignment = Alignment.TopStart)
-                    .offset(
-                        x = 27.dp,
-                        y = 4.dp,
-                    ).requiredWidth(width = 343.dp)
+                    .offset(x = 27.dp, y = 4.dp)
+                    .requiredWidth(width = 343.dp)
                     .requiredHeight(height = 40.dp),
         )
         Box(
             modifier =
                 Modifier
                     .align(alignment = Alignment.TopStart)
-                    .offset(
-                        x = 0.dp,
-                        y = 80.dp,
-                    ).requiredWidth(width = 390.dp)
+                    .offset(x = 0.dp, y = 80.dp)
+                    .requiredWidth(width = 390.dp)
                     .requiredHeight(height = 885.dp)
                     .clip(shape = RoundedCornerShape(40.dp))
                     .background(color = Color(0xfff8f8f8)),
@@ -195,10 +184,8 @@ fun LoginScreenUI(
             modifier =
                 Modifier
                     .align(alignment = Alignment.TopCenter)
-                    .offset(
-                        x = 0.dp,
-                        y = 100.dp,
-                    ).requiredWidth(width = 50.dp)
+                    .offset(x = 0.dp, y = 100.dp)
+                    .requiredWidth(width = 50.dp)
                     .requiredHeight(height = 10.dp)
                     .clip(shape = RoundedCornerShape(20.dp))
                     .background(color = Color(0xff6c6c6c)),
@@ -210,10 +197,8 @@ fun LoginScreenUI(
             modifier =
                 Modifier
                     .align(alignment = Alignment.TopStart)
-                    .offset(
-                        x = 142.dp,
-                        y = 153.dp,
-                    ).requiredWidth(width = 108.dp)
+                    .offset(x = 142.dp, y = 153.dp)
+                    .requiredWidth(width = 108.dp)
                     .requiredHeight(height = 153.dp),
         )
         Text(
@@ -225,10 +210,8 @@ fun LoginScreenUI(
             modifier =
                 Modifier
                     .align(alignment = Alignment.TopCenter)
-                    .offset(
-                        x = 1.dp,
-                        y = 342.dp,
-                    ).requiredWidth(width = 350.dp),
+                    .offset(x = 1.dp, y = 342.dp)
+                    .requiredWidth(width = 350.dp),
         )
 
         // Campo de usuario
@@ -236,19 +219,14 @@ fun LoginScreenUI(
             modifier =
                 Modifier
                     .align(alignment = Alignment.TopStart)
-                    .offset(
-                        x = 20.dp,
-                        y = 430.dp,
-                    ).requiredWidth(width = 350.dp),
+                    .offset(x = 20.dp, y = 430.dp)
+                    .requiredWidth(width = 350.dp),
         ) {
             OutlinedTextField(
                 value = username,
                 onValueChange = onUsernameChange,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(60.dp),
-                placeholder = { Text("Nombre Usuario", color = Color(0xff6c6c6c)) },
+                modifier = Modifier.fillMaxWidth().height(60.dp),
+                placeholder = { Text("Correo Electrónico", color = Color(0xff6c6c6c)) },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 singleLine = true,
                 shape = RoundedCornerShape(15.dp),
@@ -260,18 +238,13 @@ fun LoginScreenUI(
             modifier =
                 Modifier
                     .align(alignment = Alignment.TopStart)
-                    .offset(
-                        x = 20.dp,
-                        y = 500.dp,
-                    ).requiredWidth(width = 350.dp),
+                    .offset(x = 20.dp, y = 500.dp)
+                    .requiredWidth(width = 350.dp),
         ) {
             OutlinedTextField(
                 value = password,
                 onValueChange = onPasswordChange,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(60.dp),
+                modifier = Modifier.fillMaxWidth().height(60.dp),
                 placeholder = { Text("Contraseña", color = Color(0xff6c6c6c)) },
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -295,17 +268,15 @@ fun LoginScreenUI(
             modifier =
                 Modifier
                     .align(alignment = Alignment.TopStart)
-                    .offset(
-                        x = 20.dp,
-                        y = 580.dp,
-                    ).requiredWidth(width = 350.dp)
+                    .offset(x = 20.dp, y = 580.dp)
+                    .requiredWidth(width = 350.dp)
                     .height(52.dp),
             enabled = !isLoading && username.isNotEmpty() && password.isNotEmpty(),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xff581327)),
             shape = RoundedCornerShape(15.dp),
         ) {
             if (isLoading) {
-                CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp)
+                CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.requiredSize(24.dp))
             } else {
                 Text("Iniciar sesión", color = Color.White, fontSize = 16.sp)
             }
@@ -316,18 +287,12 @@ fun LoginScreenUI(
             text = "¿Has olvidado tu contraseña?",
             color = Color(0xff581327),
             textAlign = TextAlign.Center,
-            style =
-                TextStyle(
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                ),
+            style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium),
             modifier =
                 Modifier
                     .align(alignment = Alignment.TopCenter)
-                    .offset(
-                        x = 1.dp,
-                        y = 640.dp,
-                    ).clickable(onClick = onForgotPasswordClick)
+                    .offset(x = 1.dp, y = 640.dp)
+                    .clickable(onClick = onForgotPasswordClick)
                     .requiredWidth(width = 212.dp)
                     .requiredHeight(height = 20.dp),
         )
@@ -336,17 +301,8 @@ fun LoginScreenUI(
             text = "o",
             color = Color(0xff6c6c6c),
             textAlign = TextAlign.Center,
-            style =
-                TextStyle(
-                    fontSize = 16.sp,
-                ),
-            modifier =
-                Modifier
-                    .align(alignment = Alignment.TopCenter)
-                    .offset(
-                        x = 0.dp,
-                        y = 680.dp,
-                    ),
+            style = TextStyle(fontSize = 16.sp),
+            modifier = Modifier.align(alignment = Alignment.TopCenter).offset(x = 0.dp, y = 680.dp),
         )
         Image(
             painter = painterResource(id = R.drawable.line3),
@@ -354,10 +310,8 @@ fun LoginScreenUI(
             modifier =
                 Modifier
                     .align(alignment = Alignment.TopStart)
-                    .offset(
-                        x = 220.dp,
-                        y = 690.5.dp,
-                    ).requiredWidth(width = 160.dp)
+                    .offset(x = 220.dp, y = 690.5.dp)
+                    .requiredWidth(width = 160.dp)
                     .border(border = BorderStroke(1.dp, Color(0xff6c6c6c))),
         )
         Image(
@@ -366,10 +320,8 @@ fun LoginScreenUI(
             modifier =
                 Modifier
                     .align(alignment = Alignment.TopStart)
-                    .offset(
-                        x = 20.dp,
-                        y = 690.5.dp,
-                    ).requiredWidth(width = 160.dp)
+                    .offset(x = 20.dp, y = 690.5.dp)
+                    .requiredWidth(width = 160.dp)
                     .border(border = BorderStroke(1.dp, Color(0xff6c6c6c))),
         )
 
@@ -380,24 +332,18 @@ fun LoginScreenUI(
             modifier =
                 Modifier
                     .align(alignment = Alignment.TopStart)
-                    .offset(
-                        x = 245.dp,
-                        y = 730.dp,
-                    ).requiredWidth(width = 60.dp)
+                    .offset(x = 245.dp, y = 730.dp)
+                    .requiredWidth(width = 60.dp)
                     .requiredHeight(height = 50.dp)
                     .clip(shape = RoundedCornerShape(15.dp))
                     .background(color = Color.White)
-                    .border(
-                        border = BorderStroke(1.dp, Color(0xff6c6c6c)),
-                        shape = RoundedCornerShape(15.dp),
-                    ).clickable { onSocialLogin("facebook") },
+                    .border(border = BorderStroke(1.dp, Color(0xff6c6c6c)), shape = RoundedCornerShape(15.dp))
+                    .clickable { onSocialLogin("facebook") },
         ) {
             Image(
                 painter = painterResource(id = R.drawable.facebook),
                 contentDescription = "facebook",
-                modifier =
-                    Modifier
-                        .requiredSize(size = 28.dp),
+                modifier = Modifier.requiredSize(size = 28.dp),
             )
         }
 
@@ -407,24 +353,18 @@ fun LoginScreenUI(
             modifier =
                 Modifier
                     .align(alignment = Alignment.TopStart)
-                    .offset(
-                        x = 165.dp,
-                        y = 730.dp,
-                    ).requiredWidth(width = 60.dp)
+                    .offset(x = 165.dp, y = 730.dp)
+                    .requiredWidth(width = 60.dp)
                     .requiredHeight(height = 50.dp)
                     .clip(shape = RoundedCornerShape(15.dp))
                     .background(color = Color.White)
-                    .border(
-                        border = BorderStroke(1.dp, Color(0xff6c6c6c)),
-                        shape = RoundedCornerShape(15.dp),
-                    ).clickable { onSocialLogin("google") },
+                    .border(border = BorderStroke(1.dp, Color(0xff6c6c6c)), shape = RoundedCornerShape(15.dp))
+                    .clickable { onSocialLogin("google") },
         ) {
             Image(
                 painter = painterResource(id = R.drawable.google),
                 contentDescription = "google",
-                modifier =
-                    Modifier
-                        .requiredSize(size = 24.dp),
+                modifier = Modifier.requiredSize(size = 24.dp),
             )
         }
 
@@ -434,30 +374,20 @@ fun LoginScreenUI(
             modifier =
                 Modifier
                     .align(alignment = Alignment.TopStart)
-                    .offset(
-                        x = 85.dp,
-                        y = 730.dp,
-                    ).requiredWidth(width = 60.dp)
+                    .offset(x = 85.dp, y = 730.dp)
+                    .requiredWidth(width = 60.dp)
                     .requiredHeight(height = 50.dp)
                     .clip(shape = RoundedCornerShape(15.dp))
                     .background(color = Color.White)
-                    .border(
-                        border = BorderStroke(1.dp, Color(0xff6c6c6c)),
-                        shape = RoundedCornerShape(15.dp),
-                    ).padding(
-                        start = 10.dp,
-                        end = 10.dp,
-                        top = 10.dp,
-                        bottom = 12.dp,
-                    ).clickable { onSocialLogin("apple") },
+                    .border(border = BorderStroke(1.dp, Color(0xff6c6c6c)), shape = RoundedCornerShape(15.dp))
+                    .padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 12.dp)
+                    .clickable { onSocialLogin("apple") },
         ) {
             Image(
                 painter = painterResource(id = R.drawable.apple),
                 contentDescription = "apple",
                 colorFilter = ColorFilter.tint(Color.Black),
-                modifier =
-                    Modifier
-                        .requiredSize(size = 30.dp),
+                modifier = Modifier.requiredSize(size = 30.dp),
             )
         }
 
@@ -466,37 +396,19 @@ fun LoginScreenUI(
             textAlign = TextAlign.Center,
             text =
                 buildAnnotatedString {
+                    withStyle(style = SpanStyle(color = Color(0xff6c6c6c), fontSize = 15.sp, fontWeight = FontWeight.Medium)) {
+                        append("¿No tienes cuenta todavía?")
+                    }
                     withStyle(
-                        style =
-                            SpanStyle(
-                                color = Color(0xff6c6c6c),
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium,
-                            ),
-                    ) { append("¿No tienes cuenta todavía?") }
-                    withStyle(
-                        style =
-                            SpanStyle(
-                                color = Color(0xff581327),
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium,
-                            ),
+                        style = SpanStyle(color = Color(0xff581327), fontSize = 15.sp, fontWeight = FontWeight.Medium),
                     ) { append(" ") }
-                    withStyle(
-                        style =
-                            SpanStyle(
-                                color = Color(0xff581327),
-                                fontSize = 15.sp,
-                            ),
-                    ) { append("Regístrate") }
+                    withStyle(style = SpanStyle(color = Color(0xff581327), fontSize = 15.sp)) { append("Regístrate") }
                 },
             modifier =
                 Modifier
                     .align(alignment = Alignment.TopCenter)
-                    .offset(
-                        x = 1.5.dp,
-                        y = 800.dp,
-                    ).clickable(onClick = onRegisterClick)
+                    .offset(x = 1.5.dp, y = 800.dp)
+                    .clickable(onClick = onRegisterClick)
                     .requiredWidth(width = 273.dp)
                     .requiredHeight(height = 19.dp),
         )
@@ -510,12 +422,7 @@ private fun handleLoginSuccess(
     sessionManager: SessionManager,
     navController: NavController,
 ) {
-    Toast
-        .makeText(
-            context,
-            "¡Bienvenido, ${response.user.nombre}!",
-            Toast.LENGTH_SHORT,
-        ).show()
+    Toast.makeText(context, "¡Bienvenido, ${response.user.nombre}!", Toast.LENGTH_SHORT).show()
 
     sessionManager.saveAuthData(
         token = response.authToken,
@@ -534,27 +441,25 @@ private fun handleLoginSuccess(
             )
         }
 
-    val casasJson =
-        Json.encodeToString(ArraySerializer(Casa.serializer()), casasList.toTypedArray())
-    navController.navigate("lista_casas?casas=$casasJson") {
-        popUpTo("login") { inclusive = true }
-    }
-}
+    // 3. Lógica directa de navegación a la Casa Activa
+    if (casasList.isNotEmpty()) {
+        val casaGuardadaId = sessionManager.getCasaActivaId()
 
-@Preview(widthDp = 390, heightDp = 844)
-@Composable
-private fun PrincipalInicioSesinPreview() {
-    LoginScreenUI(
-        username = "",
-        password = "",
-        passwordVisible = false,
-        isLoading = false,
-        onUsernameChange = {},
-        onPasswordChange = {},
-        onPasswordVisibilityToggle = {},
-        onLoginClick = {},
-        onRegisterClick = {},
-        onForgotPasswordClick = {},
-        onSocialLogin = {},
-    )
+        var casaActiva = casasList.find { it.id == casaGuardadaId }
+
+        if (casaActiva == null) {
+            casaActiva = casasList[0]
+            sessionManager.saveCasaActivaId(casaActiva.id)
+        }
+
+        navController.navigate(Route.Home.createRoute(casaActiva.id, casaActiva.nombre)) {
+            popUpTo(0) { inclusive = true }
+        }
+    } else {
+        val casasJson = Json.encodeToString(ArraySerializer(Casa.serializer()), casasList.toTypedArray())
+
+        navController.navigate(Route.ListaCasas.createRoute(casasJson)) {
+            popUpTo(0) { inclusive = true }
+        }
+    }
 }

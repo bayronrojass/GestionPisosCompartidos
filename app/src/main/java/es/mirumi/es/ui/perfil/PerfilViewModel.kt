@@ -1,14 +1,36 @@
 package es.mirumi.es.ui.perfil
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.data.remote.NetworkModule
 import es.mirumi.es.data.repository.repositories.RepositoryUsuario
 import es.mirumi.es.model.Usuario
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+// 1. Estado de la UI unificado
+data class PerfilUiState(
+    val isLoading: Boolean = false,
+    val usuario: Usuario? = null,
+    val error: String? = null,
+)
+
+// 2. Eventos de un solo uso (Toasts, Navegación)
+sealed class PerfilEvent {
+    data class ShowToast(
+        val message: String,
+    ) : PerfilEvent()
+
+    data class LogoutSuccess(
+        val message: String,
+    ) : PerfilEvent()
+}
 
 class PerfilViewModel(
     private val sessionManager: SessionManager,
@@ -16,37 +38,26 @@ class PerfilViewModel(
     private val repository = RepositoryUsuario(NetworkModule.usuarioApiService)
     private val userId = sessionManager.fetchCurrentUserId()
 
-    private val _usuario = MutableLiveData<Usuario?>()
-    val usuario: LiveData<Usuario?> = _usuario
+    // Manejo de Estado (StateFlow)
+    private val _uiState = MutableStateFlow(PerfilUiState())
+    val uiState: StateFlow<PerfilUiState> = _uiState.asStateFlow()
 
-    private val _isLoading = MutableLiveData<Boolean>()
-    val isLoading: LiveData<Boolean> = _isLoading
-
-    private val _error = MutableLiveData<String?>()
-    val error: LiveData<String?> = _error
-
-    private val _toastMessage = MutableLiveData<String?>()
-    val toastMessage: LiveData<String?> = _toastMessage
-    private val _logoutEvent = MutableLiveData<String?>()
-    val logoutEvent: LiveData<String?> = _logoutEvent
-
-    private val _navigationEvent = MutableLiveData<String?>()
-    val navigationEvent: LiveData<String?> = _navigationEvent
+    // Manejo de Eventos Únicos (Channel)
+    private val _events = Channel<PerfilEvent>()
+    val events = _events.receiveAsFlow()
 
     init {
         cargarPerfil()
     }
 
     fun cargarPerfil() {
-        _isLoading.value = true
+        _uiState.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
             try {
                 val user = repository.getUsuario(userId)
-                _usuario.value = user
+                _uiState.update { it.copy(isLoading = false, usuario = user) }
             } catch (e: Exception) {
-                _error.value = e.message
-            } finally {
-                _isLoading.value = false
+                _uiState.update { it.copy(isLoading = false, error = e.message) }
             }
         }
     }
@@ -55,40 +66,47 @@ class PerfilViewModel(
         nuevoNombre: String,
         nuevoCorreo: String,
     ) {
-        _isLoading.value = true
+        _uiState.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
             try {
                 repository.updateUsuario(userId, nuevoNombre, nuevoCorreo)
-                cargarPerfil()
+
+                val user = repository.getUsuario(userId)
+                _uiState.update { it.copy(isLoading = false, usuario = user) }
+
                 // Actualizamos también la sesión local
                 val token = sessionManager.fetchAuthToken()?.replace("Bearer ", "") ?: ""
                 sessionManager.saveAuthData(token, userId, nuevoCorreo)
-                _toastMessage.value = "Perfil actualizado correctamente"
+
+                // Disparamos el Toast
+                _events.send(PerfilEvent.ShowToast("Perfil actualizado correctamente"))
             } catch (e: Exception) {
-                _error.value = e.message
-            } finally {
-                _isLoading.value = false
+                _uiState.update { it.copy(isLoading = false, error = e.message) }
             }
         }
     }
 
     fun eliminarCuenta() {
-        _isLoading.value = true
+        _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             try {
                 repository.deleteUsuario(userId)
-                // Al borrar, llamamos a cerrar sesión con mensaje específico
                 cerrarSesion("Cuenta eliminada correctamente")
             } catch (e: Exception) {
-                _error.value = e.message
-                _isLoading.value = false
+                _uiState.update { it.copy(isLoading = false, error = e.message) }
             }
         }
     }
 
     fun cerrarSesion(mensaje: String = "Sesión cerrada con éxito") {
         sessionManager.logoutUser()
-        // Emitimos el evento con el mensaje para que la UI navegue
-        _logoutEvent.value = mensaje
+        viewModelScope.launch {
+            _events.send(PerfilEvent.LogoutSuccess(mensaje))
+        }
+    }
+
+    // Limpia el error de la UI una vez mostrado
+    fun errorShown() {
+        _uiState.update { it.copy(error = null) }
     }
 }

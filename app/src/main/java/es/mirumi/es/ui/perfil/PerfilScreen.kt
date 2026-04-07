@@ -34,8 +34,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -56,7 +56,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import es.mirumi.es.R
 import es.mirumi.es.data.SessionManager
-import es.mirumi.es.ui.navigation.Route // Importante: Asegúrate de que este import existe
+import es.mirumi.es.ui.navigation.Route
 import kotlinx.coroutines.launch
 
 @Composable
@@ -71,11 +71,8 @@ fun PerfilScreen(
             factory = PerfilViewModelFactory(sessionManager),
         )
 
-    val usuario by viewModel.usuario.observeAsState()
-    val isLoading by viewModel.isLoading.observeAsState(false)
-    val error by viewModel.error.observeAsState()
-    val toastMessage by viewModel.toastMessage.observeAsState()
-    val logoutEvent by viewModel.logoutEvent.observeAsState()
+    // Recolectamos el Estado de la UI
+    val uiState by viewModel.uiState.collectAsState()
 
     // Estados para diálogos
     var showEditDialog by remember { mutableStateOf(false) }
@@ -85,15 +82,26 @@ fun PerfilScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // Efectos
-    LaunchedEffect(toastMessage) {
-        toastMessage?.let { scope.launch { snackbarHostState.showSnackbar(it) } }
+    // Escuchador de Eventos Únicos (Navegación y Toasts)
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is PerfilEvent.ShowToast -> {
+                    scope.launch { snackbarHostState.showSnackbar(event.message) }
+                }
+                is PerfilEvent.LogoutSuccess -> {
+                    onLogout(event.message)
+                }
+            }
+        }
     }
-    LaunchedEffect(logoutEvent) {
-        logoutEvent?.let { onLogout(it) }
-    }
-    LaunchedEffect(error) {
-        error?.let { scope.launch { snackbarHostState.showSnackbar(it) } }
+
+    // Escuchador de Errores de Estado
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let {
+            scope.launch { snackbarHostState.showSnackbar(it) }
+            viewModel.errorShown() // Limpiamos el error
+        }
     }
 
     Scaffold(
@@ -101,7 +109,6 @@ fun PerfilScreen(
         containerColor = Color(0xfff9f9f9),
     ) { paddingValues ->
 
-        // Contenedor principal con el nuevo diseño
         Box(
             modifier =
                 Modifier
@@ -115,10 +122,7 @@ fun PerfilScreen(
                 text = "Perfil usuario",
                 color = Color.Black,
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                modifier =
-                    Modifier
-                        .align(alignment = Alignment.TopStart)
-                        .offset(x = 20.dp, y = 25.dp),
+                modifier = Modifier.align(alignment = Alignment.TopStart).offset(x = 20.dp, y = 25.dp),
             )
 
             // 2. TARJETA DE DATOS DEL USUARIO
@@ -134,27 +138,26 @@ fun PerfilScreen(
                         .background(color = Color.White)
                         .padding(vertical = 20.dp, horizontal = 10.dp),
             ) {
-                // Columna izquierda: Foto y nombre
                 Column(
                     verticalArrangement = Arrangement.spacedBy(5.dp, Alignment.Top),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.width(120.dp),
                 ) {
-                    // Foto de perfil
                     Box(
                         modifier =
                             Modifier
                                 .size(100.dp)
                                 .clip(shape = CircleShape)
                                 .background(Color(0xFF8061A2))
-                                .border(
-                                    border = BorderStroke(2.dp, Color(0xfff8f8f8)),
-                                    shape = CircleShape,
-                                ),
+                                .border(border = BorderStroke(2.dp, Color(0xfff8f8f8)), shape = CircleShape),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = usuario?.nombre?.take(1)?.uppercase() ?: "?",
+                            text =
+                                uiState.usuario
+                                    ?.nombre
+                                    ?.take(1)
+                                    ?.uppercase() ?: "?",
                             fontSize = 40.sp,
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
@@ -167,7 +170,7 @@ fun PerfilScreen(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(
-                            text = usuario?.nombre ?: "Cargando...",
+                            text = uiState.usuario?.nombre ?: "Cargando...",
                             color = Color.Black,
                             textAlign = TextAlign.Center,
                             style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Medium),
@@ -184,51 +187,25 @@ fun PerfilScreen(
                     }
                 }
 
-                // Columna derecha: Información adicional
                 Column(
                     verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top),
                     modifier = Modifier.width(150.dp),
                 ) {
-                    // Ubicación
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)) {
+                        Text("Ubicación", color = Color(0xff585858), style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium))
                         Text(
-                            text = "Ubicación",
-                            color = Color(0xff585858),
-                            style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
-                        )
-                        Text(
-                            text = "Escultor José Capuz 29",
+                            "Escultor José Capuz 29",
                             color = Color.Black,
                             style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold),
                         )
                     }
-
-                    // Activo desde
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)) {
-                        Text(
-                            text = "Activo desde",
-                            color = Color(0xff585858),
-                            style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
-                        )
-                        Text(
-                            text = "Sep del 2025",
-                            color = Color.Black,
-                            style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
-                        )
+                        Text("Activo desde", color = Color(0xff585858), style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium))
+                        Text("Sep del 2025", color = Color.Black, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium))
                     }
-
-                    // Preferencia
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)) {
-                        Text(
-                            text = "Preferencia",
-                            color = Color(0xff585858),
-                            style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
-                        )
-                        Text(
-                            text = "Silenciosa",
-                            color = Color.Black,
-                            style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
-                        )
+                        Text("Preferencia", color = Color(0xff585858), style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium))
+                        Text("Silenciosa", color = Color.Black, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium))
                     }
                 }
             }
@@ -238,10 +215,7 @@ fun PerfilScreen(
                 text = "MI CUENTA",
                 color = Color.Black,
                 style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold),
-                modifier =
-                    Modifier
-                        .align(alignment = Alignment.TopStart)
-                        .offset(x = 21.dp, y = 350.dp),
+                modifier = Modifier.align(alignment = Alignment.TopStart).offset(x = 21.dp, y = 350.dp),
             )
 
             // 4. LISTA DE OPCIONES
@@ -260,30 +234,36 @@ fun PerfilScreen(
                     onClick = { showEditDialog = true },
                     iconId = R.drawable.frame,
                 )
-
                 HorizontalDivider(color = Color(0xffe0e0e0), thickness = 1.dp)
 
-                // Opción 2: Datos del piso (CONECTADA LA NAVEGACIÓN)
+                // Opción 2: Cambiar de Vivienda (NUEVA)
+                PerfilOptionRow(
+                    text = "Cambiar de vivienda",
+                    onClick = {
+                        // Navegamos al selector de casas pasándole vacío (para que las recargue si es necesario)
+                        navController.navigate(Route.ListaCasas.createRoute(""))
+                    },
+                    iconId = R.drawable.casita, // He puesto casita.xml que está en tus assets
+                )
+                HorizontalDivider(color = Color(0xffe0e0e0), thickness = 1.dp)
+
+                // Opción 3: Datos del piso
                 PerfilOptionRow(
                     text = "Datos del piso",
-                    onClick = {
-                        navController.navigate(Route.GestionUsuariosPiso.createRoute(casaId))
-                    },
+                    onClick = { navController.navigate(Route.GestionUsuariosPiso.createRoute(casaId)) },
                     iconId = R.drawable.iconopiso,
                 )
-
                 HorizontalDivider(color = Color(0xffe0e0e0), thickness = 1.dp)
 
-                // Opción 3: Estadísticas
+                // Opción 4: Estadísticas
                 PerfilOptionRow(
                     text = "Estadísticas",
                     onClick = {},
                     iconId = R.drawable.iconoestadisticas,
                 )
-
                 HorizontalDivider(color = Color(0xffe0e0e0), thickness = 1.dp)
 
-                // Opción 4: Ajustes
+                // Opción 5: Ajustes
                 PerfilOptionRow(
                     text = "Ajustes",
                     onClick = {},
@@ -297,20 +277,13 @@ fun PerfilScreen(
                 modifier =
                     Modifier
                         .align(alignment = Alignment.TopStart)
-                        .offset(x = 20.dp, y = 650.dp)
+                        .offset(x = 20.dp, y = 720.dp)
                         .width(350.dp)
                         .height(50.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor = Color(0xff8061a2),
-                    ),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xff8061a2)),
             ) {
-                Text(
-                    text = "Cerrar sesión",
-                    color = Color.White,
-                    style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold),
-                )
+                Text("Cerrar sesión", color = Color.White, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold))
             }
 
             // 6. TEXTO ELIMINAR CUENTA
@@ -321,26 +294,22 @@ fun PerfilScreen(
                 modifier =
                     Modifier
                         .align(alignment = Alignment.TopCenter)
-                        .offset(y = 720.dp)
+                        .offset(y = 790.dp)
                         .clickable { showDeleteDialog = true }
                         .padding(12.dp),
             )
 
             Spacer(
-                modifier =
-                    Modifier
-                        .height(100.dp)
-                        .align(Alignment.TopCenter)
-                        .offset(y = 780.dp),
+                modifier = Modifier.height(100.dp).align(Alignment.TopCenter).offset(y = 850.dp),
             )
         }
     }
 
     // --- DIÁLOGOS ---
 
-    if (showEditDialog && usuario != null) {
-        var nombre by remember { mutableStateOf(usuario!!.nombre) }
-        var correo by remember { mutableStateOf(usuario!!.correo) }
+    if (showEditDialog && uiState.usuario != null) {
+        var nombre by remember { mutableStateOf(uiState.usuario!!.nombre) }
+        var correo by remember { mutableStateOf(uiState.usuario!!.correo) }
 
         AlertDialog(
             onDismissRequest = { showEditDialog = false },
@@ -416,8 +385,6 @@ fun PerfilScreen(
     }
 }
 
-// --- COMPONENTES SIMPLIFICADOS ---
-
 @Composable
 fun PerfilOptionRow(
     text: String,
@@ -452,10 +419,7 @@ fun PerfilOptionRow(
         Image(
             painter = painterResource(id = R.drawable.vector19),
             contentDescription = "Flecha",
-            modifier =
-                Modifier
-                    .size(16.dp)
-                    .rotate(180f),
+            modifier = Modifier.size(16.dp).rotate(180f),
             colorFilter = ColorFilter.tint(Color(0xff8061a2)),
         )
     }

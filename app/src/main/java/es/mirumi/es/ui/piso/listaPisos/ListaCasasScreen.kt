@@ -2,11 +2,8 @@ package es.mirumi.es.ui.piso.listaPisos
 
 import android.app.Activity
 import android.content.Context
-import android.content.ContextWrapper
-import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,22 +21,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import com.google.zxing.integration.android.IntentIntegrator
 import es.mirumi.es.R
 import es.mirumi.es.data.SessionManager
@@ -53,134 +46,88 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
-// Colores del tema
-val PurplePrimary = Color(0xff8061a2)
-val BackgroundColor = Color(0xfff8f8f8)
-val TextBlack = Color.Black
-val TextGray = Color(0xff6c6c6c)
-
 @Composable
 fun ListaCasasScreen(
     casas: List<Casa> = emptyList(),
-    navController: NavHostController = rememberNavController(),
+    navController: NavHostController,
 ) {
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context.applicationContext) }
     val repositoryCasa = remember { RepositoryCasa(NetworkModule.casaApiService) }
 
-    // Launcher para QR Scanner
-    val qrScannerLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.StartActivityForResult(),
-        ) { result ->
-            val intentResult = IntentIntegrator.parseActivityResult(result.resultCode, result.data)
-            intentResult.contents?.let {
-                handleQrResult(it, sessionManager, repositoryCasa, context)
-            } ?: run {
-                if (result.resultCode != Activity.RESULT_CANCELED) {
-                    Toast.makeText(context, "Escaneo cancelado", Toast.LENGTH_SHORT).show()
-                }
+    // Usamos la Factory para crear el ViewModel correctamente
+    val viewModel: ListaCasasViewModel =
+        viewModel(
+            factory = ListaCasasViewModelFactory(repositoryCasa, sessionManager),
+        )
+    val uiState by viewModel.uiState.collectAsState()
+
+    // Carga inicial: si la lista de la navegación es vacía, pide al servidor
+    LaunchedEffect(Unit) {
+        viewModel.cargarCasas(casas)
+    }
+
+    // Gestión de errores
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.clearError()
+        }
+    }
+
+    val qrLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val scanResult = IntentIntegrator.parseActivityResult(result.resultCode, result.data)
+            if (scanResult.contents != null) {
+                handleQrAction(scanResult.contents, viewModel, sessionManager, repositoryCasa, context)
             }
         }
 
     Scaffold(
-        containerColor = BackgroundColor,
+        containerColor = Color(0xFFF8F8F8),
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { navController.navigate(Route.CrearPiso.route) },
                 containerColor = Color.Black,
                 contentColor = Color.White,
                 shape = CircleShape,
-                modifier = Modifier.padding(16.dp).size(60.dp),
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Crear nueva casa", modifier = Modifier.size(30.dp))
-            }
+            ) { Icon(Icons.Default.Add, "Nuevo Piso") }
         },
     ) { padding ->
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(horizontal = 20.dp),
-        ) {
-            // 1. CABECERA
-            Spacer(modifier = Modifier.height(25.dp))
-            Text(
-                text = "Mis pisos",
-                style =
-                    TextStyle(
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextBlack,
-                    ),
-                modifier = Modifier.padding(bottom = 20.dp),
-            )
+        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp)) {
+            HeaderSection()
 
-            // 2. BOTONES DE ACCIÓN RÁPIDA (Invitaciones y QR)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(15.dp),
-            ) {
-                // Botón Invitaciones
-                ActionButton(
-                    text = "Invitaciones",
-                    iconRes = R.drawable.ic_email,
-                    modifier = Modifier.weight(1f),
-                    onClick = { navController.navigate(Route.Invitaciones.route) },
-                )
-
-                // Botón QR
-                ActionButton(
-                    text = "Escanear QR",
-                    iconVector = Icons.Default.QrCodeScanner,
-                    modifier = Modifier.weight(1f),
-                    onClick = {
-                        iniciarEscanerQr(context, qrScannerLauncher)
-                    },
-                )
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                QuickActionButton("Invitaciones", R.drawable.ic_email, Modifier.weight(1f)) {
+                    navController.navigate(Route.Invitaciones.route)
+                }
+                QuickActionButton("Escanear QR", Icons.Default.QrCodeScanner, Modifier.weight(1f)) {
+                    val integrator =
+                        IntentIntegrator(context as Activity).apply {
+                            setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
+                            setPrompt("Enfoca el QR del piso")
+                            setBeepEnabled(true)
+                        }
+                    qrLauncher.launch(integrator.createScanIntent())
+                }
             }
 
-            Spacer(modifier = Modifier.height(25.dp))
+            Spacer(Modifier.height(24.dp))
 
-            // 3. LISTA DE PISOS
-            if (casas.isEmpty()) {
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .weight(1f),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Image(
-                            painter = painterResource(id = R.drawable.casita),
-                            contentDescription = null,
-                            modifier = Modifier.size(80.dp).alpha(0.3f),
-                            colorFilter = ColorFilter.tint(TextGray),
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Aún no tienes pisos.\n¡Crea uno o únete con QR!",
-                            style = TextStyle(fontSize = 16.sp, color = TextGray),
-                            textAlign = TextAlign.Center,
-                        )
-                    }
+            if (uiState.isLoading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color(0xFF8061A2))
                 }
+            } else if (uiState.casas.isEmpty()) {
+                EmptyState()
             } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(bottom = 100.dp),
-                ) {
-                    items(casas, key = { it.id }) { casa ->
-                        CasaItemModern(
-                            casa = casa,
-                            onClick = {
-                                navController.navigate(
-                                    Route.Home.createRoute(casa.id, casa.nombre),
-                                )
-                            },
-                        )
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(bottom = 80.dp)) {
+                    items(uiState.casas, key = { it.id }) { casa ->
+                        CasaCard(casa) {
+                            // Al seleccionar: Guardamos ID activo y navegamos al Home
+                            sessionManager.saveCasaActivaId(casa.id)
+                            navController.navigate(Route.Home.createRoute(casa.id, casa.nombre))
+                        }
                     }
                 }
             }
@@ -188,221 +135,112 @@ fun ListaCasasScreen(
     }
 }
 
-// --- COMPONENTES UI ---
+@Composable
+fun HeaderSection() {
+    Spacer(Modifier.height(24.dp))
+    Text("Mis pisos", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+    Spacer(Modifier.height(20.dp))
+}
 
 @Composable
-private fun ActionButton(
-    text: String,
-    iconRes: Int? = null,
-    iconVector: androidx.compose.ui.graphics.vector.ImageVector? = null,
-    modifier: Modifier = Modifier,
+fun QuickActionButton(
+    label: String,
+    icon: Any,
+    modifier: Modifier,
     onClick: () -> Unit,
 ) {
-    Card(
-        modifier =
-            modifier
-                .height(60.dp)
-                .shadow(elevation = 2.dp, shape = RoundedCornerShape(15.dp))
-                .clickable { onClick() },
-        shape = RoundedCornerShape(15.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+    Surface(
+        modifier = modifier.height(56.dp).clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White,
+        shadowElevation = 2.dp,
     ) {
         Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+            Modifier.padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
         ) {
-            if (iconRes != null) {
-                Image(
-                    painter = painterResource(id = iconRes),
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp),
-                    colorFilter = ColorFilter.tint(PurplePrimary),
-                )
-            } else if (iconVector != null) {
-                Icon(
-                    imageVector = iconVector,
-                    contentDescription = null,
-                    tint = PurplePrimary,
-                    modifier = Modifier.size(24.dp),
-                )
+            when (icon) {
+                is Int -> Icon(painterResource(icon), null, tint = Color(0xFF8061A2), modifier = Modifier.size(20.dp))
+                is androidx.compose.ui.graphics.vector.ImageVector -> Icon(icon, null, tint = Color(0xFF8061A2))
             }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = text,
-                style =
-                    TextStyle(
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextBlack,
-                    ),
-            )
+            Spacer(Modifier.width(8.dp))
+            Text(label, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }
 
 @Composable
-private fun CasaItemModern(
+fun CasaCard(
     casa: Casa,
     onClick: () -> Unit,
 ) {
     Card(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(90.dp)
-                .shadow(elevation = 4.dp, shape = RoundedCornerShape(15.dp))
-                .clickable { onClick() },
-        shape = RoundedCornerShape(15.dp),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(4.dp),
     ) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f),
-            ) {
-                Box(
-                    modifier =
-                        Modifier
-                            .size(50.dp)
-                            .clip(CircleShape)
-                            .background(PurplePrimary.copy(alpha = 0.1f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.iconopiso),
-                        contentDescription = null,
-                        colorFilter = ColorFilter.tint(PurplePrimary),
-                        modifier = Modifier.size(26.dp),
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                Column(verticalArrangement = Arrangement.Center) {
-                    Text(
-                        text = casa.nombre,
-                        style =
-                            TextStyle(
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TextBlack,
-                            ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    if (casa.nombre.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = casa.nombre,
-                            style =
-                                TextStyle(
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    color = TextGray,
-                                ),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(48.dp).clip(CircleShape).background(Color(0xFFF0EBF5)), contentAlignment = Alignment.Center) {
+                Icon(painterResource(R.drawable.iconopiso), null, tint = Color(0xFF8061A2), modifier = Modifier.size(24.dp))
             }
-
-            Image(
-                painter = painterResource(id = R.drawable.vector19),
-                contentDescription = "Ir",
-                colorFilter = ColorFilter.tint(PurplePrimary),
-                modifier =
-                    Modifier
-                        .size(16.dp)
-                        .rotate(180f),
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text(casa.nombre, fontWeight = FontWeight.Bold, fontSize = 18.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    casa.descripcion ?: "Sin descripción",
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Icon(
+                painterResource(R.drawable.vector19),
+                null,
+                tint = Color(0xFF8061A2),
+                modifier = Modifier.size(16.dp).graphicsLayer(rotationZ = 180f),
             )
         }
     }
 }
 
-// --- LÓGICA DEL QR ---
-
-// 1. Función de extensión para encontrar la Activity de forma segura
-fun Context.findActivity(): Activity? =
-    when (this) {
-        is Activity -> this
-        is ContextWrapper -> baseContext.findActivity()
-        else -> null
-    }
-
-// 2. Función de inicio de escáner que usa la Activity
-private fun iniciarEscanerQr(
-    context: Context,
-    launcher: ActivityResultLauncher<Intent>,
-) {
-    val activity = context.findActivity()
-    if (activity != null) {
-        val integrator =
-            IntentIntegrator(activity).apply {
-                setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
-                setPrompt("Escanea el QR del piso para unirte")
-                setBeepEnabled(false)
-                setOrientationLocked(true) // Nota: Si esto falla en algunos dispositivos, ponlo a false
-            }
-        launcher.launch(integrator.createScanIntent())
-    } else {
-        Toast.makeText(context, "Error: No se pudo acceder a la cámara", Toast.LENGTH_SHORT).show()
+@Composable
+fun EmptyState() {
+    Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        Image(
+            painterResource(R.drawable.casita),
+            null,
+            Modifier.size(100.dp).graphicsLayer(alpha = 0.2f),
+            colorFilter = ColorFilter.tint(Color.Gray),
+        )
+        Spacer(Modifier.height(16.dp))
+        Text("No tienes pisos todavía.\n¡Crea uno o únete con un QR!", textAlign = TextAlign.Center, color = Color.Gray)
     }
 }
 
-private fun handleQrResult(
-    qrData: String,
-    sessionManager: SessionManager,
-    repositoryCasa: RepositoryCasa,
-    context: Context,
+private fun handleQrAction(
+    data: String,
+    vm: ListaCasasViewModel,
+    sm: SessionManager,
+    repo: RepositoryCasa,
+    ctx: Context,
 ) {
     try {
-        val json = JSONObject(qrData)
+        val json = JSONObject(data)
         if (json.has("casaId")) {
-            val casaId = json.getLong("casaId")
-            val miId = sessionManager.fetchCurrentUserId()
-
-            if (miId == -1L) {
-                Toast.makeText(context, "Error: Inicia sesión antes de unirte", Toast.LENGTH_LONG).show()
-                return
-            }
-
+            val id = json.getLong("casaId")
             CoroutineScope(Dispatchers.Main).launch {
-                try {
-                    val token = sessionManager.fetchAuthToken() ?: ""
-                    val request = JoinCasaRequest(usuarioId = miId)
-                    val response = repositoryCasa.joinCasa(token, casaId, request)
-
-                    if (response.isSuccessful) {
-                        Toast.makeText(context, "¡Te has unido al piso con éxito!", Toast.LENGTH_LONG).show()
-                    } else {
-                        Toast.makeText(context, "Error al unirse: ${response.code()}", Toast.LENGTH_LONG).show()
-                    }
-                } catch (e: Exception) {
-                    Toast.makeText(context, "Error de red: ${e.message}", Toast.LENGTH_LONG).show()
+                val token = sm.fetchAuthToken() ?: ""
+                val response = repo.joinCasa(token, id, JoinCasaRequest(sm.fetchCurrentUserId()))
+                if (response.isSuccessful) {
+                    Toast.makeText(ctx, "¡Te has unido con éxito!", Toast.LENGTH_SHORT).show()
+                    vm.refreshCasas() // Recarga la lista tras unirse
                 }
             }
-        } else {
-            Toast.makeText(context, "QR no válido", Toast.LENGTH_SHORT).show()
         }
     } catch (e: Exception) {
-        Toast.makeText(context, "Error al leer el QR", Toast.LENGTH_SHORT).show()
+        Toast.makeText(ctx, "Código QR no válido", Toast.LENGTH_SHORT).show()
     }
 }
-
-// Función auxiliar para opacidad
-fun Modifier.alpha(alpha: Float) =
-    this.then(
-        Modifier.drawWithContent {
-            drawContent()
-            drawRect(Color.White.copy(alpha = 1f - alpha), blendMode = BlendMode.DstIn)
-        },
-    )

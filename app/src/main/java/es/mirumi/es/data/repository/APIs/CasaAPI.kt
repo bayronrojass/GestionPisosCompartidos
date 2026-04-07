@@ -7,6 +7,7 @@ import es.mirumi.es.model.requests.GastoRequest
 import es.mirumi.es.model.requests.JoinCasaRequest
 import es.mirumi.es.model.responses.CasaDetailsResponseDTO
 import es.mirumi.es.model.responses.CasaResponse
+import es.mirumi.es.model.Casa
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
@@ -76,4 +77,10 @@ interface CasaAPI {
         @Path("casaId") casaId: Long,
         @Body request: GastoRequest,
     ): Response<String>
+
+    @GET("casas/usuario/{usuarioId}")
+    suspend fun getMisCasas(
+        @Header("Authorization") token: String,
+        @Path("usuarioId") usuarioId: Long,
+    ): Response<List<Casa>>
 }

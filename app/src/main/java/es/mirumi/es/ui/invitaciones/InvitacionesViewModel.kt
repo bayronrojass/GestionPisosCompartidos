@@ -7,125 +7,121 @@ import es.mirumi.es.data.SessionManager
 import es.mirumi.es.data.repository.repositories.RepositoryInvitacion
 import es.mirumi.es.model.requests.AccionInvitacionRequest
 import es.mirumi.es.model.responses.InvitacionResponse
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+// Estado visual de la pantalla
+data class InvitacionesUiState(
+    val isLoading: Boolean = false,
+    val invitaciones: List<InvitacionResponse> = emptyList(),
+    val error: String? = null,
+)
+
+// Eventos de un solo uso (Navegación y Toasts)
+sealed class InvitacionEvent {
+    data class ShowToast(
+        val message: String,
+    ) : InvitacionEvent()
+
+    data class NavigateToCasa(
+        val casaId: Long,
+        val casaNombre: String,
+    ) : InvitacionEvent()
+}
 
 class InvitacionesViewModel(
     private val repository: RepositoryInvitacion,
     private val sessionManager: SessionManager,
 ) : ViewModel() {
-    // 2. Define un TAG para encontrar tus logs fácilmente
     companion object {
         private const val TAG = "InvitacionesVM"
     }
 
-    private val _invitaciones = MutableStateFlow<List<InvitacionResponse>>(emptyList())
-    val invitaciones: StateFlow<List<InvitacionResponse>> = _invitaciones
+    private val _uiState = MutableStateFlow(InvitacionesUiState())
+    val uiState: StateFlow<InvitacionesUiState> = _uiState.asStateFlow()
 
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading
-
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error
+    private val _events = Channel<InvitacionEvent>()
+    val events = _events.receiveAsFlow()
 
     fun fetchMisInvitaciones() {
+        _uiState.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
             try {
-                val token = sessionManager.fetchAuthToken()
-                if (token == null) throw Exception("Usuario no autenticado")
-
+                val token = sessionManager.fetchAuthToken() ?: throw Exception("Usuario no autenticado")
                 val usuarioId = sessionManager.fetchCurrentUserId()
                 if (usuarioId == -1L) throw Exception("ID de usuario no encontrado")
 
                 val response = repository.getMisInvitaciones(token, usuarioId)
 
                 if (response.isSuccessful) {
-                    _invitaciones.value = response.body() ?: emptyList()
+                    _uiState.update {
+                        it.copy(isLoading = false, invitaciones = response.body() ?: emptyList())
+                    }
                 } else {
-                    val errorMsg =
-                        "Error al cargar invitaciones: ${response.code()} - ${response.message()} - ${
-                            response.errorBody()?.string()
-                        }"
+                    val errorMsg = "Error: ${response.code()}"
                     Log.e(TAG, errorMsg)
-
-                    throw Exception(errorMsg)
+                    _uiState.update { it.copy(isLoading = false, error = "No se pudieron cargar las invitaciones") }
                 }
             } catch (e: Exception) {
-                _error.value = e.message
-            } finally {
-                _isLoading.value = false
+                _uiState.update { it.copy(isLoading = false, error = e.message) }
             }
         }
     }
 
-    fun aceptarInvitacion(invitacionId: Long) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-            try {
-                val token = sessionManager.fetchAuthToken()
-                if (token == null) throw Exception("Usuario no autenticado")
+    fun aceptarInvitacion(invitacion: InvitacionResponse) {
+        procesarInvitacion(invitacion, esAceptar = true)
+    }
 
+    fun rechazarInvitacion(invitacion: InvitacionResponse) {
+        procesarInvitacion(invitacion, esAceptar = false)
+    }
+
+    private fun procesarInvitacion(
+        invitacion: InvitacionResponse,
+        esAceptar: Boolean,
+    ) {
+        _uiState.update { it.copy(isLoading = true) }
+        viewModelScope.launch {
+            try {
+                val token = sessionManager.fetchAuthToken() ?: throw Exception("Usuario no autenticado")
                 val usuarioId = sessionManager.fetchCurrentUserId()
-                if (usuarioId == -1L) throw Exception("ID de usuario no encontrado")
 
                 val request = AccionInvitacionRequest(usuarioId)
-
-                val response = repository.aceptarInvitacion(token, invitacionId, request)
+                val response =
+                    if (esAceptar) {
+                        repository.aceptarInvitacion(token, invitacion.id, request)
+                    } else {
+                        repository.rechazarInvitacion(token, invitacion.id, request)
+                    }
 
                 if (response.isSuccessful) {
-                    // Si tiene éxito, refresca la lista de invitaciones pendientes
-                    fetchMisInvitaciones()
+                    if (esAceptar) {
+                        // 1. Guardamos la casa como la "Casa Activa" en el móvil
+                        sessionManager.saveCasaActivaId(invitacion.casaId)
+                        // 2. Avisamos a la UI para que salte al Home de esa casa
+                        _events.send(InvitacionEvent.NavigateToCasa(invitacion.casaId, invitacion.casaNombre))
+                    } else {
+                        // Si se rechaza, avisamos y recargamos la lista
+                        _events.send(InvitacionEvent.ShowToast("Invitación rechazada"))
+                        fetchMisInvitaciones()
+                    }
                 } else {
-                    // También puedes añadir un Log.e aquí
-                    val errorMsg =
-                        "Error al aceptar: ${response.code()} - ${response.errorBody()?.string()}"
-                    Log.e(TAG, errorMsg)
-                    throw Exception(errorMsg)
+                    _events.send(InvitacionEvent.ShowToast("Error al procesar la invitación"))
+                    _uiState.update { it.copy(isLoading = false) }
                 }
             } catch (e: Exception) {
-                _error.value = e.message
-                _isLoading.value = false
+                _events.send(InvitacionEvent.ShowToast(e.message ?: "Error desconocido"))
+                _uiState.update { it.copy(isLoading = false) }
             }
         }
     }
 
-    fun rechazarInvitacion(invitacionId: Long) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-            try {
-                val token = sessionManager.fetchAuthToken()
-                if (token == null) throw Exception("Usuario no autenticado")
-
-                val usuarioId = sessionManager.fetchCurrentUserId()
-                if (usuarioId == -1L) throw Exception("ID de usuario no encontrado")
-
-                // 3. Crea el objeto request
-                val request = AccionInvitacionRequest(usuarioId)
-
-                val response = repository.rechazarInvitacion(token, invitacionId, request)
-
-                if (response.isSuccessful) {
-                    fetchMisInvitaciones()
-                } else {
-                    val errorMsg =
-                        "Error al rechazar: ${response.code()} - ${response.errorBody()?.string()}"
-                    Log.e(TAG, errorMsg)
-                    throw Exception(errorMsg)
-                }
-            } catch (e: Exception) {
-                _error.value = e.message
-                _isLoading.value = false
-            }
-        }
-    }
-
-    /** Limpia el mensaje de error para que el Toast no se repita. */
-    fun clearError() {
-        _error.value = null
+    fun errorShown() {
+        _uiState.update { it.copy(error = null) }
     }
 }

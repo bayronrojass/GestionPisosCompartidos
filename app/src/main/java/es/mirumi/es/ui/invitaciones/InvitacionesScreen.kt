@@ -1,28 +1,11 @@
 package es.mirumi.es.ui.invitaciones
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,15 +15,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.data.remote.NetworkModule
 import es.mirumi.es.data.repository.repositories.RepositoryInvitacion
 import es.mirumi.es.model.responses.InvitacionResponse
+import es.mirumi.es.ui.navigation.Route
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InvitacionesScreen(sessionManager: SessionManager) {
+fun InvitacionesScreen(
+    sessionManager: SessionManager,
+    navController: NavController,
+) {
     val viewModel: InvitacionesViewModel =
         viewModel(
             factory =
@@ -50,110 +38,79 @@ fun InvitacionesScreen(sessionManager: SessionManager) {
                 ),
         )
 
-    val invitaciones by viewModel.invitaciones.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
-
+    val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // Cargar invitaciones al iniciar
     LaunchedEffect(Unit) {
         viewModel.fetchMisInvitaciones()
     }
 
-    // Observar errores
-    LaunchedEffect(error) {
-        error?.let { errorMsg ->
-            Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
-            viewModel.clearError()
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is InvitacionEvent.ShowToast -> {
+                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                }
+                is InvitacionEvent.NavigateToCasa -> {
+                    Toast.makeText(context, "¡Bienvenido a ${event.casaNombre}!", Toast.LENGTH_SHORT).show()
+
+                    navController.navigate(Route.Home.createRoute(event.casaId, event.casaNombre)) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let {
+            scope.launch { snackbarHostState.showSnackbar(it) }
+            viewModel.errorShown()
         }
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = { Text("Mis Invitaciones") },
-//                backgroundColor = Color.White,
-//                contentColor = Color.Black,
-//                elevation = 4.dp
-            )
+            TopAppBar(title = { Text("Mis Invitaciones", fontWeight = FontWeight.Bold) })
         },
     ) { innerPadding ->
         Box(
             modifier =
                 Modifier
                     .padding(innerPadding)
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    .padding(16.dp),
+            contentAlignment = Alignment.Center,
         ) {
             when {
-                isLoading -> {
-                    // Estado de carga
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        CircularProgressIndicator()
-                        Spacer(Modifier.height(16.dp))
-                        Text("Cargando invitaciones...")
-                    }
+                uiState.isLoading && uiState.invitaciones.isEmpty() -> {
+                    CircularProgressIndicator()
                 }
 
-                invitaciones.isEmpty() -> {
-                    // Estado vacío
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        Text(
-                            "No tienes invitaciones pendientes",
-                            fontSize = 18.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 32.dp),
-                        )
-                    }
+                uiState.invitaciones.isEmpty() -> {
+                    Text(
+                        text = "No tienes invitaciones pendientes",
+                        fontSize = 18.sp,
+                        color = Color.Gray,
+                        textAlign = TextAlign.Center,
+                    )
                 }
 
                 else -> {
-                    // Lista de invitaciones
-                    LazyColumn(
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
-                    ) {
-                        item {
-                            Text(
-                                "Mis Invitaciones",
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(bottom = 16.dp),
-                            )
-                        }
-
-                        val currentListas = invitaciones ?: emptyList()
-
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
                         items(
-                            count = currentListas.size,
-                            key = { index -> currentListas[index].id }, // Usar ID como key única
-                        ) { index ->
-                            val invitacion = currentListas[index]
+                            items = uiState.invitaciones,
+                            key = { it.id },
+                        ) { invitacion ->
                             InvitacionItem(
                                 invitacion = invitacion,
-                                onAcceptClick = {
-                                    scope.launch {
-                                        viewModel.aceptarInvitacion(invitacion.id)
-                                    }
-                                },
-                                onRejectClick = {
-                                    scope.launch {
-                                        viewModel.rechazarInvitacion(invitacion.id)
-                                    }
-                                },
+                                isProcessing = uiState.isLoading,
+                                onAcceptClick = { viewModel.aceptarInvitacion(invitacion) },
+                                onRejectClick = { viewModel.rechazarInvitacion(invitacion) },
                             )
-                            Spacer(Modifier.height(8.dp))
                         }
                     }
                 }
@@ -165,6 +122,7 @@ fun InvitacionesScreen(sessionManager: SessionManager) {
 @Composable
 fun InvitacionItem(
     invitacion: InvitacionResponse,
+    isProcessing: Boolean,
     onAcceptClick: () -> Unit,
     onRejectClick: () -> Unit,
 ) {
@@ -172,9 +130,9 @@ fun InvitacionItem(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(vertical = 4.dp),
-        //        elevation = 4.dp,
-//        backgroundColor = Color.White
+                .padding(vertical = 8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
     ) {
         Column(
             modifier =
@@ -182,36 +140,38 @@ fun InvitacionItem(
                     .fillMaxWidth()
                     .padding(16.dp),
         ) {
-            // Información de la invitación
             Text(
-                text = invitacion.casaNombre ?: "Invitación a piso",
+                text = "🏠 ${invitacion.casaNombre}",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black,
             )
 
-            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "Invitado por: ${invitacion.remitenteNombre}",
+                fontSize = 14.sp,
+                color = Color.DarkGray,
+                modifier = Modifier.padding(top = 4.dp),
+            )
 
-            // Botones de acción
+            Spacer(Modifier.height(16.dp))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
             ) {
-                Button(
+                TextButton(
                     onClick = onRejectClick,
-//                    colors = ButtonDefaults.buttonColors(
-//                        backgroundColor = Color.LightGray
-//                    ),
+                    enabled = !isProcessing,
                     modifier = Modifier.padding(end = 8.dp),
                 ) {
-                    Text("Rechazar", color = Color.Black)
+                    Text("Rechazar", color = if (isProcessing) Color.Gray else Color.Red)
                 }
 
                 Button(
                     onClick = onAcceptClick,
-//                    colors = ButtonDefaults.buttonColors(
-//                        backgroundColor = Color(0xFF6A5ACD)
-//                    )
+                    enabled = !isProcessing,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xff8061a2)),
                 ) {
                     Text("Aceptar", color = Color.White)
                 }
