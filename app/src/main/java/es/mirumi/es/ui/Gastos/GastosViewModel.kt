@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
-
 data class PieChartData(
     val categoria: String,
     val porcentaje: Float,
@@ -65,7 +64,6 @@ class GastosViewModel(
 
     private val _filtroCategoria = MutableStateFlow("TODOS")
     val filtroCategoria: StateFlow<String> = _filtroCategoria.asStateFlow()
-
 
     private val colorPalette =
         listOf(

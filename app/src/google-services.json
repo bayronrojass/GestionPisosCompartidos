@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "809101183620",
+    "project_id": "mirumi-23884",
+    "storage_bucket": "mirumi-23884.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:809101183620:android:a95488f44a2d654cc750d1",
+        "android_client_info": {
+          "package_name": "es.mirumi.es"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDSEOC870LN6e-81ewLQPHsm0Yrr5hDChA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
