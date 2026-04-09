@@ -1,3 +1,26 @@
+import java.net.Inet4Address
+import java.net.NetworkInterface
+
+fun getLocalIPv4(): String {
+    try {
+        val networkInterfaces = NetworkInterface.getNetworkInterfaces()
+        for (networkInterface in networkInterfaces) {
+            if (networkInterface.isLoopback || !networkInterface.isUp) continue
+            for (inetAddress in networkInterface.inetAddresses) {
+                if (inetAddress is Inet4Address && !inetAddress.isLoopbackAddress) {
+                    val ip = inetAddress.hostAddress
+                    if (!ip.startsWith("172.") && !ip.startsWith("169.254.")) {
+                        return ip
+                    }
+                }
+            }
+        }
+    } catch (e: Exception) {
+        println("Error buscando IP: ${e.message}")
+    }
+    return "192.168.1.100" // Fallback de emergencia
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -41,6 +64,7 @@ android {
     buildFeatures {
         compose = true
         viewBinding = true
+        buildConfig = true
     }
 
     packaging {
@@ -50,6 +74,20 @@ android {
             excludes.add("META-INF/INDEX.LIST")
             excludes.add("META-INF/LICENSE")
             excludes.add("META-INF/NOTICE")
+        }
+    }
+
+    flavorDimensions.add("environment")
+
+    productFlavors {
+        create("emulator") {
+            dimension = "environment"
+            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8080/\"")
+        }
+
+        create("realDevice") {
+            dimension = "environment"
+            buildConfigField("String", "BASE_URL", "\"http://192.168.68.105:8080/\"")
         }
     }
 }

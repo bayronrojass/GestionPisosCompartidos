@@ -6,6 +6,7 @@ import com.google.gson.Strictness
 import com.google.gson.TypeAdapter
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
+import es.mirumi.es.BuildConfig // ¡Importante! Importa tu BuildConfig
 import es.mirumi.es.data.repository.APIs.CasaAPI
 import es.mirumi.es.data.repository.APIs.DatabaseAPI
 import es.mirumi.es.data.repository.APIs.EventoAPI
@@ -27,18 +28,16 @@ import java.time.format.DateTimeFormatter
  * y proporciona las instancias de los servicios API.
  */
 object NetworkModule {
-    private const val BASE_URL = "http://10.0.2.2:8080/"
-
-    // private const val BASE_URL = "http://192.168.1.49:8080/"
     private val gson: Gson =
         GsonBuilder()
             .setStrictness(Strictness.LENIENT)
             .create()
 
     private val brokerUrl = "tcp://10.0.2.2:1883"
+
     val retrofit: Retrofit by lazy {
         Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(BuildConfig.BASE_URL)
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }

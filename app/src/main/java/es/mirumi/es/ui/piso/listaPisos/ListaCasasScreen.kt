@@ -228,19 +228,32 @@ private fun handleQrAction(
     ctx: Context,
 ) {
     try {
-        val json = JSONObject(data)
-        if (json.has("casaId")) {
-            val id = json.getLong("casaId")
-            CoroutineScope(Dispatchers.Main).launch {
-                val token = sm.fetchAuthToken() ?: ""
-                val response = repo.joinCasa(token, id, JoinCasaRequest(sm.fetchCurrentUserId()))
-                if (response.isSuccessful) {
-                    Toast.makeText(ctx, "¡Te has unido con éxito!", Toast.LENGTH_SHORT).show()
-                    vm.refreshCasas() // Recarga la lista tras unirse
-                }
+        val casaId =
+            try {
+                val json = JSONObject(data)
+                if (json.has("casaId")) json.getLong("casaId") else json.getLong("id")
+            } catch (e: Exception) {
+                data.trim().toLong()
+            }
+
+        val usuarioId = sm.fetchCurrentUserId()
+        if (usuarioId == -1L) {
+            Toast.makeText(ctx, "Error: Sesión no válida", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        CoroutineScope(Dispatchers.Main).launch {
+            val token = sm.fetchAuthToken() ?: ""
+            val response = repo.joinCasa(token, casaId, JoinCasaRequest(usuarioId))
+
+            if (response.isSuccessful) {
+                Toast.makeText(ctx, "¡Te has unido con éxito!", Toast.LENGTH_LONG).show()
+                vm.refreshCasas()
+            } else {
+                Toast.makeText(ctx, "Error: El código ha expirado o ya eres miembro", Toast.LENGTH_SHORT).show()
             }
         }
     } catch (e: Exception) {
-        Toast.makeText(ctx, "Código QR no válido", Toast.LENGTH_SHORT).show()
+        Toast.makeText(ctx, "Código QR no válido o mal formateado", Toast.LENGTH_SHORT).show()
     }
 }

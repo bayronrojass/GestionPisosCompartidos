@@ -48,7 +48,6 @@ class SessionManager(
     fun isLoggedIn(): Boolean = prefs.getString(KEY_AUTH_TOKEN, null) != null
 
     fun logoutUser() {
-        // Borramos los datos de sesión, PERO mantenemos la última casa guardada
         prefs.edit().apply {
             remove(KEY_AUTH_TOKEN)
             remove(KEY_USER_ID)
