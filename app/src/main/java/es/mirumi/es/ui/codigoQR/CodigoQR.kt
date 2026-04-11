@@ -1,29 +1,29 @@
 package es.mirumi.es.ui.codigoQR
 
-import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
-import es.mirumi.es.R
+import android.graphics.Bitmap
+import android.graphics.Color
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
 
-class CodigoQR : Fragment() {
-    companion object {
-        fun newInstance() = CodigoQR()
-    }
+object CodigoQR {
+    fun generateQRCodeBitmap(
+        content: String,
+        size: Int = 512,
+    ): Bitmap? =
+        try {
+            val bitMatrix = QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, size, size)
+            val width = bitMatrix.width
+            val height = bitMatrix.height
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
 
-    private val viewModel: CodigoQRViewModel by viewModels()
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        // TODO: Use the ViewModel
-    }
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?,
-    ): View = inflater.inflate(R.layout.fragment_codigo_q_r, container, false)
+            for (x in 0 until width) {
+                for (y in 0 until height) {
+                    bitmap.setPixel(x, y, if (bitMatrix[x, y]) Color.BLACK else Color.WHITE)
+                }
+            }
+            bitmap
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
 }
