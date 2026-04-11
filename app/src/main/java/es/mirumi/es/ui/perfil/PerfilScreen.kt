@@ -1,5 +1,6 @@
 package es.mirumi.es.ui.perfil
 
+import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -58,6 +59,13 @@ import es.mirumi.es.R
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.ui.navigation.Route
 import kotlinx.coroutines.launch
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.SubcomposeAsyncImage
+import androidx.compose.material3.CircularProgressIndicator
 
 @Composable
 fun PerfilScreen(
@@ -78,9 +86,21 @@ fun PerfilScreen(
     var showEditDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showPhotoOptionsDialog by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    // --- NUEVO: Configuración para abrir la galería ---
+    val context = LocalContext.current
+    val photoPickerLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.PickVisualMedia(),
+        ) { uri: Uri? ->
+            uri?.let {
+                viewModel.subirFotoPerfil(context, it)
+            }
+        }
 
     // Escuchador de Eventos Únicos (Navegación y Toasts)
     LaunchedEffect(Unit) {
@@ -149,19 +169,62 @@ fun PerfilScreen(
                                 .size(100.dp)
                                 .clip(shape = CircleShape)
                                 .background(Color(0xFF8061A2))
-                                .border(border = BorderStroke(2.dp, Color(0xfff8f8f8)), shape = CircleShape),
+                                .border(border = BorderStroke(2.dp, Color(0xfff8f8f8)), shape = CircleShape)
+                                .clickable {
+                                    if (!uiState.usuario?.fotoUrl.isNullOrEmpty()) {
+                                        showPhotoOptionsDialog = true
+                                    } else {
+                                        photoPickerLauncher.launch(
+                                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                                        )
+                                    }
+                                },
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(
-                            text =
-                                uiState.usuario
-                                    ?.nombre
-                                    ?.take(1)
-                                    ?.uppercase() ?: "?",
-                            fontSize = 40.sp,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                        )
+                        val fotoUrl = uiState.usuario?.fotoUrl
+
+                        if (!fotoUrl.isNullOrEmpty()) {
+                            SubcomposeAsyncImage(
+                                model = fotoUrl,
+                                contentDescription = "Foto de perfil",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize(),
+                                // MIENTRAS CARGA: Mostramos un circulito de carga infinito
+                                loading = {
+                                    CircularProgressIndicator(
+                                        color = Color.White,
+                                        modifier = Modifier.padding(30.dp),
+                                    )
+                                },
+                                // SI DA ERROR (o no carga): Mostramos la letra
+                                error = {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text =
+                                                uiState.usuario
+                                                    ?.nombre
+                                                    ?.take(1)
+                                                    ?.uppercase() ?: "?",
+                                            fontSize = 40.sp,
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                    }
+                                },
+                            )
+                        } else {
+                            // Si el usuario no tiene foto en la BD, mostramos la letra normal
+                            Text(
+                                text =
+                                    uiState.usuario
+                                        ?.nombre
+                                        ?.take(1)
+                                        ?.uppercase() ?: "?",
+                                fontSize = 40.sp,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
                     }
 
                     Column(
@@ -380,6 +443,34 @@ fun PerfilScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) { Text("Cancelar") }
+            },
+        )
+    }
+
+    if (showPhotoOptionsDialog) {
+        AlertDialog(
+            onDismissRequest = { showPhotoOptionsDialog = false },
+            title = { Text("Foto de Perfil") },
+            text = { Text("¿Qué deseas hacer con tu foto actual?") },
+            confirmButton = {
+                // Botón principal: Cambiarla
+                Button(onClick = {
+                    showPhotoOptionsDialog = false
+                    photoPickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                    )
+                }) {
+                    Text("Cambiar Foto")
+                }
+            },
+            dismissButton = {
+                // Botón secundario: Eliminarla (En texto rojo)
+                TextButton(onClick = {
+                    showPhotoOptionsDialog = false
+                    viewModel.eliminarFotoPerfil()
+                }) {
+                    Text("Eliminar", color = Color.Red)
+                }
             },
         )
     }

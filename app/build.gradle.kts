@@ -87,7 +87,7 @@ android {
 
         create("realDevice") {
             dimension = "environment"
-            buildConfigField("String", "BASE_URL", "\"http://192.168.68.105:8080/\"")
+            buildConfigField("String", "BASE_URL", "\"http://192.168.0.13:8080/\"")
         }
     }
 }
@@ -96,6 +96,7 @@ dependencies {
 
     // Kotlin + Coroutines
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.exifinterface)
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("io.mockk:mockk:1.13.8")

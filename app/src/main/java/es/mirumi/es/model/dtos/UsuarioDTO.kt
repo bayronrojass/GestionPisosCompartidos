@@ -9,4 +9,6 @@ data class UsuarioDTO(
     val nombre: String,
     @SerializedName("correo")
     val correo: String,
+    @SerializedName("fotoUrl")
+    val fotoUrl: String? = null,
 )

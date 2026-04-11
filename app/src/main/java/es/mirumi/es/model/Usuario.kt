@@ -12,4 +12,6 @@ data class Usuario(
     val nombre: String,
     @SerializedName("correo")
     val correo: String,
+    @SerializedName("fotoUrl")
+    val fotoUrl: String? = null,
 ) : Parcelable
