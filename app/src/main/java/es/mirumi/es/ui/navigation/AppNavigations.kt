@@ -119,7 +119,6 @@ fun AppNavigation(
             val casaId = backStackEntry.arguments?.getLong("casaId") ?: 0L
             val casaNombre = backStackEntry.arguments?.getString("casaNombre") ?: ""
 
-            // MainScreenWithNavigation ahora gestiona su propio ViewModel y la navegación al calendario
             MainScreenWithNavigation(
                 casaId = casaId,
                 casaNombre = casaNombre,
@@ -184,6 +183,28 @@ fun AppNavigation(
                 listaNombre = listaNombre,
                 casaNombre = casaNombre,
                 casaId = casaId,
+            )
+        }
+
+        composable(
+            route = "qr_screen/{casaId}",
+            arguments = listOf(androidx.navigation.navArgument("casaId") { type = androidx.navigation.NavType.LongType }),
+        ) { backStackEntry ->
+            val casaId = backStackEntry.arguments?.getLong("casaId") ?: 0L
+
+            val qrViewModel: es.mirumi.es.ui.codigoQR.CodigoQRViewModel =
+                androidx.lifecycle.viewmodel.compose.viewModel(
+                    factory =
+                        object : androidx.lifecycle.ViewModelProvider.Factory {
+                            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T =
+                                es.mirumi.es.ui.codigoQR
+                                    .CodigoQRViewModel(sessionManager) as T
+                        },
+                )
+
+            es.mirumi.es.ui.codigoQR.QRScreen(
+                casaIdActual = casaId,
+                viewModel = qrViewModel,
             )
         }
     }

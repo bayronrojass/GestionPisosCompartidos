@@ -14,10 +14,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -79,10 +77,8 @@ fun PerfilScreen(
             factory = PerfilViewModelFactory(sessionManager),
         )
 
-    // Recolectamos el Estado de la UI
     val uiState by viewModel.uiState.collectAsState()
 
-    // Estados para diálogos
     var showEditDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
@@ -102,7 +98,6 @@ fun PerfilScreen(
             }
         }
 
-    // Escuchador de Eventos Únicos (Navegación y Toasts)
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
@@ -116,11 +111,10 @@ fun PerfilScreen(
         }
     }
 
-    // Escuchador de Errores de Estado
     LaunchedEffect(uiState.error) {
         uiState.error?.let {
             scope.launch { snackbarHostState.showSnackbar(it) }
-            viewModel.errorShown() // Limpiamos el error
+            viewModel.errorShown()
         }
     }
 
@@ -129,31 +123,37 @@ fun PerfilScreen(
         containerColor = Color(0xfff9f9f9),
     ) { paddingValues ->
 
-        Box(
+        // SOLUCIÓN AL DISEÑO: Usamos un Column en lugar de un Box con offsets
+        Column(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(bottom = paddingValues.calculateBottomPadding())
+                    .padding(paddingValues)
                     .background(color = Color(0xfff9f9f9))
-                    .verticalScroll(rememberScrollState()),
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp),
+            // Margen lateral para toda la pantalla
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            Spacer(modifier = Modifier.height(25.dp))
+
             // 1. TÍTULO
             Text(
                 text = "Perfil usuario",
                 color = Color.Black,
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                modifier = Modifier.align(alignment = Alignment.TopStart).offset(x = 20.dp, y = 25.dp),
+                modifier = Modifier.align(Alignment.Start),
             )
+
+            Spacer(modifier = Modifier.height(30.dp))
 
             // 2. TARJETA DE DATOS DEL USUARIO
             Row(
-                horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally),
+                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
                 modifier =
                     Modifier
-                        .align(alignment = Alignment.TopStart)
-                        .offset(x = 20.dp, y = 100.dp)
-                        .width(350.dp)
+                        .fillMaxWidth()
                         .clip(shape = RoundedCornerShape(15.dp))
                         .background(color = Color.White)
                         .padding(vertical = 20.dp, horizontal = 10.dp),
@@ -161,12 +161,12 @@ fun PerfilScreen(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(5.dp, Alignment.Top),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.width(120.dp),
+                    modifier = Modifier.weight(1f),
                 ) {
                     Box(
                         modifier =
                             Modifier
-                                .size(100.dp)
+                                .size(90.dp)
                                 .clip(shape = CircleShape)
                                 .background(Color(0xFF8061A2))
                                 .border(border = BorderStroke(2.dp, Color(0xfff8f8f8)), shape = CircleShape)
@@ -236,7 +236,7 @@ fun PerfilScreen(
                             text = uiState.usuario?.nombre ?: "Cargando...",
                             color = Color.Black,
                             textAlign = TextAlign.Center,
-                            style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Medium),
+                            style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Medium),
                             modifier = Modifier.fillMaxWidth(),
                         )
                         Text(
@@ -252,46 +252,47 @@ fun PerfilScreen(
 
                 Column(
                     verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top),
-                    modifier = Modifier.width(150.dp),
+                    modifier = Modifier.weight(1.2f),
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)) {
                         Text("Ubicación", color = Color(0xff585858), style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium))
                         Text(
                             "Escultor José Capuz 29",
                             color = Color.Black,
-                            style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold),
+                            style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Bold),
                         )
                     }
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)) {
                         Text("Activo desde", color = Color(0xff585858), style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium))
-                        Text("Sep del 2025", color = Color.Black, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium))
+                        Text("Sep del 2025", color = Color.Black, style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium))
                     }
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)) {
                         Text("Preferencia", color = Color(0xff585858), style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium))
-                        Text("Silenciosa", color = Color.Black, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium))
+                        Text("Silenciosa", color = Color.Black, style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium))
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(40.dp))
 
             // 3. TEXTO MI CUENTA
             Text(
                 text = "MI CUENTA",
                 color = Color.Black,
                 style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold),
-                modifier = Modifier.align(alignment = Alignment.TopStart).offset(x = 21.dp, y = 350.dp),
+                modifier = Modifier.align(Alignment.Start),
             )
+
+            Spacer(modifier = Modifier.height(10.dp))
 
             // 4. LISTA DE OPCIONES
             Column(
                 modifier =
                     Modifier
-                        .align(alignment = Alignment.TopStart)
-                        .offset(x = 20.dp, y = 390.dp)
-                        .width(350.dp)
+                        .fillMaxWidth()
                         .clip(shape = RoundedCornerShape(15.dp))
                         .background(color = Color.White),
             ) {
-                // Opción 1: Datos personales
                 PerfilOptionRow(
                     text = "Datos personales",
                     onClick = { showEditDialog = true },
@@ -299,18 +300,13 @@ fun PerfilScreen(
                 )
                 HorizontalDivider(color = Color(0xffe0e0e0), thickness = 1.dp)
 
-                // Opción 2: Cambiar de Vivienda (NUEVA)
                 PerfilOptionRow(
                     text = "Cambiar de vivienda",
-                    onClick = {
-                        // Navegamos al selector de casas pasándole vacío (para que las recargue si es necesario)
-                        navController.navigate(Route.ListaCasas.createRoute(""))
-                    },
-                    iconId = R.drawable.casita, // He puesto casita.xml que está en tus assets
+                    onClick = { navController.navigate(Route.ListaCasas.createRoute("")) },
+                    iconId = R.drawable.casita,
                 )
                 HorizontalDivider(color = Color(0xffe0e0e0), thickness = 1.dp)
 
-                // Opción 3: Datos del piso
                 PerfilOptionRow(
                     text = "Datos del piso",
                     onClick = { navController.navigate(Route.GestionUsuariosPiso.createRoute(casaId)) },
@@ -318,7 +314,6 @@ fun PerfilScreen(
                 )
                 HorizontalDivider(color = Color(0xffe0e0e0), thickness = 1.dp)
 
-                // Opción 4: Estadísticas
                 PerfilOptionRow(
                     text = "Estadísticas",
                     onClick = {},
@@ -326,7 +321,6 @@ fun PerfilScreen(
                 )
                 HorizontalDivider(color = Color(0xffe0e0e0), thickness = 1.dp)
 
-                // Opción 5: Ajustes
                 PerfilOptionRow(
                     text = "Ajustes",
                     onClick = {},
@@ -334,20 +328,28 @@ fun PerfilScreen(
                 )
             }
 
+            // Espaciador dinámico: Empuja el botón hacia abajo sin montarse encima de Ajustes
+            Spacer(modifier = Modifier.height(50.dp))
+
             // 5. BOTÓN CERRAR SESIÓN
             Button(
                 onClick = { showLogoutDialog = true },
                 modifier =
                     Modifier
-                        .align(alignment = Alignment.TopStart)
-                        .offset(x = 20.dp, y = 720.dp)
-                        .width(350.dp)
+                        .fillMaxWidth()
                         .height(50.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xff8061a2)),
+                // SOLUCIÓN COLOR: Forzamos el color del contenido (letras) a blanco puro siempre
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = Color(0xff8061a2),
+                        contentColor = Color.White,
+                    ),
             ) {
-                Text("Cerrar sesión", color = Color.White, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold))
+                Text("Cerrar sesión", fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             // 6. TEXTO ELIMINAR CUENTA
             Text(
@@ -356,15 +358,11 @@ fun PerfilScreen(
                 style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold),
                 modifier =
                     Modifier
-                        .align(alignment = Alignment.TopCenter)
-                        .offset(y = 790.dp)
                         .clickable { showDeleteDialog = true }
                         .padding(12.dp),
             )
 
-            Spacer(
-                modifier = Modifier.height(100.dp).align(Alignment.TopCenter).offset(y = 850.dp),
-            )
+            Spacer(modifier = Modifier.height(40.dp))
         }
     }
 
@@ -376,7 +374,8 @@ fun PerfilScreen(
 
         AlertDialog(
             onDismissRequest = { showEditDialog = false },
-            title = { Text("Editar Perfil") },
+            title = { Text("Editar Perfil", color = Color.Black) },
+            containerColor = Color.White,
             text = {
                 Column {
                     OutlinedTextField(
@@ -397,15 +396,20 @@ fun PerfilScreen(
                 }
             },
             confirmButton = {
-                Button(onClick = {
-                    if (nombre.isNotBlank() && correo.isNotBlank()) {
-                        viewModel.actualizarPerfil(nombre, correo)
-                        showEditDialog = false
-                    }
-                }) { Text("Guardar") }
+                Button(
+                    onClick = {
+                        if (nombre.isNotBlank() && correo.isNotBlank()) {
+                            viewModel.actualizarPerfil(nombre, correo)
+                            showEditDialog = false
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xff8061a2), contentColor = Color.White),
+                ) { Text("Guardar") }
             },
             dismissButton = {
-                TextButton(onClick = { showEditDialog = false }) { Text("Cancelar") }
+                TextButton(onClick = { showEditDialog = false }) {
+                    Text("Cancelar", color = Color(0xff8061a2))
+                }
             },
         )
     }
@@ -413,16 +417,22 @@ fun PerfilScreen(
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
-            title = { Text("Cerrar Sesión") },
-            text = { Text("¿Estás seguro de que quieres cerrar sesión?") },
+            title = { Text("Cerrar Sesión", color = Color.Black) },
+            containerColor = Color.White,
+            text = { Text("¿Estás seguro de que quieres cerrar sesión?", color = Color.DarkGray) },
             confirmButton = {
-                Button(onClick = {
-                    viewModel.cerrarSesion()
-                    showLogoutDialog = false
-                }) { Text("Sí, salir") }
+                Button(
+                    onClick = {
+                        viewModel.cerrarSesion()
+                        showLogoutDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xff8061a2), contentColor = Color.White),
+                ) { Text("Sí, salir") }
             },
             dismissButton = {
-                TextButton(onClick = { showLogoutDialog = false }) { Text("Cancelar") }
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text("Cancelar", color = Color(0xff8061a2))
+                }
             },
         )
     }
@@ -430,19 +440,22 @@ fun PerfilScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("¿Eliminar cuenta?") },
-            text = { Text("Esta acción no se puede deshacer. Perderás acceso a tus pisos y tareas.") },
+            title = { Text("¿Eliminar cuenta?", color = Color.Black) },
+            containerColor = Color.White,
+            text = { Text("Esta acción no se puede deshacer. Perderás acceso a tus pisos y tareas.", color = Color.DarkGray) },
             confirmButton = {
                 Button(
                     onClick = {
                         viewModel.eliminarCuenta()
                         showDeleteDialog = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935)),
-                ) { Text("Eliminar definitivamente") }
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935), contentColor = Color.White),
+                ) { Text("Eliminar") }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) { Text("Cancelar") }
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancelar", color = Color(0xff8061a2))
+                }
             },
         )
     }

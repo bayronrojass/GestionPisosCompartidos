@@ -55,19 +55,16 @@ fun ListaCasasScreen(
     val sessionManager = remember { SessionManager(context.applicationContext) }
     val repositoryCasa = remember { RepositoryCasa(NetworkModule.casaApiService) }
 
-    // Usamos la Factory para crear el ViewModel correctamente
     val viewModel: ListaCasasViewModel =
         viewModel(
             factory = ListaCasasViewModelFactory(repositoryCasa, sessionManager),
         )
     val uiState by viewModel.uiState.collectAsState()
 
-    // Carga inicial: si la lista de la navegación es vacía, pide al servidor
     LaunchedEffect(Unit) {
         viewModel.cargarCasas(casas)
     }
 
-    // Gestión de errores
     LaunchedEffect(uiState.error) {
         uiState.error?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
@@ -107,6 +104,7 @@ fun ListaCasasScreen(
                             setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
                             setPrompt("Enfoca el QR del piso")
                             setBeepEnabled(true)
+                            setOrientationLocked(false)
                         }
                     qrLauncher.launch(integrator.createScanIntent())
                 }
@@ -124,7 +122,6 @@ fun ListaCasasScreen(
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(bottom = 80.dp)) {
                     items(uiState.casas, key = { it.id }) { casa ->
                         CasaCard(casa) {
-                            // Al seleccionar: Guardamos ID activo y navegamos al Home
                             sessionManager.saveCasaActivaId(casa.id)
                             navController.navigate(Route.Home.createRoute(casa.id, casa.nombre))
                         }
@@ -228,12 +225,19 @@ private fun handleQrAction(
     ctx: Context,
 ) {
     try {
-        val casaId =
+        //URI mirumi://invite?casaId=X
+        val casaIdLeido: Long =
             try {
-                val json = JSONObject(data)
-                if (json.has("casaId")) json.getLong("casaId") else json.getLong("id")
+                val uri = android.net.Uri.parse(data)
+                val idStr = uri.getQueryParameter("casaId")
+                idStr?.toLongOrNull() ?: throw Exception("Not a URI")
             } catch (e: Exception) {
-                data.trim().toLong()
+                try {
+                    val json = JSONObject(data)
+                    if (json.has("casaId")) json.getLong("casaId") else json.getLong("id")
+                } catch (e: Exception) {
+                    data.trim().toLong()
+                }
             }
 
         val usuarioId = sm.fetchCurrentUserId()
@@ -242,18 +246,23 @@ private fun handleQrAction(
             return
         }
 
+        // Hacemos la llamada al backend con retrofit
         CoroutineScope(Dispatchers.Main).launch {
-            val token = sm.fetchAuthToken() ?: ""
-            val response = repo.joinCasa(token, casaId, JoinCasaRequest(usuarioId))
+            try {
+                val token = sm.fetchAuthToken() ?: ""
+                val response = repo.joinCasa(token, casaIdLeido, JoinCasaRequest(usuarioId))
 
-            if (response.isSuccessful) {
-                Toast.makeText(ctx, "¡Te has unido con éxito!", Toast.LENGTH_LONG).show()
-                vm.refreshCasas()
-            } else {
-                Toast.makeText(ctx, "Error: El código ha expirado o ya eres miembro", Toast.LENGTH_SHORT).show()
+                if (response.isSuccessful) {
+                    Toast.makeText(ctx, "¡Te has unido con éxito!", Toast.LENGTH_LONG).show()
+                    vm.refreshCasas()
+                } else {
+                    Toast.makeText(ctx, "Error al unirse: Posiblemente ya eres miembro.", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(ctx, "Error de red al unirse a la casa", Toast.LENGTH_SHORT).show()
             }
         }
     } catch (e: Exception) {
-        Toast.makeText(ctx, "Código QR no válido o mal formateado", Toast.LENGTH_SHORT).show()
+        Toast.makeText(ctx, "El código QR no pertenece a Mirumi", Toast.LENGTH_SHORT).show()
     }
 }

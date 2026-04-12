@@ -115,7 +115,6 @@ fun GestionUsuariosPiso(
                     Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = TextGray)
                 }
 
-                // Título centrado
                 Text(
                     text = "Miembros del piso",
                     modifier = Modifier.fillMaxWidth(),
@@ -158,7 +157,6 @@ fun GestionUsuariosPiso(
         }
     }
 
-    // --- MENÚ DESLIZANTE DE INVITACIÓN ---
     if (showInviteSheet) {
         ModalBottomSheet(
             onDismissRequest = { showInviteSheet = false },
@@ -185,7 +183,6 @@ fun UsuarioRow(miembro: MiembroPiso) {
             modifier = Modifier.padding(15.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Avatar con inicial
             Box(
                 modifier =
                     Modifier
@@ -223,7 +220,6 @@ fun UsuarioRow(miembro: MiembroPiso) {
     }
 }
 
-// --- CONTENIDO DEL BOTTOM SHEET (TABS QR / EMAIL) ---
 @Composable
 fun InvitacionBottomSheetContent(
     pisoId: Long,
@@ -238,7 +234,6 @@ fun InvitacionBottomSheetContent(
                 .fillMaxWidth()
                 .padding(bottom = 50.dp),
     ) {
-        // Pestañas superiores
         TabRow(
             selectedTabIndex = selectedTab,
             containerColor = Color.White,
@@ -273,7 +268,6 @@ fun InvitacionBottomSheetContent(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Contenido cambiante
         Box(
             modifier =
                 Modifier
@@ -291,8 +285,7 @@ fun InvitacionBottomSheetContent(
 
 @Composable
 fun QrTabContent(pisoId: Long) {
-    // ESTE ES EL JSON QUE LEERÁ LA CÁMARA
-    val qrData = "{\"casaId\": $pisoId}"
+    val qrData = "mirumi://invite?casaId=$pisoId"
     val qrBitmap = rememberQrBitmap(content = qrData)
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -303,20 +296,24 @@ fun QrTabContent(pisoId: Long) {
         )
 
         if (qrBitmap != null) {
-            Image(
-                bitmap = qrBitmap.asImageBitmap(),
-                contentDescription = "QR Code",
+            Box(
                 modifier =
                     Modifier
-                        .size(250.dp)
-                        .border(2.dp, TextGray.copy(alpha = 0.2f), RoundedCornerShape(10.dp))
-                        .padding(10.dp),
-            )
+                        .background(Color.White)
+                        .padding(10.dp)
+                        .border(2.dp, TextGray.copy(alpha = 0.2f), RoundedCornerShape(10.dp)),
+            ) {
+                Image(
+                    bitmap = qrBitmap.asImageBitmap(),
+                    contentDescription = "QR Code",
+                    modifier = Modifier.size(230.dp),
+                )
+            }
         } else {
             CircularProgressIndicator(color = PurplePrimary)
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(20.dp))
         Text(
             text = "Pídele a tu compañero que abra la app\ny escanee este código desde la lista de pisos.",
             textAlign = TextAlign.Center,
@@ -371,7 +368,6 @@ fun EmailTabContent(onSend: (String) -> Unit) {
     }
 }
 
-// --- FUNCIÓN GENERADORA DE QR ---
 @Composable
 fun rememberQrBitmap(
     content: String,
@@ -388,18 +384,17 @@ fun rememberQrBitmap(
                         BarcodeFormat.QR_CODE,
                         size,
                         size,
-                        mapOf(EncodeHintType.MARGIN to 1),
+                        mapOf(EncodeHintType.MARGIN to 2),
                     )
                 val w = bits.width
                 val h = bits.height
-                val pixels = IntArray(w * h)
+
+                val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
                 for (y in 0 until h) {
                     for (x in 0 until w) {
-                        pixels[y * w + x] = if (bits[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE
+                        bmp.setPixel(x, y, if (bits[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
                     }
                 }
-                val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-                bmp.setPixels(pixels, 0, w, 0, 0, w, h)
                 bitmap = bmp
             } catch (e: Exception) {
                 e.printStackTrace()
