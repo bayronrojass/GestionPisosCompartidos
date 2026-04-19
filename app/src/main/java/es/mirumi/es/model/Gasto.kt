@@ -12,4 +12,5 @@ data class Gasto(
     val categoria: String = "OTROS",
     @SerializedName("pagadoPorNombre")
     val pagadoPorNombre: String? = "Desconocido",
+    val beneficiarios: List<String>? = emptyList(),
 )

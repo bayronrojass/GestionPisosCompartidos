@@ -1,5 +1,9 @@
 package es.mirumi.es.ui.gastos
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,16 +24,15 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.DirectionsBus
+import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.NoteAdd
@@ -40,13 +43,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -63,8 +66,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
@@ -98,6 +101,34 @@ fun GastosScreen(
     val planDePagos by viewModel.planDePagos.collectAsState()
     val mostrarEstadisticas by viewModel.mostrarEstadisticas.collectAsState()
     val filtroActual by viewModel.filtroCategoria.collectAsState()
+    val usuariosCasa by viewModel.usuariosDetectados.collectAsState()
+
+    // Estados de IA
+    val isScanning by viewModel.isScanningTicket.collectAsState()
+    val borrador by viewModel.borradorEscaneado.collectAsState()
+    val context = LocalContext.current
+
+    val photoPickerLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.PickVisualMedia(),
+        ) { uri: Uri? ->
+            if (uri != null) {
+                viewModel.escanearTicketIA(context, uri)
+            }
+        }
+
+    // SI HAY BORRADOR, ABRIMOS EL DIÁLOGO AUTOMÁTICAMENTE
+    if (borrador != null) {
+        NuevoGastoDialog(
+            onDismiss = { viewModel.limpiarBorrador() },
+            borradorInicial = borrador,
+            miembrosCasa = usuariosCasa,
+            onConfirm = { nombre, importe, categoria, beneficiarios ->
+                viewModel.crearGasto(nombre, importe, categoria, beneficiarios)
+                viewModel.limpiarBorrador()
+            },
+        )
+    }
 
     var gastoSeleccionado by remember { mutableStateOf<Gasto?>(null) }
     var tabSeleccionado by remember { mutableIntStateOf(0) }
@@ -220,22 +251,30 @@ fun GastosScreen(
                     }
                 }
             }
-
+            // CREACIÓN O EDICIÓN DE GASTO MANUAL
             if (showDialog) {
-                val usuariosCasa by viewModel.usuariosDetectados.collectAsState()
-
                 NuevoGastoDialog(
-                    onDismiss = { showDialog = false },
+                    onDismiss = {
+                        showDialog = false
+                        isEditing = false
+                    },
                     gastoEditar = if (isEditing) gastoSeleccionado else null,
                     miembrosCasa = usuariosCasa,
                     onConfirm = { nombre, importe, categoria, beneficiarios ->
                         if (isEditing && gastoSeleccionado != null) {
-                            // Lógica de editar futura
+                            viewModel.editarGasto(
+                                gastoId = gastoSeleccionado!!.id,
+                                nombre = nombre,
+                                importe = importe,
+                                categoria = categoria,
+                                beneficiarios = beneficiarios,
+                            )
                         } else {
                             viewModel.crearGasto(nombre, importe, categoria, beneficiarios)
                         }
                         showDialog = false
                         if (isEditing) gastoSeleccionado = null
+                        isEditing = false
                     },
                 )
             }
@@ -247,8 +286,26 @@ fun GastosScreen(
                     viewModel = viewModel,
                 )
             }
+            // OVERLAY DE CARGA DE TICKET
+            if (isScanning) {
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.6f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator(color = Color.White)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Analizando ticket...", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
         }
     }
+
+    // MENÚ FLOTANTE
     if (gastoSeleccionado == null) {
         val pizarraFabActions =
             listOf(
@@ -259,8 +316,13 @@ fun GastosScreen(
                 ),
                 FabActionItem(
                     icon = Icons.Default.Add,
-                    label = "Crear Gasto",
+                    label = "Crear Gasto Manual",
                     action = FabActionType.CREAR_GASTO,
+                ),
+                FabActionItem(
+                    icon = Icons.Default.DocumentScanner,
+                    label = "Escanear Ticket (IA)",
+                    action = FabActionType.ESCANEAR_TICKET,
                 ),
             )
 
@@ -293,12 +355,13 @@ fun GastosScreen(
                     FabActionType.POST_IT -> {
                         model.addNewPostIt()
                     }
-
                     FabActionType.CREAR_GASTO -> {
                         isEditing = false
                         showDialog = true
                     }
-
+                    FabActionType.ESCANEAR_TICKET -> {
+                        photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    }
                     else -> {}
                 }
             },
@@ -320,8 +383,7 @@ fun VistaListaGastosContent(
     ) {
         item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                val categorias =
-                    listOf("TODOS", "ALQUILER", "COMIDA", "SUMINISTROS", "OCIO", "OTROS")
+                val categorias = listOf("TODOS", "ALQUILER", "COMIDA", "SUMINISTROS", "OCIO", "OTROS")
                 items(categorias) { cat ->
                     CategoryChip(cat, filtroActual, onFiltrar)
                 }
@@ -677,7 +739,7 @@ fun VistaDetalleGasto(
 ) {
     val pagadorNombre = gasto.pagadoPorNombre ?: "Desconocido"
     val colorAvatarPagador = viewModel.getColorPorNombreDinamico(pagadorNombre)
-    val participantes = viewModel.obtenerParticipantesGasto(gasto.importe)
+    val participantes = viewModel.obtenerParticipantesGasto(gasto)
 
     Column(
         modifier =
@@ -866,7 +928,6 @@ fun VistaEstadisticas(
                                 offset = DpOffset(10.dp, 10.dp),
                                 modifier = Modifier.align(Alignment.TopStart),
                             )
-
                         1 ->
                             BubbleShape(
                                 text = data.textoPorcentaje,
@@ -877,7 +938,6 @@ fun VistaEstadisticas(
                                 offset = DpOffset(20.dp, (-10).dp),
                                 modifier = Modifier.align(Alignment.BottomStart),
                             )
-
                         2 ->
                             BubbleShape(
                                 text = data.textoPorcentaje,
@@ -888,7 +948,6 @@ fun VistaEstadisticas(
                                 offset = DpOffset((-10).dp, 60.dp),
                                 modifier = Modifier.align(Alignment.TopEnd),
                             )
-
                         3 ->
                             BubbleShape(
                                 text = data.textoPorcentaje,
@@ -963,91 +1022,6 @@ fun BubbleShape(
             modifier = Modifier.rotate(-rotation),
         )
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun NuevoGastoDialog(
-    onDismiss: () -> Unit,
-    gastoEditar: Gasto? = null,
-    onConfirm: (String, String, String) -> Unit,
-) {
-    var nombre by remember { mutableStateOf(gastoEditar?.nombre ?: "") }
-    var importe by remember { mutableStateOf(gastoEditar?.importe?.toString() ?: "") }
-    var categoriaSelected by remember { mutableStateOf(gastoEditar?.categoria ?: "OTROS") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Color.White,
-        title = {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    if (gastoEditar ==
-                        null
-                    ) {
-                        "Nuevo Gasto"
-                    } else {
-                        "Editar Gasto"
-                    },
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = ColorTextoGris,
-                )
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = ColorTextoGris)
-                }
-            }
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = nombre,
-                    onValueChange = { nombre = it },
-                    label = { Text("Nombre del gasto") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                )
-
-                OutlinedTextField(
-                    value = importe,
-                    onValueChange = { importe = it },
-                    label = { Text("Importe (€)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    shape = RoundedCornerShape(12.dp),
-                )
-
-                Text("Categoría:", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    CategoryChip("COMIDA", categoriaSelected) { categoriaSelected = it }
-                    CategoryChip("OCIO", categoriaSelected) { categoriaSelected = it }
-                    CategoryChip("OTROS", categoriaSelected) { categoriaSelected = it }
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (nombre.isNotEmpty() && importe.isNotEmpty()) {
-                        onConfirm(nombre, importe, categoriaSelected)
-                        onDismiss()
-                    }
-                },
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color.Black),
-            ) {
-                Text("Aceptar", color = Color.Black)
-            }
-        },
-    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

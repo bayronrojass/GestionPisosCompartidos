@@ -20,6 +20,7 @@ import retrofit2.Response
 import java.io.IOException
 import java.util.UUID
 import es.mirumi.es.model.Casa
+import okhttp3.ResponseBody
 
 class RepositoryCasa(
     private val apiService: CasaAPI,
@@ -97,7 +98,7 @@ class RepositoryCasa(
         token: String,
         casaId: Long,
         request: GastoRequest,
-    ): Response<String> = apiService.postGastoCasa(token, casaId, request)
+    ): Response<ResponseBody> = apiService.postGastoCasa(token, casaId, request)
 
     suspend fun getMisCasas(
         token: String,
@@ -106,4 +107,11 @@ class RepositoryCasa(
         val tokenFormateado = if (token.startsWith("Bearer ")) token else "Bearer $token"
         return apiService.getMisCasas(tokenFormateado, usuarioId)
     }
+
+    suspend fun editarGasto(
+        token: String,
+        casaId: Long,
+        gastoId: Long,
+        request: GastoRequest,
+    ) = apiService.editarGasto(token, casaId, gastoId, request)
 }
