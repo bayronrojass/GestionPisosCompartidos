@@ -5,22 +5,23 @@ import android.net.Uri
 import android.webkit.MimeTypeMap
 import com.google.gson.Gson
 import es.mirumi.es.data.repository.APIs.CasaAPI
+import es.mirumi.es.model.Casa
 import es.mirumi.es.model.Evento
 import es.mirumi.es.model.Gasto
 import es.mirumi.es.model.Usuario
 import es.mirumi.es.model.requests.CasaRequest
 import es.mirumi.es.model.requests.GastoRequest
 import es.mirumi.es.model.requests.JoinCasaRequest
+import es.mirumi.es.model.requests.PagoBizumRequest
 import es.mirumi.es.model.responses.CasaDetailsResponseDTO
 import es.mirumi.es.model.responses.CasaResponse
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.ResponseBody
 import retrofit2.Response
 import java.io.IOException
 import java.util.UUID
-import es.mirumi.es.model.Casa
-import okhttp3.ResponseBody
 
 class RepositoryCasa(
     private val apiService: CasaAPI,
@@ -100,6 +101,13 @@ class RepositoryCasa(
         request: GastoRequest,
     ): Response<ResponseBody> = apiService.postGastoCasa(token, casaId, request)
 
+    suspend fun editarGasto(
+        token: String,
+        casaId: Long,
+        gastoId: Long,
+        request: GastoRequest,
+    ) = apiService.editarGasto(token, casaId, gastoId, request)
+
     suspend fun getMisCasas(
         token: String,
         usuarioId: Long,
@@ -107,4 +115,11 @@ class RepositoryCasa(
         val tokenFormateado = if (token.startsWith("Bearer ")) token else "Bearer $token"
         return apiService.getMisCasas(tokenFormateado, usuarioId)
     }
+
+    // --- NUEVO: PAGO BIZUM ---
+    suspend fun notificarPagoBizum(
+        token: String,
+        casaId: Long,
+        request: PagoBizumRequest
+    ): Response<Unit> = apiService.notificarPagoBizum(token, casaId, request)
 }
