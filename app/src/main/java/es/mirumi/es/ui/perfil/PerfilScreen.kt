@@ -185,7 +185,13 @@ fun PerfilScreen(
 
                         if (!fotoUrl.isNullOrEmpty()) {
                             SubcomposeAsyncImage(
-                                model = fotoUrl,
+                                // ¡ESTA ES LA CLAVE! Reconstruimos el modelo con el timestamp para romper la caché
+                                model =
+                                    coil.request.ImageRequest
+                                        .Builder(LocalContext.current)
+                                        .data("$fotoUrl?v=${System.currentTimeMillis()}")
+                                        .crossfade(true)
+                                        .build(),
                                 contentDescription = "Foto de perfil",
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize(),

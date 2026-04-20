@@ -120,6 +120,6 @@ class RepositoryCasa(
     suspend fun notificarPagoBizum(
         token: String,
         casaId: Long,
-        request: PagoBizumRequest
+        request: PagoBizumRequest,
     ): Response<Unit> = apiService.notificarPagoBizum(token, casaId, request)
 }

@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName
 
 data class AportacionDTO(
     val nombre: String,
-    val cantidad: Double
+    val cantidad: Double,
 )
 
 data class Gasto(
@@ -17,5 +17,6 @@ data class Gasto(
     val categoria: String = "OTROS",
     @SerializedName("pagadoPorNombre")
     val pagadoPorNombre: String? = "Desconocido",
+    val aportaciones: List<AportacionDTO>? = emptyList(),
     val beneficiarios: List<String>? = emptyList(),
 )

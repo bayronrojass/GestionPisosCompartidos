@@ -109,5 +109,4 @@ interface CasaAPI {
         @Path("casaId") casaId: Long,
         @Body request: PagoBizumRequest,
     ): Response<Unit>
-
 }
