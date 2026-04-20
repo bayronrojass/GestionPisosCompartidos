@@ -225,7 +225,7 @@ private fun handleQrAction(
     ctx: Context,
 ) {
     try {
-        //URI mirumi://invite?casaId=X
+        // URI mirumi://invite?casaId=X
         val casaIdLeido: Long =
             try {
                 val uri = android.net.Uri.parse(data)

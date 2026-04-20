@@ -20,6 +20,7 @@ import retrofit2.Response
 import java.io.IOException
 import java.util.UUID
 import es.mirumi.es.model.Casa
+import es.mirumi.es.model.requests.PagoBizumRequest
 
 class RepositoryCasa(
     private val apiService: CasaAPI,
@@ -106,4 +107,10 @@ class RepositoryCasa(
         val tokenFormateado = if (token.startsWith("Bearer ")) token else "Bearer $token"
         return apiService.getMisCasas(tokenFormateado, usuarioId)
     }
+
+    suspend fun notificarPagoBizum(
+        token: String,
+        casaId: Long,
+        request: PagoBizumRequest,
+    ) = apiService.notificarPagoBizum(token, casaId, request)
 }

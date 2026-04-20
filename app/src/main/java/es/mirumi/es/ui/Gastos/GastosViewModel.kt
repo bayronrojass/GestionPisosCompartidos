@@ -9,6 +9,7 @@ import es.mirumi.es.data.SessionManager
 import es.mirumi.es.data.repository.repositories.RepositoryCasa
 import es.mirumi.es.model.Gasto
 import es.mirumi.es.model.requests.GastoRequest
+import es.mirumi.es.model.requests.PagoBizumRequest
 import es.mirumi.es.utils.DebtCalculator
 import es.mirumi.es.utils.Deuda
 import kotlinx.coroutines.Dispatchers
@@ -64,6 +65,9 @@ class GastosViewModel(
 
     private val _filtroCategoria = MutableStateFlow("TODOS")
     val filtroCategoria: StateFlow<String> = _filtroCategoria.asStateFlow()
+
+    private val _mensajePago = MutableStateFlow<String?>(null)
+    val mensajePago: StateFlow<String?> = _mensajePago.asStateFlow()
 
     private val colorPalette =
         listOf(
@@ -279,6 +283,43 @@ class GastosViewModel(
         val index = hash % colorPalette.size
         return colorPalette[index]
     }
+
+    /**
+     * Procesa la notificación de pago al backend.
+     * @param gastoId Si es nulo, el servidor asume que se está saldando la deuda total acumulada.
+     */
+    fun realizarPago(acreedorId: Long, cantidad: Double, gastoId: Long? = null) {
+        viewModelScope.launch {
+            try {
+                val token = sessionManager.fetchAuthToken() ?: ""
+                val deudorId = sessionManager.fetchCurrentUserId()
+
+                val request = PagoBizumRequest(
+                    deudorId = deudorId,
+                    acreedorId = acreedorId,
+                    cantidad = abs(cantidad), // Aseguramos que la cantidad sea positiva
+                    gastoId = gastoId
+                )
+
+                val response = repository.notificarPagoBizum(token, casaId, request)
+
+                if (response.isSuccessful) {
+                    _mensajePago.value = "Pago notificado. Esperando confirmación del receptor."
+                    cargarGastos() // Refrescamos los datos para ver cambios
+                } else {
+                    _mensajePago.value = "Error al notificar el pago: ${response.code()}"
+                }
+            } catch (e: Exception) {
+                _mensajePago.value = "Error de red al procesar el pago"
+                Log.e("GASTOS", "Excepción pago: ${e.message}")
+            }
+        }
+    }
+
+    fun limpiarMensajePago() {
+        _mensajePago.value = null
+    }
+
 }
 
 class GastosViewModelFactory(

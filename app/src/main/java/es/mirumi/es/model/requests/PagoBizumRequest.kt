@@ -1,8 +1,9 @@
 package es.mirumi.es.model.requests
 
-data class ElementoRequest(
-    val nombre: String,
-    val descripcion: String?,
-    val completado: Boolean,
-    val cantidad: Int = 1,
+data class PagoBizumRequest(
+    val deudorId: Long,
+    val acreedorId: Long,
+    val cantidad: Double,
+    val gastoId: Long? = null, // null = saldo total
+    val estado: String = "PENDIENTE_CONFIRMACION",
 )
