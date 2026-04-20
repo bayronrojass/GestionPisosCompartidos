@@ -8,9 +8,11 @@ import es.mirumi.es.model.requests.JoinCasaRequest
 import es.mirumi.es.model.responses.CasaDetailsResponseDTO
 import es.mirumi.es.model.responses.CasaResponse
 import es.mirumi.es.model.Casa
+import es.mirumi.es.model.dtos.BorradorGastoDTO
 import es.mirumi.es.model.requests.PagoBizumRequest
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -18,6 +20,7 @@ import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
 
@@ -77,7 +80,22 @@ interface CasaAPI {
         @Header("Authorization") token: String,
         @Path("casaId") casaId: Long,
         @Body request: GastoRequest,
-    ): Response<String>
+    ): Response<ResponseBody>
+
+    @Multipart
+    @POST("casas/escanear-ticket")
+    suspend fun escanearTicket(
+        @Header("Authorization") token: String,
+        @Part file: MultipartBody.Part,
+    ): Response<BorradorGastoDTO>
+
+    @PUT("casas/{casaId}/gastos/{gastoId}")
+    suspend fun editarGasto(
+        @Header("Authorization") token: String,
+        @Path("casaId") casaId: Long,
+        @Path("gastoId") gastoId: Long,
+        @Body request: GastoRequest,
+    ): Response<Unit>
 
     @GET("casas/usuario/{usuarioId}")
     suspend fun getMisCasas(
@@ -91,4 +109,5 @@ interface CasaAPI {
         @Path("casaId") casaId: Long,
         @Body request: PagoBizumRequest,
     ): Response<Unit>
+
 }

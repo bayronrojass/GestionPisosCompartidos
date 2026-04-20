@@ -8,6 +8,7 @@ enum class FabActionType {
     CREAR_LISTA,
     CREAR_TAREA,
     OTHER,
+    ESCANEAR_TICKET,
 }
 
 data class FabActionItem(

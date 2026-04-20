@@ -6,8 +6,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import es.mirumi.es.data.SessionManager
+import es.mirumi.es.data.remote.NetworkModule
 import es.mirumi.es.data.repository.repositories.RepositoryCasa
 import es.mirumi.es.model.Gasto
+import es.mirumi.es.model.dtos.BorradorGastoDTO
 import es.mirumi.es.model.requests.GastoRequest
 import es.mirumi.es.model.requests.PagoBizumRequest
 import es.mirumi.es.utils.DebtCalculator
@@ -17,6 +19,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import uriToFile
 import kotlin.math.abs
 
 data class PieChartData(
@@ -43,8 +49,10 @@ class GastosViewModel(
     private val sessionManager: SessionManager,
     private val casaId: Long,
 ) : ViewModel() {
+
     private var listaCompleta: List<Gasto> = emptyList()
 
+    // --- ESTADOS DE PANTALLA (StateFlows) ---
     private val _gastos = MutableStateFlow<List<Gasto>>(emptyList())
     val gastos: StateFlow<List<Gasto>> = _gastos.asStateFlow()
 
@@ -66,25 +74,70 @@ class GastosViewModel(
     private val _filtroCategoria = MutableStateFlow("TODOS")
     val filtroCategoria: StateFlow<String> = _filtroCategoria.asStateFlow()
 
+    // Estados IA Escáner
+    private val _isScanningTicket = MutableStateFlow(false)
+    val isScanningTicket: StateFlow<Boolean> = _isScanningTicket.asStateFlow()
+
+    private val _borradorEscaneado = MutableStateFlow<BorradorGastoDTO?>(null)
+    val borradorEscaneado: StateFlow<BorradorGastoDTO?> = _borradorEscaneado.asStateFlow()
+
+    // Estado Bizum
     private val _mensajePago = MutableStateFlow<String?>(null)
     val mensajePago: StateFlow<String?> = _mensajePago.asStateFlow()
 
+    // Colores Gráficos y Avatares
     private val colorPalette =
         listOf(
-            Color(0xFF536DFE), // Azul eléctrico
-            Color(0xFFFF4081), // Rosa fuerte
-            Color(0xFF00E676), // Verde neón
-            Color(0xFFFFD740), // Amarillo sol
-            Color(0xFF7C4DFF), // Violeta profundo
-            Color(0xFFFF6E40), // Naranja coral
-            Color(0xFF18FFFF), // Cian brillante
-            Color(0xFFFFAB40), // Naranja suave
-            Color(0xFFE040FB), // Magenta
-            Color(0xFF69F0AE), // Menta
+            Color(0xFF536DFE), Color(0xFFFF4081), Color(0xFF00E676),
+            Color(0xFFFFD740), Color(0xFF7C4DFF), Color(0xFFFF6E40),
+            Color(0xFF18FFFF), Color(0xFFFFAB40), Color(0xFFE040FB),
+            Color(0xFF69F0AE)
         )
 
     init {
+        cargarUsuariosCasa()
         cargarGastos()
+    }
+
+    // =========================================================================
+    //  1. CARGA INICIAL Y NAVEGACIÓN
+    // =========================================================================
+
+    private fun cargarUsuariosCasa() {
+        viewModelScope.launch {
+            val token = sessionManager.fetchAuthToken() ?: return@launch
+            try {
+                val response = repository.getPisoMiembros(token, casaId)
+                if (response.isSuccessful) {
+                    val miembros = response.body()?.map { it.nombre } ?: emptyList()
+                    _usuariosDetectados.value = miembros
+                }
+            } catch (e: Exception) {
+                Log.e("GASTOS", "Error cargando miembros: ${e.message}")
+            }
+        }
+    }
+
+    fun cargarGastos() {
+        viewModelScope.launch {
+            val token = sessionManager.fetchAuthToken() ?: return@launch
+            try {
+                val response = repository.getGastosCasa(token, casaId)
+                if (response.isSuccessful) {
+                    val lista = response.body() ?: emptyList()
+                    listaCompleta = lista
+
+                    aplicarFiltro(_filtroCategoria.value)
+                    calcularEstadisticas(lista)
+                    calcularSaldos(lista)
+                    calcularPlanPagos()
+                } else {
+                    Log.e("GASTOS", "Error al cargar: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e("GASTOS", "Error conexión: ${e.message}")
+            }
+        }
     }
 
     fun toggleVista(verEstadisticas: Boolean) {
@@ -100,29 +153,9 @@ class GastosViewModel(
         }
     }
 
-    fun cargarGastos() {
-        viewModelScope.launch {
-            val token = sessionManager.fetchAuthToken() ?: return@launch
-            try {
-                val response = repository.getGastosCasa(token, casaId)
-                if (response.isSuccessful) {
-                    val lista = response.body() ?: emptyList()
-                    listaCompleta = lista
-
-                    val usuarios = lista.mapNotNull { it.pagadoPorNombre }.distinct()
-                    _usuariosDetectados.value = usuarios
-
-                    aplicarFiltro(_filtroCategoria.value)
-                    calcularEstadisticas(lista)
-                    calcularSaldos(lista)
-                } else {
-                    Log.e("GASTOS", "Error al cargar: ${response.code()}")
-                }
-            } catch (e: Exception) {
-                Log.e("GASTOS", "Error conexión: ${e.message}")
-            }
-        }
-    }
+    // =========================================================================
+    //  2. CREACIÓN Y EDICIÓN DE GASTOS
+    // =========================================================================
 
     fun crearGasto(
         nombre: String,
@@ -135,13 +168,13 @@ class GastosViewModel(
             val userId = sessionManager.fetchCurrentUserId()
             val importeDouble = importe.toDoubleOrNull() ?: 0.0
 
-            val request =
-                GastoRequest(
-                    nombre = nombre,
-                    importe = importeDouble,
-                    categoria = categoria,
-                    pagadoPorId = userId,
-                )
+            val request = GastoRequest(
+                nombre = nombre,
+                importe = importeDouble,
+                categoria = categoria,
+                pagadoPorId = userId,
+                beneficiarios = beneficiarios,
+            )
 
             try {
                 val response = repository.crearGasto(token, casaId, request)
@@ -156,11 +189,44 @@ class GastosViewModel(
         }
     }
 
-    /**
-     * Calcula quién debe a quién basándose en los gastos.
-     * Soporta que un gasto sea para personas específicas (si el modelo Gasto lo tuviera).
-     */
-    fun calcularPlanPagos() {
+    fun editarGasto(
+        gastoId: Long,
+        nombre: String,
+        importe: String,
+        categoria: String,
+        beneficiarios: List<String>,
+    ) {
+        viewModelScope.launch {
+            val token = sessionManager.fetchAuthToken() ?: return@launch
+            val userId = sessionManager.fetchCurrentUserId()
+            val importeDouble = importe.toDoubleOrNull() ?: 0.0
+
+            val request = GastoRequest(
+                nombre = nombre,
+                importe = importeDouble,
+                categoria = categoria,
+                pagadoPorId = userId,
+                beneficiarios = beneficiarios,
+            )
+
+            try {
+                val response = repository.editarGasto(token, casaId, gastoId, request)
+                if (response.isSuccessful) {
+                    cargarGastos()
+                } else {
+                    Log.e("GASTOS", "Error editando gasto: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e("GASTOS", "Excepción editando gasto: ${e.message}")
+            }
+        }
+    }
+
+    // =========================================================================
+    //  3. LÓGICA MATEMÁTICA Y CALCULADORA
+    // =========================================================================
+
+    private fun calcularPlanPagos() {
         viewModelScope.launch(Dispatchers.Default) {
             val gastosActuales = listaCompleta
             val todosLosUsuarios = _usuariosDetectados.value
@@ -174,23 +240,16 @@ class GastosViewModel(
 
             gastosActuales.forEach { gasto ->
                 val pagador = gasto.pagadoPorNombre ?: return@forEach
+                val beneficiariosDelGasto = gasto.beneficiarios?.takeIf { it.isNotEmpty() } ?: todosLosUsuarios
 
-                val beneficiarios = todosLosUsuarios // gasto.beneficiarios ?: todosLosUsuarios
-
-                val numBeneficiarios = beneficiarios.size
+                val numBeneficiarios = beneficiariosDelGasto.size
                 if (numBeneficiarios == 0) return@forEach
 
                 val importePorPersona = gasto.importe / numBeneficiarios
 
-                beneficiarios.forEach { usuario ->
+                beneficiariosDelGasto.forEach { usuario ->
                     if (usuario != pagador) {
-                        deudasBrutas.add(
-                            Deuda(
-                                de = usuario,
-                                para = pagador,
-                                cantidad = importePorPersona,
-                            ),
-                        )
+                        deudasBrutas.add(Deuda(de = usuario, para = pagador, cantidad = importePorPersona))
                     }
                 }
             }
@@ -208,67 +267,65 @@ class GastosViewModel(
         }
 
         val agrupado = lista.groupBy { it.pagadoPorNombre ?: "Desconocido" }
+        val datosOrdenados = agrupado
+            .map { (nombre, gastos) ->
+                val totalPersona = gastos.sumOf { it.importe }
+                val porcentaje = (totalPersona / total).toFloat()
+                Pair(nombre, porcentaje)
+            }.sortedByDescending { it.second }
 
-        val datosOrdenados =
-            agrupado
-                .map { (nombre, gastos) ->
-                    val totalPersona = gastos.sumOf { it.importe }
-                    val porcentaje = (totalPersona / total).toFloat()
-                    Pair(nombre, porcentaje)
-                }.sortedByDescending { it.second }
-
-        val estadisticasFinales =
-            datosOrdenados.map { (nombre, porcentaje) ->
-                PieChartData(
-                    categoria = nombre,
-                    porcentaje = porcentaje,
-                    textoPorcentaje = "${(porcentaje * 100).toInt()}%",
-                    color = getColorPorNombreDinamico(nombre),
-                )
-            }
+        val estadisticasFinales = datosOrdenados.map { (nombre, porcentaje) ->
+            PieChartData(
+                categoria = nombre,
+                porcentaje = porcentaje,
+                textoPorcentaje = "${(porcentaje * 100).toInt()}%",
+                color = getColorPorNombreDinamico(nombre),
+            )
+        }
 
         _stats.value = estadisticasFinales
     }
 
     private fun calcularSaldos(lista: List<Gasto>) {
-        if (lista.isEmpty()) {
+        val todosLosUsuarios = _usuariosDetectados.value
+        if (lista.isEmpty() || todosLosUsuarios.isEmpty()) {
             _saldos.value = emptyList()
-            _usuariosDetectados.value = emptyList()
             return
         }
 
-        val totalGastado = lista.sumOf { it.importe }
-        val usuarios = lista.mapNotNull { it.pagadoPorNombre }.distinct()
-        _usuariosDetectados.value = usuarios
+        val balances = todosLosUsuarios.associateWith { 0.0 }.toMutableMap()
 
-        val numUsuarios = if (usuarios.isEmpty()) 1 else usuarios.size
+        lista.forEach { gasto ->
+            val pagador = gasto.pagadoPorNombre
+            val beneficiariosDelGasto = gasto.beneficiarios?.takeIf { it.isNotEmpty() } ?: todosLosUsuarios
+            val costoPorPersona = gasto.importe / beneficiariosDelGasto.size
 
-        val mediaPorPersona = totalGastado / numUsuarios
+            if (pagador != null && balances.containsKey(pagador)) {
+                balances[pagador] = balances[pagador]!! + gasto.importe
+            }
 
-        val saldosCalculados =
-            usuarios
-                .map { usuario ->
-                    val pagadoPorUsuario =
-                        lista.filter { it.pagadoPorNombre == usuario }.sumOf { it.importe }
-                    val balance = pagadoPorUsuario - mediaPorPersona
+            beneficiariosDelGasto.forEach { beneficiario ->
+                if (balances.containsKey(beneficiario)) {
+                    balances[beneficiario] = balances[beneficiario]!! - costoPorPersona
+                }
+            }
+        }
 
-                    SaldoUsuario(
-                        nombre = usuario,
-                        cantidad = balance,
-                        colorAvatar = getColorPorNombreDinamico(usuario),
-                    )
-                }.sortedByDescending { it.cantidad }
+        val saldosCalculados = balances
+            .map { (nombre, balance) ->
+                SaldoUsuario(nombre = nombre, cantidad = balance, colorAvatar = getColorPorNombreDinamico(nombre))
+            }.sortedByDescending { it.cantidad }
 
         _saldos.value = saldosCalculados
     }
 
-    fun obtenerParticipantesGasto(importeTotal: Double): List<ParticipantePago> {
-        val usuarios = _usuariosDetectados.value
-        if (usuarios.isEmpty()) return emptyList()
+    fun obtenerParticipantesGasto(gasto: Gasto): List<ParticipantePago> {
+        val beneficiariosDelGasto = gasto.beneficiarios?.takeIf { it.isNotEmpty() } ?: _usuariosDetectados.value
+        if (beneficiariosDelGasto.isEmpty()) return emptyList()
 
-        val cuota = importeTotal / usuarios.size
+        val cuota = gasto.importe / beneficiariosDelGasto.size
 
-        return usuarios.map { nombre ->
+        return beneficiariosDelGasto.map { nombre ->
             ParticipantePago(
                 nombre = nombre,
                 cantidad = cuota,
@@ -284,10 +341,44 @@ class GastosViewModel(
         return colorPalette[index]
     }
 
-    /**
-     * Procesa la notificación de pago al backend.
-     * @param gastoId Si es nulo, el servidor asume que se está saldando la deuda total acumulada.
-     */
+    // =========================================================================
+    //  4. IA ESCÁNER (TICKETS)
+    // =========================================================================
+
+    fun escanearTicketIA(context: android.content.Context, uri: android.net.Uri) {
+        viewModelScope.launch {
+            _isScanningTicket.value = true
+            try {
+                val token = sessionManager.fetchAuthToken() ?: throw Exception("Sin token")
+                val tokenFormateado = if (token.startsWith("Bearer ")) token else "Bearer $token"
+
+                val file = uriToFile(context, uri) ?: throw Exception("Error de imagen")
+                val requestFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
+                val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
+
+                val response = NetworkModule.casaApiService.escanearTicket(tokenFormateado, body)
+
+                if (response.isSuccessful && response.body() != null) {
+                    _borradorEscaneado.value = response.body()
+                } else {
+                    Log.e("GASTOS", "Error backend: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e("GASTOS", "Excepción: ${e.message}")
+            } finally {
+                _isScanningTicket.value = false
+            }
+        }
+    }
+
+    fun limpiarBorrador() {
+        _borradorEscaneado.value = null
+    }
+
+    // =========================================================================
+    //  5. PAGOS Y BIZUM
+    // =========================================================================
+
     fun realizarPago(acreedorId: Long, cantidad: Double, gastoId: Long? = null) {
         viewModelScope.launch {
             try {
@@ -297,7 +388,7 @@ class GastosViewModel(
                 val request = PagoBizumRequest(
                     deudorId = deudorId,
                     acreedorId = acreedorId,
-                    cantidad = abs(cantidad), // Aseguramos que la cantidad sea positiva
+                    cantidad = abs(cantidad),
                     gastoId = gastoId
                 )
 
@@ -305,7 +396,7 @@ class GastosViewModel(
 
                 if (response.isSuccessful) {
                     _mensajePago.value = "Pago notificado. Esperando confirmación del receptor."
-                    cargarGastos() // Refrescamos los datos para ver cambios
+                    cargarGastos()
                 } else {
                     _mensajePago.value = "Error al notificar el pago: ${response.code()}"
                 }
@@ -319,7 +410,6 @@ class GastosViewModel(
     fun limpiarMensajePago() {
         _mensajePago.value = null
     }
-
 }
 
 class GastosViewModelFactory(

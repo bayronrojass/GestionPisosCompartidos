@@ -1,11 +1,13 @@
 package es.mirumi.es.ui.gastos
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,28 +32,34 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import es.mirumi.es.model.Gasto
+import es.mirumi.es.model.dtos.BorradorGastoDTO
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun NuevoGastoDialog(
     onDismiss: () -> Unit,
     gastoEditar: Gasto? = null,
-    miembrosCasa: List<String>, // Nueva lista de miembros para elegir
-    onConfirm: (String, String, String, List<String>) -> Unit, // Ahora devuelve la lista de beneficiarios
+    borradorInicial: BorradorGastoDTO? = null,
+    miembrosCasa: List<String>,
+    onConfirm: (String, String, String, List<String>) -> Unit,
 ) {
-    var nombre by remember { mutableStateOf(gastoEditar?.nombre ?: "") }
-    var importe by remember { mutableStateOf(gastoEditar?.importe?.toString() ?: "") }
-    var categoriaSelected by remember { mutableStateOf(gastoEditar?.categoria ?: "OTROS") }
-
-    // Por defecto, todos están seleccionados
-    var beneficiariosSelected by remember { mutableStateOf(miembrosCasa.toSet()) }
-
+    var nombre by remember { mutableStateOf(borradorInicial?.concepto ?: gastoEditar?.nombre ?: "") }
+    var importe by remember { mutableStateOf(borradorInicial?.total?.toString() ?: gastoEditar?.importe?.toString() ?: "") }
+    var categoriaSelected by remember { mutableStateOf(gastoEditar?.categoria ?: "ALIMENTACION") }
+    var beneficiariosSelected by remember {
+        mutableStateOf(
+            gastoEditar?.beneficiarios?.takeIf { it.isNotEmpty() }?.toSet()
+                ?: miembrosCasa.toSet(),
+        )
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Color.White,
@@ -74,6 +82,20 @@ fun NuevoGastoDialog(
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (borradorInicial?.urlTicket != null) {
+                    AsyncImage(
+                        model = borradorInicial.urlTicket,
+                        contentDescription = "Ticket escaneado",
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(120.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.LightGray),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    )
+                }
+
                 OutlinedTextField(
                     value = nombre,
                     onValueChange = { nombre = it },

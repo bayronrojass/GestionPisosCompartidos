@@ -2,6 +2,11 @@ package es.mirumi.es.model
 
 import com.google.gson.annotations.SerializedName
 
+data class AportacionDTO(
+    val nombre: String,
+    val cantidad: Double
+)
+
 data class Gasto(
     val id: Long = 0,
     val nombre: String = "",
@@ -12,4 +17,5 @@ data class Gasto(
     val categoria: String = "OTROS",
     @SerializedName("pagadoPorNombre")
     val pagadoPorNombre: String? = "Desconocido",
+    val beneficiarios: List<String>? = emptyList(),
 )
