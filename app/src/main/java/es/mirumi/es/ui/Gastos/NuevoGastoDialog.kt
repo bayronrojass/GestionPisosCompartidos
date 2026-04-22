@@ -6,10 +6,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -24,6 +26,8 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -48,18 +52,23 @@ fun NuevoGastoDialog(
     onDismiss: () -> Unit,
     gastoEditar: Gasto? = null,
     borradorInicial: BorradorGastoDTO? = null,
-    miembrosCasa: List<String>,
-    onConfirm: (String, String, String, List<String>) -> Unit,
+    miembrosCasa: List<UsuarioPiso>, // Ahora recibe los IDs reales
+    onConfirm: (String, String, String, List<String>, Boolean) -> Unit, // Añadido Boolean de pagadoPorTodos
 ) {
     var nombre by remember { mutableStateOf(borradorInicial?.concepto ?: gastoEditar?.nombre ?: "") }
     var importe by remember { mutableStateOf(borradorInicial?.total?.toString() ?: gastoEditar?.importe?.toString() ?: "") }
     var categoriaSelected by remember { mutableStateOf(gastoEditar?.categoria ?: "ALIMENTACION") }
+
+    // Si editamos y hay más de 1 aportación, es que se pagó a medias. Si es nuevo, por defecto falso (lo pagas tú).
+    var pagadoPorTodos by remember { mutableStateOf((gastoEditar?.aportaciones?.size ?: 0) > 1) }
+
     var beneficiariosSelected by remember {
         mutableStateOf(
             gastoEditar?.beneficiarios?.takeIf { it.isNotEmpty() }?.toSet()
-                ?: miembrosCasa.toSet(),
+                ?: miembrosCasa.map { it.nombre }.toSet(),
         )
     }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Color.White,
@@ -120,29 +129,53 @@ fun NuevoGastoDialog(
                     CategoryChip("OTROS", categoriaSelected) { categoriaSelected = it }
                 }
 
-                // NUEVA SECCIÓN: Selección de beneficiarios
+                // NUEVA SECCIÓN: ¿Quién lo ha pagado?
+                Text("¿Quién lo ha pagado?", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(
+                        selected = !pagadoPorTodos,
+                        onClick = { pagadoPorTodos = false },
+                        colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF58337F)),
+                    )
+                    Text("Lo he pagado yo", fontSize = 14.sp)
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    RadioButton(
+                        selected = pagadoPorTodos,
+                        onClick = { pagadoPorTodos = true },
+                        colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF58337F)),
+                    )
+                    Text("A partes iguales", fontSize = 14.sp)
+                }
+
+                // SECCIÓN: Selección de beneficiarios
                 Text("¿Para quién es?", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    miembrosCasa.forEach { miembro ->
-                        val isSelected = beneficiariosSelected.contains(miembro)
+                    miembrosCasa.forEach { usuario ->
+                        val nombreMiembro = usuario.nombre
+                        val isSelected = beneficiariosSelected.contains(nombreMiembro)
                         FilterChip(
                             selected = isSelected,
                             onClick = {
                                 val current = beneficiariosSelected.toMutableSet()
                                 if (isSelected) {
-                                    if (current.size > 1) current.remove(miembro) // Evitar dejarlo vacío
+                                    if (current.size > 1) current.remove(nombreMiembro)
                                 } else {
-                                    current.add(miembro)
+                                    current.add(nombreMiembro)
                                 }
                                 beneficiariosSelected = current
                             },
-                            label = { Text(miembro) },
+                            label = { Text(nombreMiembro) },
                             leadingIcon =
                                 if (isSelected) {
-                                    { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                    { Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp)) }
                                 } else {
                                     null
                                 },
@@ -160,14 +193,11 @@ fun NuevoGastoDialog(
             Button(
                 onClick = {
                     if (nombre.isNotEmpty() && importe.isNotEmpty()) {
-                        onConfirm(nombre, importe, categoriaSelected, beneficiariosSelected.toList())
+                        onConfirm(nombre, importe, categoriaSelected, beneficiariosSelected.toList(), pagadoPorTodos)
                         onDismiss()
                     }
                 },
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color.Black),
             ) {

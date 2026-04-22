@@ -66,17 +66,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 import es.mirumi.es.model.Gasto
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModel
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModelFactory
 import es.mirumi.es.ui.pizarra.postits.PizarraScreen
+import es.mirumi.es.ui.utils.BizumUtils
 import es.mirumi.es.ui.utils.FabActionItem
 import es.mirumi.es.ui.utils.FabActionType
 import es.mirumi.es.utils.Deuda
@@ -103,7 +108,9 @@ fun GastosScreen(
     val filtroActual by viewModel.filtroCategoria.collectAsState()
     val usuariosCasa by viewModel.usuariosDetectados.collectAsState()
 
-    // Estados de IA
+    // El nombre del usuario actual (vital para saber a quién le debes y quién te debe)
+    val miNombre by viewModel.miNombre.collectAsState()
+
     val isScanning by viewModel.isScanningTicket.collectAsState()
     val borrador by viewModel.borradorEscaneado.collectAsState()
     val context = LocalContext.current
@@ -112,19 +119,16 @@ fun GastosScreen(
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.PickVisualMedia(),
         ) { uri: Uri? ->
-            if (uri != null) {
-                viewModel.escanearTicketIA(context, uri)
-            }
+            if (uri != null) viewModel.escanearTicketIA(context, uri)
         }
 
-    // SI HAY BORRADOR, ABRIMOS EL DIÁLOGO AUTOMÁTICAMENTE
     if (borrador != null) {
         NuevoGastoDialog(
             onDismiss = { viewModel.limpiarBorrador() },
             borradorInicial = borrador,
             miembrosCasa = usuariosCasa,
-            onConfirm = { nombre, importe, categoria, beneficiarios ->
-                viewModel.crearGasto(nombre, importe, categoria, beneficiarios)
+            onConfirm = { nombre, importe, categoria, beneficiarios, pagadoPorTodos ->
+                viewModel.crearGasto(nombre, importe, categoria, beneficiarios, pagadoPorTodos)
                 viewModel.limpiarBorrador()
             },
         )
@@ -137,20 +141,10 @@ fun GastosScreen(
     var showDebtDialog by remember { mutableStateOf(false) }
     var isEditing by remember { mutableStateOf(false) }
 
-    Scaffold(
-        containerColor = ColorFondo,
-    ) { padding ->
-        Box(
-            modifier =
-                Modifier
-                    .padding(padding)
-                    .fillMaxSize(),
-        ) {
+    Scaffold(containerColor = ColorFondo) { padding ->
+        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             if (mostrarEstadisticas) {
-                VistaEstadisticas(
-                    stats = stats,
-                    onBack = { viewModel.toggleVista(false) },
-                )
+                VistaEstadisticas(stats = stats, onBack = { viewModel.toggleVista(false) })
             } else if (gastoSeleccionado != null) {
                 VistaDetalleGasto(
                     gasto = gastoSeleccionado!!,
@@ -160,17 +154,10 @@ fun GastosScreen(
                         isEditing = true
                         showDialog = true
                     },
-                    onDelete = {
-                        gastoSeleccionado = null
-                    },
+                    onDelete = { gastoSeleccionado = null },
                 )
             } else {
-                Column(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 20.dp),
-                ) {
+                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
                     Spacer(modifier = Modifier.height(20.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -188,17 +175,8 @@ fun GastosScreen(
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                    ) {
-                        Box(
-                            modifier =
-                                Modifier
-                                    .width(180.dp)
-                                    .background(Color.White, RoundedCornerShape(50))
-                                    .padding(4.dp),
-                        ) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                        Box(modifier = Modifier.width(180.dp).background(Color.White, RoundedCornerShape(50)).padding(4.dp)) {
                             Row {
                                 Box(
                                     modifier =
@@ -206,26 +184,35 @@ fun GastosScreen(
                                             .weight(1f)
                                             .height(30.dp)
                                             .background(
-                                                if (tabSeleccionado == 0) ColorLilaSelected else Color.Transparent,
+                                                if (tabSeleccionado ==
+                                                    0
+                                                ) {
+                                                    ColorLilaSelected
+                                                } else {
+                                                    Color.Transparent
+                                                },
                                                 RoundedCornerShape(50),
                                             ).clickable { tabSeleccionado = 0 },
                                     contentAlignment = Alignment.Center,
-                                ) {
-                                    Text("Gastos", fontWeight = FontWeight.Medium, fontSize = 14.sp)
-                                }
+                                ) { Text("Gastos", fontWeight = FontWeight.Medium, fontSize = 14.sp) }
+
                                 Box(
                                     modifier =
                                         Modifier
                                             .weight(1f)
                                             .height(30.dp)
                                             .background(
-                                                if (tabSeleccionado == 1) ColorLilaSelected else Color.Transparent,
+                                                if (tabSeleccionado ==
+                                                    1
+                                                ) {
+                                                    ColorLilaSelected
+                                                } else {
+                                                    Color.Transparent
+                                                },
                                                 RoundedCornerShape(50),
                                             ).clickable { tabSeleccionado = 1 },
                                     contentAlignment = Alignment.Center,
-                                ) {
-                                    Text("Saldos", fontWeight = FontWeight.Medium, fontSize = 14.sp)
-                                }
+                                ) { Text("Saldos", fontWeight = FontWeight.Medium, fontSize = 14.sp) }
                             }
                         }
                     }
@@ -251,7 +238,7 @@ fun GastosScreen(
                     }
                 }
             }
-            // CREACIÓN O EDICIÓN DE GASTO MANUAL
+
             if (showDialog) {
                 NuevoGastoDialog(
                     onDismiss = {
@@ -260,17 +247,11 @@ fun GastosScreen(
                     },
                     gastoEditar = if (isEditing) gastoSeleccionado else null,
                     miembrosCasa = usuariosCasa,
-                    onConfirm = { nombre, importe, categoria, beneficiarios ->
+                    onConfirm = { nombre, importe, categoria, beneficiarios, pagadoPorTodos ->
                         if (isEditing && gastoSeleccionado != null) {
-                            viewModel.editarGasto(
-                                gastoId = gastoSeleccionado!!.id,
-                                nombre = nombre,
-                                importe = importe,
-                                categoria = categoria,
-                                beneficiarios = beneficiarios,
-                            )
+                            viewModel.editarGasto(gastoSeleccionado!!.id, nombre, importe, categoria, beneficiarios, pagadoPorTodos)
                         } else {
-                            viewModel.crearGasto(nombre, importe, categoria, beneficiarios)
+                            viewModel.crearGasto(nombre, importe, categoria, beneficiarios, pagadoPorTodos)
                         }
                         showDialog = false
                         if (isEditing) gastoSeleccionado = null
@@ -280,19 +261,13 @@ fun GastosScreen(
             }
 
             if (showDebtDialog) {
-                DialogPlanPagos(
-                    plan = planDePagos,
-                    onDismiss = { showDebtDialog = false },
-                    viewModel = viewModel,
-                )
+                // Pasamos miNombre al diálogo de deudas
+                DialogPlanPagos(plan = planDePagos, onDismiss = { showDebtDialog = false }, viewModel = viewModel, miNombre = miNombre)
             }
-            // OVERLAY DE CARGA DE TICKET
+
             if (isScanning) {
                 Box(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.6f)),
+                    modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.6f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -305,69 +280,48 @@ fun GastosScreen(
         }
     }
 
-    // MENÚ FLOTANTE
     if (gastoSeleccionado == null) {
         val pizarraFabActions =
             listOf(
-                FabActionItem(
-                    icon = Icons.Default.NoteAdd,
-                    label = "Crear Post-it",
-                    action = FabActionType.POST_IT,
-                ),
-                FabActionItem(
-                    icon = Icons.Default.Add,
-                    label = "Crear Gasto Manual",
-                    action = FabActionType.CREAR_GASTO,
-                ),
-                FabActionItem(
-                    icon = Icons.Default.DocumentScanner,
-                    label = "Escanear Ticket (IA)",
-                    action = FabActionType.ESCANEAR_TICKET,
-                ),
+                FabActionItem(icon = Icons.Default.NoteAdd, label = "Crear Post-it", action = FabActionType.POST_IT),
+                FabActionItem(icon = Icons.Default.Add, label = "Crear Gasto Manual", action = FabActionType.CREAR_GASTO),
+                FabActionItem(icon = Icons.Default.DocumentScanner, label = "Escanear Ticket (IA)", action = FabActionType.ESCANEAR_TICKET),
             )
 
-        var model: DraggableViewModel
-        if (mostrarEstadisticas) {
-            model =
-                viewModel<DraggableViewModel>(
-                    key = "Gastos Estadisticas",
-                    factory = DraggableViewModelFactory("Gastos Estadisticas", casaId),
-                )
-        } else if (tabSeleccionado == 0) {
-            model =
-                viewModel<DraggableViewModel>(
-                    key = "Gastos",
-                    factory = DraggableViewModelFactory("Gastos", casaId),
-                )
-        } else {
-            model =
-                viewModel<DraggableViewModel>(
-                    key = "Gastos Saldo",
-                    factory = DraggableViewModelFactory("Gastos Saldo", casaId),
-                )
-        }
+        val keyStr =
+            if (mostrarEstadisticas) {
+                "Gastos Estadisticas"
+            } else if (tabSeleccionado == 0) {
+                "Gastos"
+            } else {
+                "Gastos Saldo"
+            }
+        val model = viewModel<DraggableViewModel>(key = keyStr, factory = DraggableViewModelFactory(keyStr, casaId))
 
         PizarraScreen(
             model,
             fabActions = pizarraFabActions,
             onFabActionSelected = { action ->
                 when (action.action) {
-                    FabActionType.POST_IT -> {
-                        model.addNewPostIt()
-                    }
+                    FabActionType.POST_IT -> model.addNewPostIt()
                     FabActionType.CREAR_GASTO -> {
                         isEditing = false
                         showDialog = true
                     }
-                    FabActionType.ESCANEAR_TICKET -> {
-                        photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                    }
+                    FabActionType.ESCANEAR_TICKET ->
+                        photoPickerLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                        )
                     else -> {}
                 }
             },
         )
     }
 }
+
+// =================================================================================
+// COMPONENTES SECUNDARIOS (Listas, Tarjetas, Diálogos)
+// =================================================================================
 
 @Composable
 fun VistaListaGastosContent(
@@ -377,43 +331,18 @@ fun VistaListaGastosContent(
     onGastoClick: (Gasto) -> Unit,
     viewModel: GastosViewModel,
 ) {
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.fillMaxSize(),
-    ) {
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxSize()) {
         item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val categorias = listOf("TODOS", "ALQUILER", "COMIDA", "SUMINISTROS", "OCIO", "OTROS")
-                items(categorias) { cat ->
-                    CategoryChip(cat, filtroActual, onFiltrar)
-                }
+                items(categorias) { cat -> CategoryChip(cat, filtroActual, onFiltrar) }
             }
         }
-
-        item {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                "GASTOS FIJOS",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = ColorTextoGris,
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-        item { ItemGastoFijoEjemplo() }
-
-        item {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("Recientes", fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
+        item { Spacer(modifier = Modifier.height(16.dp)) }
         if (gastos.isEmpty()) {
             item { Text("No hay gastos registrados.", color = Color.Gray) }
         } else {
-            items(gastos) { gasto ->
-                ItemGasto(gasto, viewModel, onClick = { onGastoClick(gasto) })
-            }
+            items(gastos) { gasto -> ItemGasto(gasto, viewModel, onClick = { onGastoClick(gasto) }) }
         }
         item { Spacer(modifier = Modifier.height(80.dp)) }
     }
@@ -431,36 +360,19 @@ fun VistaSaldosContent(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(1.dp),
         ) {
-            Row(
-                modifier =
-                    Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    modifier =
-                        Modifier
-                            .size(40.dp)
-                            .background(Color(0xFFC8E6C9), RoundedCornerShape(10.dp)),
+                    modifier = Modifier.size(40.dp).background(Color(0xFFC8E6C9), RoundedCornerShape(10.dp)),
                     contentAlignment = Alignment.Center,
-                ) {
-                    Icon(Icons.Default.SentimentSatisfiedAlt, null, tint = Color(0xFF2E7D32))
-                }
+                ) { Icon(Icons.Default.SentimentSatisfiedAlt, null, tint = Color(0xFF2E7D32)) }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Balance del Grupo", fontWeight = FontWeight.Bold)
-                    Text(
-                        "Saldos calculados equitativamente",
-                        fontSize = 12.sp,
-                        color = ColorTextoGris,
-                    )
+                    Text("Saldos calculados equitativamente", fontSize = 12.sp, color = ColorTextoGris)
                 }
             }
         }
-
         Spacer(modifier = Modifier.height(16.dp))
-
         Button(
             onClick = onSaldarDeudasClick,
             modifier = Modifier.fillMaxWidth(),
@@ -471,7 +383,6 @@ fun VistaSaldosContent(
             Spacer(modifier = Modifier.width(8.dp))
             Text("Saldar Deudas", color = ColorMoradoOscuro, fontWeight = FontWeight.Bold)
         }
-
         Spacer(modifier = Modifier.height(24.dp))
         Text("BALANCES", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = ColorTextoGris)
         Spacer(modifier = Modifier.height(12.dp))
@@ -480,95 +391,10 @@ fun VistaSaldosContent(
             Text("No hay datos de saldos suficientes.", color = Color.Gray)
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(saldos) { saldo ->
-                    ItemSaldo(saldo)
-                }
+                items(saldos) { saldo -> ItemSaldo(saldo) }
             }
         }
     }
-}
-
-@Composable
-fun DialogPlanPagos(
-    plan: List<Deuda>,
-    onDismiss: () -> Unit,
-    viewModel: GastosViewModel,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                "Plan de Pagos",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-            )
-        },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                if (plan.isEmpty()) {
-                    Text("¡No hay deudas pendientes! Todo está saldado.", color = ColorVerdeSaldo)
-                } else {
-                    Text(
-                        "Para ajustar cuentas, haced estos pagos:",
-                        fontSize = 14.sp,
-                        color = ColorTextoGris,
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(plan) { deuda ->
-                            Card(
-                                colors = CardDefaults.cardColors(containerColor = ColorFondo),
-                                shape = RoundedCornerShape(8.dp),
-                            ) {
-                                Row(
-                                    modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        AvatarConInicial(
-                                            deuda.de,
-                                            viewModel.getColorPorNombreDinamico(deuda.de),
-                                            30.dp,
-                                        )
-                                        Icon(
-                                            Icons.Default.ArrowForward,
-                                            contentDescription = "Paga a",
-                                            modifier = Modifier.padding(horizontal = 8.dp).size(16.dp),
-                                            tint = ColorTextoGris,
-                                        )
-                                        AvatarConInicial(
-                                            deuda.para,
-                                            viewModel.getColorPorNombreDinamico(deuda.para),
-                                            30.dp,
-                                        )
-                                    }
-                                    Text(
-                                        "${String.format("%.2f", deuda.cantidad)}€",
-                                        fontWeight = FontWeight.Bold,
-                                        color = ColorMoradoOscuro,
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Entendido", color = ColorMoradoOscuro)
-            }
-        },
-        containerColor = Color.White,
-    )
 }
 
 @Composable
@@ -580,10 +406,7 @@ fun ItemSaldo(saldo: SaldoUsuario) {
         elevation = CardDefaults.cardElevation(0.dp),
     ) {
         Row(
-            modifier =
-                Modifier
-                    .padding(horizontal = 16.dp, vertical = 14.dp)
-                    .fillMaxWidth(),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
@@ -592,10 +415,8 @@ fun ItemSaldo(saldo: SaldoUsuario) {
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(saldo.nombre, fontSize = 16.sp, fontWeight = FontWeight.Medium)
             }
-
             val signo = if (saldo.cantidad >= 0) "+" else ""
             val colorTexto = if (saldo.cantidad >= 0) ColorVerdeSaldo else ColorRojoSaldo
-
             Text(
                 text = "$signo${String.format("%.2f", saldo.cantidad).replace('.', ',')}€",
                 color = colorTexto,
@@ -607,123 +428,167 @@ fun ItemSaldo(saldo: SaldoUsuario) {
 }
 
 @Composable
+fun DialogPlanPagos(
+    plan: List<Deuda>,
+    onDismiss: () -> Unit,
+    viewModel: GastosViewModel,
+    miNombre: String,
+) {
+    val context = LocalContext.current
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Plan de Pagos", fontSize = 20.sp, fontWeight = FontWeight.Bold) },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (plan.isEmpty()) {
+                    Text("¡No hay deudas pendientes! Todo está saldado.", color = ColorVerdeSaldo)
+                } else {
+                    Text("Para ajustar cuentas, haced estos pagos:", fontSize = 14.sp, color = ColorTextoGris)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(plan) { deuda ->
+                            val soyElQueDebe = deuda.de == miNombre
+                            val soyElQueRecibe = deuda.para == miNombre
+
+                            Card(colors = CardDefaults.cardColors(containerColor = ColorFondo), shape = RoundedCornerShape(8.dp)) {
+                                Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            AvatarConInicial(deuda.de, viewModel.getColorPorNombreDinamico(deuda.de), 30.dp)
+                                            Icon(
+                                                Icons.Default.ArrowForward,
+                                                contentDescription = "Paga a",
+                                                modifier = Modifier.padding(horizontal = 8.dp).size(16.dp),
+                                                tint = ColorTextoGris,
+                                            )
+                                            AvatarConInicial(deuda.para, viewModel.getColorPorNombreDinamico(deuda.para), 30.dp)
+                                        }
+                                        Text(
+                                            "${String.format("%.2f", deuda.cantidad)}€",
+                                            fontWeight = FontWeight.Bold,
+                                            color = ColorMoradoOscuro,
+                                        )
+                                    }
+
+                                    // LÓGICA BIZUM EN DEUDAS GLOBALES
+                                    if (soyElQueDebe || soyElQueRecibe) {
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                            if (soyElQueDebe) {
+                                                // Botón Pagar (Verde Bizum)
+                                                Box(
+                                                    modifier =
+                                                        Modifier
+                                                            .background(Color(0xFF00C4B3), RoundedCornerShape(8.dp))
+                                                            .clickable {
+                                                                val acreedor =
+                                                                    viewModel.usuariosDetectados.value.find {
+                                                                        it.nombre ==
+                                                                            deuda.para
+                                                                    }
+                                                                if (acreedor != null) {
+                                                                    BizumUtils.abrirAppBancariaParaBizum(context, null, deuda.cantidad)
+                                                                    viewModel.realizarPago(
+                                                                        acreedorId = acreedor.id,
+                                                                        cantidad = deuda.cantidad,
+                                                                    )
+                                                                }
+                                                            }.padding(horizontal = 12.dp, vertical = 8.dp),
+                                                ) {
+                                                    Text(
+                                                        "Pagar con Bizum",
+                                                        color = Color.White,
+                                                        fontSize = 12.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                    )
+                                                }
+                                            } else if (soyElQueRecibe) {
+                                                // Botón Solicitar (Azul)
+                                                Box(
+                                                    modifier =
+                                                        Modifier
+                                                            .background(Color(0xFF2196F3), RoundedCornerShape(8.dp))
+                                                            .clickable {
+                                                                BizumUtils.solicitarBizum(context, null, deuda.cantidad)
+                                                            }.padding(horizontal = 12.dp, vertical = 8.dp),
+                                                ) {
+                                                    Text(
+                                                        "Solicitar Bizum",
+                                                        color = Color.White,
+                                                        fontSize = 12.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Entendido", color = ColorMoradoOscuro) } },
+        containerColor = Color.White,
+    )
+}
+
+// =================================================================================
+// VISTAS DETALLADAS DE GASTOS Y PARTICIPANTES
+// =================================================================================
+
+@Composable
 fun ItemGasto(
     gasto: Gasto,
     viewModel: GastosViewModel,
     onClick: () -> Unit,
 ) {
-    val pagadorNombre = gasto.pagadoPorNombre ?: "Desconocido"
-    val colorAvatar = viewModel.getColorPorNombreDinamico(pagadorNombre)
-    val iconoCategoria = getIconoCategoria(gasto.categoria)
+    val pagadorNombre =
+        if (!gasto.aportaciones.isNullOrEmpty()) {
+            if (gasto.aportaciones.size > 1) "Varios" else gasto.aportaciones.first().nombre
+        } else if (!gasto.pagadoPorNombre.isNullOrEmpty() && gasto.pagadoPorNombre != "Desconocido") {
+            gasto.pagadoPorNombre
+        } else {
+            null // ES UN GASTO SIN PAGAR
+        }
 
     Card(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(0.dp),
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .clickable { onClick() },
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
     ) {
-        Row(
-            modifier =
-                Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-            verticalAlignment = Alignment.Top,
-        ) {
+        Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.Top) {
             Icon(
-                imageVector = iconoCategoria,
+                imageVector = getIconoCategoria(gasto.categoria),
                 contentDescription = null,
-                modifier =
-                    Modifier
-                        .padding(top = 4.dp, end = 16.dp)
-                        .size(24.dp),
+                modifier = Modifier.padding(top = 4.dp, end = 16.dp).size(24.dp),
                 tint = Color.Black,
             )
-
             Column(modifier = Modifier.weight(1f)) {
                 Text(gasto.nombre, fontSize = 18.sp, fontWeight = FontWeight.W600)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    AvatarConInicial(pagadorNombre, colorAvatar, size = 24.dp)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Pagado por: $pagadorNombre",
-                        fontSize = 13.sp,
-                        color = ColorTextoGris,
-                    )
+                    if (pagadorNombre != null) {
+                        val colorAvatar = viewModel.getColorPorNombreDinamico(pagadorNombre)
+                        AvatarConFoto(pagadorNombre, colorAvatar, gasto.pagadoPorFotoUrl, 24.dp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Pagado por: $pagadorNombre", fontSize = 13.sp, color = ColorTextoGris)
+                    } else {
+                        Icon(Icons.Default.Calculate, contentDescription = null, tint = ColorRojoSaldo, modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Falta por pagar", fontSize = 13.sp, color = ColorRojoSaldo, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text("${gasto.importe.toInt()}€", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(8.dp))
-                Box(
-                    modifier =
-                        Modifier
-                            .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(50))
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                ) {
-                    Text("Compartido", fontSize = 10.sp)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ItemGastoFijoEjemplo() {
-    Card(
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = ColorLilaClaroTarjeta),
-        elevation = CardDefaults.cardElevation(0.dp),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            modifier =
-                Modifier
-                    .padding(20.dp)
-                    .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier =
-                        Modifier
-                            .size(24.dp)
-                            .background(Color.Black, RoundedCornerShape(4.dp)),
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                Column {
-                    Text("Alquiler", fontSize = 18.sp, fontWeight = FontWeight.W600)
-                    Text("Gasto Bimestral", fontSize = 12.sp, color = ColorTextoGris)
-                }
-            }
-            Text("330€", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        }
-        Row(
-            modifier =
-                Modifier
-                    .padding(horizontal = 20.dp, vertical = 12.dp)
-                    .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row {
-                AvatarConInicial("S", Color.Gray, 24.dp)
-                Spacer(modifier = Modifier.width(4.dp))
-                AvatarConInicial("J", Color.Black, 24.dp)
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Box(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .border(1.dp, Color(0xFFD0B0F0), RoundedCornerShape(50))
-                        .padding(vertical = 8.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("Pago completado", fontSize = 12.sp, color = ColorMoradoOscuro)
             }
         }
     }
@@ -737,104 +602,115 @@ fun VistaDetalleGasto(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val pagadorNombre = gasto.pagadoPorNombre ?: "Desconocido"
-    val colorAvatarPagador = viewModel.getColorPorNombreDinamico(pagadorNombre)
+    val pagadorNombre =
+        if (!gasto.aportaciones.isNullOrEmpty()) {
+            if (gasto.aportaciones.size > 1) "Varios" else gasto.aportaciones.first().nombre
+        } else if (!gasto.pagadoPorNombre.isNullOrEmpty() && gasto.pagadoPorNombre != "Desconocido") {
+            gasto.pagadoPorNombre
+        } else {
+            null
+        }
+
     val participantes = viewModel.obtenerParticipantesGasto(gasto)
 
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(ColorFondo),
-    ) {
+    Column(modifier = Modifier.fillMaxSize().background(ColorFondo)) {
         Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
-            }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.DeleteOutline, contentDescription = "Borrar")
-            }
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver") }
+            IconButton(onClick = onDelete) { Icon(Icons.Default.DeleteOutline, contentDescription = "Borrar") }
         }
 
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
+        Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(gasto.nombre, fontSize = 24.sp, fontWeight = FontWeight.Bold)
             Text(gasto.fecha.take(10), fontSize = 14.sp, color = ColorTextoGris)
         }
-
         Spacer(modifier = Modifier.height(30.dp))
 
         Column(modifier = Modifier.padding(horizontal = 20.dp)) {
             Text(
-                "PAGADO POR",
+                if (pagadorNombre !=
+                    null
+                ) {
+                    "PAGADO POR"
+                } else {
+                    "ESTADO DEL GASTO"
+                },
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = ColorTextoGris,
             )
             Spacer(modifier = Modifier.height(8.dp))
-
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Row(
-                    modifier =
-                        Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
+                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        AvatarConInicial(pagadorNombre, colorAvatarPagador, 36.dp)
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(pagadorNombre, fontSize = 16.sp)
+                        if (pagadorNombre != null) {
+                            val colorAvatar = viewModel.getColorPorNombreDinamico(pagadorNombre)
+                            AvatarConFoto(pagadorNombre, colorAvatar, gasto.pagadoPorFotoUrl, 36.dp)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(pagadorNombre, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        } else {
+                            Box(
+                                modifier = Modifier.size(36.dp).background(Color(0xFFFFEBEE), CircleShape),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(Icons.Default.Calculate, contentDescription = null, tint = ColorRojoSaldo)
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text("Falta por pagar", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = ColorRojoSaldo)
+                        }
                     }
-                    Text("${gasto.importe}€", fontSize = 16.sp)
+                    Text(
+                        "${gasto.importe}€",
+                        fontSize = 16.sp,
+                        color =
+                            if (pagadorNombre !=
+                                null
+                            ) {
+                                ColorVerdeSaldo
+                            } else {
+                                ColorRojoSaldo
+                            },
+                        fontWeight = FontWeight.Bold,
+                    )
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Column(
-            modifier =
-                Modifier
-                    .padding(horizontal = 20.dp)
-                    .weight(1f),
-        ) {
+        Column(modifier = Modifier.padding(horizontal = 20.dp).weight(1f)) {
             Text(
-                "PARTICIPANTES DEL PAGO",
+                if (pagadorNombre !=
+                    null
+                ) {
+                    "FALTA POR PAGAR (PARTICIPANTES)"
+                } else {
+                    "REPARTO DEL GASTO"
+                },
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = ColorTextoGris,
             )
             Spacer(modifier = Modifier.height(8.dp))
-
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(participantes) { part ->
-                    ItemParticipante(part)
+                    ItemParticipante(part, pagadorNombre ?: "Nadie", gasto, viewModel)
                 }
             }
         }
 
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-            contentAlignment = Alignment.Center,
-        ) {
+        Box(modifier = Modifier.fillMaxWidth().padding(20.dp), contentAlignment = Alignment.Center) {
             OutlinedButton(
                 onClick = onEdit,
                 modifier = Modifier.width(200.dp),
@@ -849,7 +725,15 @@ fun VistaDetalleGasto(
 }
 
 @Composable
-fun ItemParticipante(part: ParticipantePago) {
+fun ItemParticipante(
+    part: ParticipantePago,
+    pagadorPrincipal: String,
+    gasto: Gasto,
+    viewModel: GastosViewModel,
+) {
+    val context = LocalContext.current
+    val esElPagador = part.nombre == pagadorPrincipal
+
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(16.dp),
@@ -857,25 +741,84 @@ fun ItemParticipante(part: ParticipantePago) {
         elevation = CardDefaults.cardElevation(0.dp),
     ) {
         Row(
-            modifier =
-                Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 AvatarConInicial(part.nombre, part.colorAvatar, 36.dp)
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(part.nombre, fontSize = 16.sp)
+                Column {
+                    Text(part.nombre, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    if (esElPagador) Text("Ya pagado", fontSize = 12.sp, color = ColorVerdeSaldo)
+                }
             }
-            Text(
-                "${String.format("%.2f", part.cantidad).replace('.', ',')}€",
-                fontSize = 16.sp,
-                color = ColorTextoGris,
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "${String.format("%.2f", part.cantidad).replace('.', ',')}€",
+                    fontSize = 16.sp,
+                    color = if (esElPagador) ColorTextoGris else ColorRojoSaldo,
+                    fontWeight = FontWeight.Bold,
+                )
+
+                if (!esElPagador && pagadorPrincipal != "Varios" && pagadorPrincipal != "Nadie") {
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Box(
+                        modifier =
+                            Modifier
+                                .background(Color(0xFF00C4B3), RoundedCornerShape(8.dp))
+                                .clickable {
+                                    val acreedor = viewModel.usuariosDetectados.value.find { it.nombre == pagadorPrincipal }
+                                    if (acreedor != null) {
+                                        BizumUtils.abrirAppBancariaParaBizum(context, null, part.cantidad)
+                                        viewModel.realizarPago(acreedorId = acreedor.id, cantidad = part.cantidad, gastoId = gasto.id)
+                                    }
+                                }.padding(horizontal = 8.dp, vertical = 6.dp),
+                    ) { Text("Bizum", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
+                }
+            }
+        }
+    }
+}
+
+// =================================================================================
+// UTILIDADES GRÁFICAS (Avatar y Estadísticas)
+// =================================================================================
+
+@Composable
+fun AvatarConFoto(
+    nombre: String,
+    colorFondo: Color,
+    fotoUrl: String?,
+    size: Dp = 40.dp,
+) {
+    val inicial = nombre.firstOrNull()?.toString()?.uppercase() ?: "?"
+    Box(modifier = Modifier.size(size).clip(CircleShape).background(colorFondo), contentAlignment = Alignment.Center) {
+        Text(text = inicial, color = Color.White, fontWeight = FontWeight.Bold, fontSize = if (size < 30.dp) 12.sp else 16.sp)
+        if (!fotoUrl.isNullOrEmpty() && nombre != "Varios") {
+            SubcomposeAsyncImage(
+                model =
+                    ImageRequest
+                        .Builder(LocalContext.current)
+                        .data("$fotoUrl?v=${System.currentTimeMillis()}")
+                        .crossfade(true)
+                        .build(),
+                contentDescription = "Foto",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
             )
         }
     }
+}
+
+@Composable
+fun AvatarConInicial(
+    nombre: String,
+    colorFondo: Color,
+    size: Dp = 40.dp,
+) {
+    AvatarConFoto(nombre, colorFondo, null, size)
 }
 
 @Composable
@@ -883,35 +826,15 @@ fun VistaEstadisticas(
     stats: List<PieChartData>,
     onBack: () -> Unit,
 ) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .padding(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
-            }
+    Column(modifier = Modifier.fillMaxSize().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver") }
             Spacer(modifier = Modifier.weight(1f))
             Text("Estadísticas", color = ColorTextoGris, fontSize = 16.sp)
         }
-
         Spacer(modifier = Modifier.height(20.dp))
-        Text(
-            "¿Cuánto\nhas pagado?",
-            fontSize = 36.sp,
-            fontWeight = FontWeight.Bold,
-            lineHeight = 40.sp,
-            modifier = Modifier.fillMaxWidth(),
-        )
-
+        Text("¿Cuánto\nhas pagado?", fontSize = 36.sp, fontWeight = FontWeight.Bold, lineHeight = 40.sp, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(40.dp))
-
         Box(modifier = Modifier.size(320.dp)) {
             if (stats.isEmpty()) {
                 Text("Sin datos", modifier = Modifier.align(Alignment.Center))
@@ -963,21 +886,11 @@ fun VistaEstadisticas(
                 }
             }
         }
-
         Spacer(modifier = Modifier.weight(1f))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             stats.take(4).forEach {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .size(12.dp)
-                                .background(it.color, CircleShape),
-                    )
+                    Box(modifier = Modifier.size(12.dp).background(it.color, CircleShape))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(it.categoria, fontSize = 14.sp, color = ColorTextoGris)
                 }
@@ -991,9 +904,9 @@ fun VistaEstadisticas(
 fun BubbleShape(
     text: String,
     color: Color,
-    size: androidx.compose.ui.unit.Dp? = null,
-    width: androidx.compose.ui.unit.Dp? = null,
-    height: androidx.compose.ui.unit.Dp? = null,
+    size: Dp? = null,
+    width: Dp? = null,
+    height: Dp? = null,
     shape: androidx.compose.ui.graphics.Shape,
     rotation: Float,
     offset: DpOffset,
@@ -1004,24 +917,11 @@ fun BubbleShape(
             modifier
                 .offset(x = offset.x, y = offset.y)
                 .rotate(rotation)
-                .then(
-                    if (size != null) {
-                        Modifier.size(size)
-                    } else {
-                        Modifier.size(width = width!!, height = height!!)
-                    },
-                ).clip(shape)
+                .then(if (size != null) Modifier.size(size) else Modifier.size(width = width!!, height = height!!))
+                .clip(shape)
                 .background(color),
         contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = text,
-            color = Color.White,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.rotate(-rotation),
-        )
-    }
+    ) { Text(text = text, color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold, modifier = Modifier.rotate(-rotation)) }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1036,11 +936,7 @@ fun CategoryChip(
         selected = isSelected,
         onClick = { onSelect(label) },
         label = { Text(label) },
-        colors =
-            FilterChipDefaults.filterChipColors(
-                selectedContainerColor = ColorLila,
-                containerColor = ColorFondo,
-            ),
+        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = ColorLila, containerColor = ColorFondo),
         border =
             FilterChipDefaults.filterChipBorder(
                 enabled = true,
@@ -1048,30 +944,6 @@ fun CategoryChip(
                 borderColor = if (isSelected) ColorMoradoOscuro else Color.Gray,
             ),
     )
-}
-
-@Composable
-fun AvatarConInicial(
-    nombre: String,
-    colorFondo: Color,
-    size: androidx.compose.ui.unit.Dp = 40.dp,
-) {
-    val inicial = nombre.firstOrNull()?.toString()?.uppercase() ?: "?"
-    Box(
-        modifier =
-            Modifier
-                .size(size)
-                .clip(CircleShape)
-                .background(colorFondo),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = inicial,
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            fontSize = if (size < 30.dp) 12.sp else 16.sp,
-        )
-    }
 }
 
 fun getIconoCategoria(categoria: String): ImageVector =
