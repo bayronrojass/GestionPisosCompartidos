@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -34,6 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
@@ -173,49 +176,85 @@ fun GestionUsuariosPiso(
 
 @Composable
 fun UsuarioRow(miembro: MiembroPiso) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(15.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    // Fila principal del usuario
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFF8F8F8), shape = RoundedCornerShape(12.dp))
+                .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.padding(15.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        // 1. EL "SÁNDWICH" (Letra de fondo + Foto por encima)
+        Box(
+            modifier =
+                Modifier
+                    .size(45.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF8061A2)),
+            // Color de fondo si no hay foto
+            contentAlignment = Alignment.Center,
         ) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(50.dp)
-                        .clip(CircleShape)
-                        .background(Color(miembro.colorIndicator).copy(alpha = 0.2f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = miembro.nombre.take(1).uppercase(),
-                    color = Color(miembro.colorIndicator),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
+            // Capa de abajo: La letra (siempre se pinta por si la foto falla)
+            Text(
+                text = miembro.nombre.take(1).uppercase(),
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+            )
+
+            if (!miembro.fotoUrl.isNullOrEmpty() && miembro.fotoUrl != "null") {
+                SubcomposeAsyncImage(
+                    model =
+                        ImageRequest
+                            .Builder(LocalContext.current)
+                            .data("${miembro.fotoUrl}?v=${System.currentTimeMillis()}")
+                            .crossfade(true)
+                            .build(),
+                    contentDescription = "Foto de perfil de ${miembro.nombre}",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
+        }
 
-            Spacer(modifier = Modifier.width(15.dp))
+        Spacer(modifier = Modifier.width(12.dp))
 
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = miembro.nombre,
-                        style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextBlack),
-                    )
-                    if (miembro.esTu) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "(Tú)",
-                            style = TextStyle(fontSize = 12.sp, color = PurplePrimary, fontWeight = FontWeight.Bold),
-                        )
-                    }
-                }
-            }
+        // 2. Nombre
+        Text(
+            text = miembro.nombre,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+            color = Color.Black,
+            modifier = Modifier.weight(1f),
+        )
+
+        // 3. Etiquetas (Admin / TÚ)
+        if (miembro.esTu) {
+            Text(
+                text = "TÚ",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier =
+                    Modifier
+                        .background(Color(0xFFFF9800), shape = RoundedCornerShape(8.dp))
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+
+        if (miembro.esAdmin) {
+            Text(
+                text = "Admin.",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier =
+                    Modifier
+                        .background(Color(0xFF4CAF50), shape = RoundedCornerShape(8.dp))
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+            )
         }
     }
 }

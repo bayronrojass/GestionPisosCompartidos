@@ -60,6 +60,7 @@ class GestionUsuariosPisoViewModel(
                             esAdmin = false,
                             esTu = usuario.id == currentUserId,
                             colorIndicator = getColorForUser(usuario.id),
+                            fotoUrl = usuario.fotoUrl,
                         )
                     }
                 _miembros.value = listaMiembrosUI
