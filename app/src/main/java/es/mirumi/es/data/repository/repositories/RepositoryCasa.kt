@@ -116,10 +116,22 @@ class RepositoryCasa(
         return apiService.getMisCasas(tokenFormateado, usuarioId)
     }
 
-    // --- NUEVO: PAGO BIZUM ---
     suspend fun notificarPagoBizum(
         token: String,
         casaId: Long,
         request: PagoBizumRequest,
     ): Response<Unit> = apiService.notificarPagoBizum(token, casaId, request)
+
+    suspend fun subirFotoTicket(
+        token: String,
+        casaId: Long,
+        gastoId: Long,
+        file: MultipartBody.Part,
+    ): Response<ResponseBody> = apiService.subirFotoTicket(token, casaId, gastoId, file)
+
+    suspend fun eliminarFotoTicket(
+        token: String,
+        casaId: Long,
+        gastoId: Long,
+    ) = apiService.eliminarFotoTicket(token, casaId, gastoId)
 }

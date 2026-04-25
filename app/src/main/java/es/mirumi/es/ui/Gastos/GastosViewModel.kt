@@ -1,5 +1,7 @@
 package es.mirumi.es.ui.gastos
 
+import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
@@ -369,6 +371,41 @@ class GastosViewModel(
                 }
             } catch (e: Exception) {
                 _mensajePago.value = "Error de red al procesar el pago"
+            }
+        }
+    }
+
+    fun subirFotoTicket(
+        context: Context,
+        gastoId: Long,
+        uri: Uri,
+    ) {
+        viewModelScope.launch {
+            val token = sessionManager.fetchAuthToken() ?: return@launch
+            val tokenFormateado = if (token.startsWith("Bearer ")) token else "Bearer $token"
+
+            val file = uriToFile(context, uri) ?: return@launch
+            val requestFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
+            val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
+
+            val response = repository.subirFotoTicket(tokenFormateado, casaId, gastoId, body)
+
+            if (response.isSuccessful) {
+                cargarGastos()
+            }
+        }
+    }
+
+    fun eliminarFotoTicket(gastoId: Long) {
+        viewModelScope.launch {
+            try {
+                val token = sessionManager.fetchAuthToken() ?: return@launch
+                val response = repository.eliminarFotoTicket(token, casaId, gastoId)
+                if (response.isSuccessful) {
+                    cargarGastos()
+                }
+            } catch (e: Exception) {
+                Log.e("GASTOS", "Error al borrar ticket: ${e.message}")
             }
         }
     }

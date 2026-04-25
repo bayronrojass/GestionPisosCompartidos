@@ -109,4 +109,20 @@ interface CasaAPI {
         @Path("casaId") casaId: Long,
         @Body request: PagoBizumRequest,
     ): Response<Unit>
+
+    @Multipart
+    @POST("casas/{casaId}/gastos/{gastoId}/foto")
+    suspend fun subirFotoTicket(
+        @Header("Authorization") token: String,
+        @Path("casaId") casaId: Long,
+        @Path("gastoId") gastoId: Long,
+        @Part file: MultipartBody.Part,
+    ): Response<ResponseBody>
+
+    @DELETE("casas/{casaId}/gastos/{gastoId}/foto")
+    suspend fun eliminarFotoTicket(
+        @Header("Authorization") token: String,
+        @Path("casaId") casaId: Long,
+        @Path("gastoId") gastoId: Long,
+    ): Response<Unit>
 }

@@ -21,4 +21,5 @@ data class Gasto(
     val pagadoPorFotoUrl: String? = null,
     val aportaciones: List<AportacionDTO>? = emptyList(),
     val beneficiarios: List<String>? = emptyList(),
+    val fotoTicketUrl: String? = null,
 )
