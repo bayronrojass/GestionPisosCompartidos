@@ -6,12 +6,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -26,8 +24,6 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -52,20 +48,25 @@ fun NuevoGastoDialog(
     onDismiss: () -> Unit,
     gastoEditar: Gasto? = null,
     borradorInicial: BorradorGastoDTO? = null,
-    miembrosCasa: List<UsuarioPiso>, // Ahora recibe los IDs reales
-    onConfirm: (String, String, String, List<String>, Boolean) -> Unit, // Añadido Boolean de pagadoPorTodos
+    miembrosCasa: List<UsuarioPiso>,
+    onConfirm: (String, String, String, List<String>, Long) -> Unit,
 ) {
     var nombre by remember { mutableStateOf(borradorInicial?.concepto ?: gastoEditar?.nombre ?: "") }
     var importe by remember { mutableStateOf(borradorInicial?.total?.toString() ?: gastoEditar?.importe?.toString() ?: "") }
-    var categoriaSelected by remember { mutableStateOf(gastoEditar?.categoria ?: "ALIMENTACION") }
+    var categoriaSelected by remember { mutableStateOf(gastoEditar?.categoria ?: "COMIDA") }
 
-    // Si editamos y hay más de 1 aportación, es que se pagó a medias. Si es nuevo, por defecto falso (lo pagas tú).
-    var pagadoPorTodos by remember { mutableStateOf((gastoEditar?.aportaciones?.size ?: 0) > 1) }
-
+    // BENEFICIARIOS (Los que participan en el gasto) -> Guardamos sus NOMBRES
     var beneficiariosSelected by remember {
         mutableStateOf(
             gastoEditar?.beneficiarios?.takeIf { it.isNotEmpty() }?.toSet()
                 ?: miembrosCasa.map { it.nombre }.toSet(),
+        )
+    }
+    // PAGADOR (El que puso el dinero) -> Guardamos su ID
+    var pagadorIdSelected by remember {
+        mutableStateOf(
+            gastoEditar?.let { g -> miembrosCasa.find { it.nombre == g.pagadoPorNombre }?.id }
+                ?: miembrosCasa.firstOrNull()?.id ?: 0L,
         )
     }
 
@@ -91,6 +92,7 @@ fun NuevoGastoDialog(
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // TICKET ESCANEADO
                 if (borradorInicial?.urlTicket != null) {
                     AsyncImage(
                         model = borradorInicial.urlTicket,
@@ -105,6 +107,7 @@ fun NuevoGastoDialog(
                     )
                 }
 
+                // NOMBRE
                 OutlinedTextField(
                     value = nombre,
                     onValueChange = { nombre = it },
@@ -113,6 +116,7 @@ fun NuevoGastoDialog(
                     shape = RoundedCornerShape(12.dp),
                 )
 
+                // IMPORTE
                 OutlinedTextField(
                     value = importe,
                     onValueChange = { importe = it },
@@ -122,6 +126,7 @@ fun NuevoGastoDialog(
                     shape = RoundedCornerShape(12.dp),
                 )
 
+                // CATEGORÍA
                 Text("Categoría:", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     CategoryChip("COMIDA", categoriaSelected) { categoriaSelected = it }
@@ -129,30 +134,28 @@ fun NuevoGastoDialog(
                     CategoryChip("OTROS", categoriaSelected) { categoriaSelected = it }
                 }
 
-                // NUEVA SECCIÓN: ¿Quién lo ha pagado?
+                // 🔥 NUEVA SECCIÓN: QUIÉN PAGA (CHIPS VERDES - SELECCIÓN ÚNICA)
                 Text("¿Quién lo ha pagado?", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    RadioButton(
-                        selected = !pagadoPorTodos,
-                        onClick = { pagadoPorTodos = false },
-                        colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF58337F)),
-                    )
-                    Text("Lo he pagado yo", fontSize = 14.sp)
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    RadioButton(
-                        selected = pagadoPorTodos,
-                        onClick = { pagadoPorTodos = true },
-                        colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF58337F)),
-                    )
-                    Text("A partes iguales", fontSize = 14.sp)
+                    miembrosCasa.forEach { miembro ->
+                        val isSelected = pagadorIdSelected == miembro.id
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { pagadorIdSelected = miembro.id },
+                            label = { Text(miembro.nombre) },
+                            colors =
+                                FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Color(0xFF00E676), // Verde Bizum
+                                    containerColor = ColorFondo,
+                                ),
+                        )
+                    }
                 }
 
-                // SECCIÓN: Selección de beneficiarios
+                // BENEFICIARIOS (CHIPS LILAS - SELECCIÓN MÚLTIPLE)
                 Text("¿Para quién es?", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -193,7 +196,7 @@ fun NuevoGastoDialog(
             Button(
                 onClick = {
                     if (nombre.isNotEmpty() && importe.isNotEmpty()) {
-                        onConfirm(nombre, importe, categoriaSelected, beneficiariosSelected.toList(), pagadoPorTodos)
+                        onConfirm(nombre, importe, categoriaSelected, beneficiariosSelected.toList(), pagadorIdSelected)
                         onDismiss()
                     }
                 },

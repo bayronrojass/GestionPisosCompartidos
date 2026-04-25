@@ -162,31 +162,22 @@ class GastosViewModel(
         importe: String,
         categoria: String,
         beneficiarios: List<String>,
-        pagadoPorTodos: Boolean,
+        pagadorId: Long,
     ) {
         viewModelScope.launch {
             val token = sessionManager.fetchAuthToken() ?: return@launch
-            val userId = sessionManager.fetchCurrentUserId()
             val importeDouble = importe.toDoubleOrNull() ?: 0.0
+            val aportaciones = listOf(AportacionRequest(pagadorId, importeDouble))
 
-            // Lógica mágica: Asignar aportaciones correctamente según la UI
-            val aportaciones =
-                if (pagadoPorTodos) {
-                    val usuariosMap = _usuariosDetectados.value.associateBy { it.nombre }
-                    val numBeneficiarios = beneficiarios.size
-                    if (numBeneficiarios > 0) {
-                        val cuota = importeDouble / numBeneficiarios
-                        beneficiarios.mapNotNull { nombreBen ->
-                            usuariosMap[nombreBen]?.id?.let { id -> AportacionRequest(id, cuota) }
-                        }
-                    } else {
-                        emptyList()
-                    }
-                } else {
-                    listOf(AportacionRequest(userId, importeDouble))
-                }
-
-            val request = GastoRequest(nombre, importeDouble, categoria, null, aportaciones, beneficiarios)
+            val request =
+                GastoRequest(
+                    nombre = nombre,
+                    importe = importeDouble,
+                    categoria = categoria,
+                    pagadoPorId = pagadorId,
+                    aportaciones = aportaciones,
+                    beneficiarios = beneficiarios,
+                )
 
             try {
                 if (repository.crearGasto(token, casaId, request).isSuccessful) cargarGastos()
@@ -202,30 +193,23 @@ class GastosViewModel(
         importe: String,
         categoria: String,
         beneficiarios: List<String>,
-        pagadoPorTodos: Boolean,
+        pagadorId: Long,
     ) {
         viewModelScope.launch {
             val token = sessionManager.fetchAuthToken() ?: return@launch
-            val userId = sessionManager.fetchCurrentUserId()
             val importeDouble = importe.toDoubleOrNull() ?: 0.0
 
-            val aportaciones =
-                if (pagadoPorTodos) {
-                    val usuariosMap = _usuariosDetectados.value.associateBy { it.nombre }
-                    val numBeneficiarios = beneficiarios.size
-                    if (numBeneficiarios > 0) {
-                        val cuota = importeDouble / numBeneficiarios
-                        beneficiarios.mapNotNull { nombreBen ->
-                            usuariosMap[nombreBen]?.id?.let { id -> AportacionRequest(id, cuota) }
-                        }
-                    } else {
-                        emptyList()
-                    }
-                } else {
-                    listOf(AportacionRequest(userId, importeDouble))
-                }
+            val aportaciones = listOf(AportacionRequest(pagadorId, importeDouble))
 
-            val request = GastoRequest(nombre, importeDouble, categoria, null, aportaciones, beneficiarios)
+            val request =
+                GastoRequest(
+                    nombre = nombre,
+                    importe = importeDouble,
+                    categoria = categoria,
+                    pagadoPorId = pagadorId, // 🔥
+                    aportaciones = aportaciones,
+                    beneficiarios = beneficiarios,
+                )
 
             try {
                 if (repository.editarGasto(token, casaId, gastoId, request).isSuccessful) cargarGastos()

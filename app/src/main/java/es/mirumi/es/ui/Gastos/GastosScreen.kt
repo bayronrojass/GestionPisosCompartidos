@@ -127,8 +127,8 @@ fun GastosScreen(
             onDismiss = { viewModel.limpiarBorrador() },
             borradorInicial = borrador,
             miembrosCasa = usuariosCasa,
-            onConfirm = { nombre, importe, categoria, beneficiarios, pagadoPorTodos ->
-                viewModel.crearGasto(nombre, importe, categoria, beneficiarios, pagadoPorTodos)
+            onConfirm = { nombre, importe, categoria, beneficiarios, pagadorId ->
+                viewModel.crearGasto(nombre, importe, categoria, beneficiarios, pagadorId)
                 viewModel.limpiarBorrador()
             },
         )
@@ -247,11 +247,11 @@ fun GastosScreen(
                     },
                     gastoEditar = if (isEditing) gastoSeleccionado else null,
                     miembrosCasa = usuariosCasa,
-                    onConfirm = { nombre, importe, categoria, beneficiarios, pagadoPorTodos ->
+                    onConfirm = { nombre, importe, categoria, beneficiarios, pagadorId ->
                         if (isEditing && gastoSeleccionado != null) {
-                            viewModel.editarGasto(gastoSeleccionado!!.id, nombre, importe, categoria, beneficiarios, pagadoPorTodos)
+                            viewModel.editarGasto(gastoSeleccionado!!.id, nombre, importe, categoria, beneficiarios, pagadorId)
                         } else {
-                            viewModel.crearGasto(nombre, importe, categoria, beneficiarios, pagadoPorTodos)
+                            viewModel.crearGasto(nombre, importe, categoria, beneficiarios, pagadorId)
                         }
                         showDialog = false
                         if (isEditing) gastoSeleccionado = null
@@ -285,7 +285,7 @@ fun GastosScreen(
             listOf(
                 FabActionItem(icon = Icons.Default.NoteAdd, label = "Crear Post-it", action = FabActionType.POST_IT),
                 FabActionItem(icon = Icons.Default.Add, label = "Crear Gasto Manual", action = FabActionType.CREAR_GASTO),
-                FabActionItem(icon = Icons.Default.DocumentScanner, label = "Escanear Ticket (IA)", action = FabActionType.ESCANEAR_TICKET),
+                FabActionItem(icon = Icons.Default.DocumentScanner, label = "Escanear Ticket", action = FabActionType.ESCANEAR_TICKET),
             )
 
         val keyStr =
