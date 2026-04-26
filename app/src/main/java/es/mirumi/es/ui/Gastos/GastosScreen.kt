@@ -78,6 +78,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
+import es.mirumi.es.data.SessionManager
 import es.mirumi.es.model.Gasto
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModel
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModelFactory
@@ -115,6 +116,7 @@ fun GastosScreen(
     val isScanning by viewModel.isScanningTicket.collectAsState()
     val borrador by viewModel.borradorEscaneado.collectAsState()
     val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context) }
 
     val photoPickerLauncher =
         rememberLauncherForActivityResult(
@@ -297,7 +299,7 @@ fun GastosScreen(
             } else {
                 "Gastos Saldo"
             }
-        val model = viewModel<DraggableViewModel>(key = keyStr, factory = DraggableViewModelFactory(keyStr, casaId))
+        val model = viewModel<DraggableViewModel>(key = keyStr, factory = DraggableViewModelFactory(keyStr, casaId, sessionManager))
 
         PizarraScreen(
             model,

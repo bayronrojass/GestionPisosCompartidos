@@ -170,6 +170,7 @@ class GastosViewModel(
             val token = sessionManager.fetchAuthToken() ?: return@launch
             val importeDouble = importe.toDoubleOrNull() ?: 0.0
             val aportaciones = listOf(AportacionRequest(pagadorId, importeDouble))
+            val urlDelEscaner = _borradorEscaneado.value?.urlTicket
 
             val request =
                 GastoRequest(
@@ -179,6 +180,7 @@ class GastosViewModel(
                     pagadoPorId = pagadorId,
                     aportaciones = aportaciones,
                     beneficiarios = beneficiarios,
+                    urlTicket = urlDelEscaner,
                 )
 
             try {
@@ -202,15 +204,17 @@ class GastosViewModel(
             val importeDouble = importe.toDoubleOrNull() ?: 0.0
 
             val aportaciones = listOf(AportacionRequest(pagadorId, importeDouble))
+            val urlExistente = listaCompleta.find { it.id == gastoId }?.fotoTicketUrl
 
             val request =
                 GastoRequest(
                     nombre = nombre,
                     importe = importeDouble,
                     categoria = categoria,
-                    pagadoPorId = pagadorId, // 🔥
+                    pagadoPorId = pagadorId,
                     aportaciones = aportaciones,
                     beneficiarios = beneficiarios,
+                    urlTicket = urlExistente,
                 )
 
             try {

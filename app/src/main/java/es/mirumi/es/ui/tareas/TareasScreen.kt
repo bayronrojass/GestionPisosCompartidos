@@ -473,7 +473,7 @@ fun TareasScreen(
             key = draggableViewModelKey,
             factory =
                 remember(draggableViewModelKey) {
-                    DraggableViewModelFactory(draggableViewModelKey, casaId)
+                    DraggableViewModelFactory(draggableViewModelKey, casaId, sessionManager)
                 },
         )
 

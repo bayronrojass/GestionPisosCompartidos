@@ -7,12 +7,14 @@ import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface PostItAPI {
     @POST("casas/{id}/{location}/postIt")
     suspend fun crearPostIt(
         @Path("id") id: Long,
         @Path("location") location: String,
+        @Query("usuarioId") usuarioId: Long,
     ): Response<PostItDTO>
 
     @GET("casas/{id}/{location}/postIt")

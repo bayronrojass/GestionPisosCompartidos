@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import es.mirumi.es.data.SessionManager
 import es.mirumi.es.data.repository.repositories.RepositoryPostIt
 import es.mirumi.es.model.dtos.PostItDTO
 import kotlinx.coroutines.delay
@@ -17,6 +18,7 @@ class DraggableViewModel(
     private val casaId: Long,
     private val location: String,
     private val postItRepository: RepositoryPostIt = RepositoryPostIt(),
+    private val sessionManager: SessionManager,
 ) : ViewModel() {
     private val _postIts = MutableStateFlow<List<PostItState>>(emptyList())
     val postIts: StateFlow<List<PostItState>> = _postIts.asStateFlow()
@@ -62,7 +64,7 @@ class DraggableViewModel(
     fun addNewPostIt() {
         viewModelScope.launch {
             try {
-                postItRepository.createPostIt(casaId = casaId, location)
+                postItRepository.createPostIt(casaId = casaId, location, sessionManager.fetchCurrentUserId())
                 syncPostIts()
             } catch (e: Exception) {
                 println("Error al crear el Post-it: ${e.message}")

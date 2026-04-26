@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import es.mirumi.es.data.SessionManager
 import es.mirumi.es.model.Elemento
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModel
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModelFactory
@@ -77,6 +78,7 @@ fun ItemScreen(
     val items by viewModel.items.observeAsState(emptyList())
     val isLoading by viewModel.isLoading.observeAsState(false)
     val error by viewModel.error.observeAsState()
+    val sessionManager = remember { SessionManager(context) }
 
     var showEditDialog by remember { mutableStateOf<Elemento?>(null) }
     var showDeleteDialog by remember { mutableStateOf<Elemento?>(null) }
@@ -97,7 +99,7 @@ fun ItemScreen(
     val draggableViewModel: DraggableViewModel =
         viewModel(
             key = postItKey,
-            factory = DraggableViewModelFactory(postItKey, casaId),
+            factory = DraggableViewModelFactory(postItKey, casaId, sessionManager),
         )
 
     val pizarraFabActions =

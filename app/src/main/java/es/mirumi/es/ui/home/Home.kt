@@ -43,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -51,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.mirumi.es.R
+import es.mirumi.es.data.SessionManager
 import es.mirumi.es.model.Evento
 import es.mirumi.es.model.Tarea
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModel
@@ -142,6 +144,9 @@ private fun HomeContent(
     tareas: List<Tarea>,
     casaId: Long,
 ) {
+    val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context) }
+
     Column(
         modifier =
             modifier
@@ -207,7 +212,7 @@ private fun HomeContent(
     val model =
         androidx.lifecycle.viewmodel.compose.viewModel<DraggableViewModel>(
             key = "Home",
-            factory = DraggableViewModelFactory("Home", casaId),
+            factory = DraggableViewModelFactory("Home", casaId, sessionManager),
         )
 
     PizarraScreen(

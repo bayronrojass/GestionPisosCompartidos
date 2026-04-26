@@ -12,4 +12,5 @@ data class GastoRequest(
     val pagadoPorId: Long? = null,
     val aportaciones: List<AportacionRequest> = emptyList(),
     val beneficiarios: List<String> = emptyList(),
+    val urlTicket: String? = null,
 )

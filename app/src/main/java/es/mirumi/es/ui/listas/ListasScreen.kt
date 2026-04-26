@@ -236,7 +236,7 @@ fun ListaScreen(
             FabActionItem(Icons.Default.NoteAdd, "Crear Post-it", FabActionType.POST_IT),
             FabActionItem(Icons.Default.Add, "Crear Lista", FabActionType.CREAR_LISTA),
         )
-    val model = viewModel<DraggableViewModel>(key = "Lista", factory = DraggableViewModelFactory("Lista", casaId))
+    val model = viewModel<DraggableViewModel>(key = "Lista", factory = DraggableViewModelFactory("Lista", casaId, sessionManager))
 
     PizarraScreen(
         model,
