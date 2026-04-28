@@ -1,10 +1,12 @@
 package es.mirumi.es.ui.gastos
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,14 +31,13 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.DocumentScanner
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.NoteAdd
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material.icons.filled.SentimentSatisfiedAlt
 import androidx.compose.material3.AlertDialog
@@ -101,6 +102,7 @@ val ColorMoradoOscuro = Color(0xFF58337F)
 fun GastosScreen(
     viewModel: GastosViewModel,
     casaId: Long,
+    sessionManager: SessionManager, // <-- Recibe el parámetro de MainTab
 ) {
     val gastos by viewModel.gastos.collectAsState()
     val stats by viewModel.stats.collectAsState()
@@ -110,28 +112,24 @@ fun GastosScreen(
     val filtroActual by viewModel.filtroCategoria.collectAsState()
     val usuariosCasa by viewModel.usuariosDetectados.collectAsState()
 
-    // El nombre del usuario actual (vital para saber a quién le debes y quién te debe)
     val miNombre by viewModel.miNombre.collectAsState()
 
     val isScanning by viewModel.isScanningTicket.collectAsState()
     val borrador by viewModel.borradorEscaneado.collectAsState()
     val context = LocalContext.current
-    val sessionManager = remember { SessionManager(context) }
 
     val photoPickerLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.PickVisualMedia(),
-        ) { uri: Uri? ->
-            if (uri != null) viewModel.escanearTicketIA(context, uri)
-        }
+        ) { uri: Uri? -> if (uri != null) viewModel.escanearTicketIA(context, uri) }
 
     if (borrador != null) {
         NuevoGastoDialog(
             onDismiss = { viewModel.limpiarBorrador() },
             borradorInicial = borrador,
             miembrosCasa = usuariosCasa,
-            onConfirm = { nombre, importe, categoria, beneficiarios, pagadorId ->
-                viewModel.crearGasto(nombre, importe, categoria, beneficiarios, pagadorId)
+            onConfirm = { nombre, importe, categoria, beneficiarios, pagadoPorTodos ->
+                viewModel.crearGasto(nombre, importe, categoria, beneficiarios, pagadoPorTodos)
                 viewModel.limpiarBorrador()
             },
         )
@@ -152,6 +150,7 @@ fun GastosScreen(
                 VistaDetalleGasto(
                     gasto = gastoSeleccionado!!,
                     viewModel = viewModel,
+                    miNombre = miNombre,
                     onBack = { gastoSeleccionado = null },
                     onEdit = {
                         isEditing = true
@@ -172,7 +171,10 @@ fun GastosScreen(
                             "Estadísticas",
                             fontSize = 14.sp,
                             textDecoration = TextDecoration.Underline,
-                            modifier = Modifier.clickable { viewModel.toggleVista(true) },
+                            modifier =
+                                Modifier.clickable {
+                                    viewModel.toggleVista(true)
+                                },
                         )
                     }
 
@@ -250,11 +252,11 @@ fun GastosScreen(
                     },
                     gastoEditar = if (isEditing) gastoSeleccionado else null,
                     miembrosCasa = usuariosCasa,
-                    onConfirm = { nombre, importe, categoria, beneficiarios, pagadorId ->
+                    onConfirm = { nombre, importe, categoria, beneficiarios, pagadoPorTodos ->
                         if (isEditing && gastoSeleccionado != null) {
-                            viewModel.editarGasto(gastoSeleccionado!!.id, nombre, importe, categoria, beneficiarios, pagadorId)
+                            viewModel.editarGasto(gastoSeleccionado!!.id, nombre, importe, categoria, beneficiarios, pagadoPorTodos)
                         } else {
-                            viewModel.crearGasto(nombre, importe, categoria, beneficiarios, pagadorId)
+                            viewModel.crearGasto(nombre, importe, categoria, beneficiarios, pagadoPorTodos)
                         }
                         showDialog = false
                         if (isEditing) gastoSeleccionado = null
@@ -264,15 +266,11 @@ fun GastosScreen(
             }
 
             if (showDebtDialog) {
-                // Pasamos miNombre al diálogo de deudas
                 DialogPlanPagos(plan = planDePagos, onDismiss = { showDebtDialog = false }, viewModel = viewModel, miNombre = miNombre)
             }
 
             if (isScanning) {
-                Box(
-                    modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.6f)),
-                    contentAlignment = Alignment.Center,
-                ) {
+                Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.6f)), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         CircularProgressIndicator(color = Color.White)
                         Spacer(modifier = Modifier.height(16.dp))
@@ -288,7 +286,7 @@ fun GastosScreen(
             listOf(
                 FabActionItem(icon = Icons.Default.NoteAdd, label = "Crear Post-it", action = FabActionType.POST_IT),
                 FabActionItem(icon = Icons.Default.Add, label = "Crear Gasto Manual", action = FabActionType.CREAR_GASTO),
-                FabActionItem(icon = Icons.Default.DocumentScanner, label = "Escanear Ticket", action = FabActionType.ESCANEAR_TICKET),
+                FabActionItem(icon = Icons.Default.DocumentScanner, label = "Escanear Ticket (IA)", action = FabActionType.ESCANEAR_TICKET),
             )
 
         val keyStr =
@@ -299,6 +297,8 @@ fun GastosScreen(
             } else {
                 "Gastos Saldo"
             }
+
+        // Pasa el sessionManager a la Pizarra 👇
         val model = viewModel<DraggableViewModel>(key = keyStr, factory = DraggableViewModelFactory(keyStr, casaId, sessionManager))
 
         PizarraScreen(
@@ -483,7 +483,6 @@ fun DialogPlanPagos(
                                         Spacer(modifier = Modifier.height(12.dp))
                                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                                             if (soyElQueDebe) {
-                                                // Botón Pagar (Verde Bizum)
                                                 Box(
                                                     modifier =
                                                         Modifier
@@ -511,7 +510,6 @@ fun DialogPlanPagos(
                                                     )
                                                 }
                                             } else if (soyElQueRecibe) {
-                                                // Botón Solicitar (Azul)
                                                 Box(
                                                     modifier =
                                                         Modifier
@@ -558,7 +556,7 @@ fun ItemGasto(
         } else if (!gasto.pagadoPorNombre.isNullOrEmpty() && gasto.pagadoPorNombre != "Desconocido") {
             gasto.pagadoPorNombre
         } else {
-            null // ES UN GASTO SIN PAGAR
+            null
         }
 
     Card(
@@ -601,109 +599,47 @@ fun ItemGasto(
 fun VistaDetalleGasto(
     gasto: Gasto,
     viewModel: GastosViewModel,
+    miNombre: String,
     onBack: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val context = LocalContext.current
-    var showFullScreen by remember { mutableStateOf(false) }
-
-    val gastosActuales by viewModel.gastos.collectAsState()
-    val gastoActualizado = gastosActuales.find { it.id == gasto.id } ?: gasto
-    val photoPickerLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.PickVisualMedia(),
-        ) { uri: Uri? ->
-            if (uri != null) {
-                viewModel.subirFotoTicket(context, gastoActualizado.id, uri)
-                showFullScreen = false
-            }
-        }
-
-    // Lógica para determinar el nombre del pagador
     val pagadorNombre =
-        if (!gastoActualizado.aportaciones.isNullOrEmpty()) {
-            if (gastoActualizado.aportaciones.size > 1) "Varios" else gastoActualizado.aportaciones.first().nombre
-        } else if (!gastoActualizado.pagadoPorNombre.isNullOrEmpty() && gastoActualizado.pagadoPorNombre != "Desconocido") {
-            gastoActualizado.pagadoPorNombre
+        if (!gasto.aportaciones.isNullOrEmpty()) {
+            if (gasto.aportaciones.size > 1) "Varios (A partes iguales)" else gasto.aportaciones.first().nombre
+        } else if (!gasto.pagadoPorNombre.isNullOrEmpty() && gasto.pagadoPorNombre != "Desconocido") {
+            gasto.pagadoPorNombre
         } else {
             null
         }
 
-    val participantes = viewModel.obtenerParticipantesGasto(gastoActualizado)
+    val participantes = viewModel.obtenerParticipantesGasto(gasto)
 
     Column(modifier = Modifier.fillMaxSize().background(ColorFondo)) {
-        // --- BARRA SUPERIOR ---
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
-            }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.DeleteOutline, contentDescription = "Borrar Gasto")
-            }
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver") }
+            IconButton(onClick = onDelete) { Icon(Icons.Default.DeleteOutline, contentDescription = "Borrar") }
         }
 
-        // --- CABECERA: TÍTULO Y TICKET ---
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(gastoActualizado.nombre, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-            Text(gastoActualizado.fecha.take(10), fontSize = 14.sp, color = ColorTextoGris)
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            if (!gastoActualizado.fotoTicketUrl.isNullOrEmpty()) {
-                // Miniatura del ticket
-                SubcomposeAsyncImage(
-                    model =
-                        ImageRequest
-                            .Builder(context)
-                            .data("${gastoActualizado.fotoTicketUrl}?v=${System.currentTimeMillis()}")
-                            .crossfade(true)
-                            .build(),
-                    contentDescription = "Ticket",
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 40.dp)
-                            .height(150.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .clickable { showFullScreen = true },
-                    contentScale = ContentScale.Crop,
-                )
-                Text(
-                    "Toca para ver en grande",
-                    fontSize = 11.sp,
-                    color = ColorTextoGris,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-            } else {
-                // Botón para adjuntar si no hay nada
-                OutlinedButton(
-                    onClick = {
-                        photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, ColorMoradoOscuro),
-                ) {
-                    Icon(Icons.Default.DocumentScanner, null, tint = ColorMoradoOscuro)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Adjuntar Ticket", color = ColorMoradoOscuro)
-                }
-            }
+        Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(gasto.nombre, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Text(gasto.fecha.take(10), fontSize = 14.sp, color = ColorTextoGris)
         }
+        Spacer(modifier = Modifier.height(30.dp))
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // --- SECCIÓN: QUIÉN PAGÓ ---
         Column(modifier = Modifier.padding(horizontal = 20.dp)) {
             Text(
-                if (pagadorNombre != null) "PAGADO POR" else "ESTADO DEL GASTO",
+                if (pagadorNombre !=
+                    null
+                ) {
+                    "PAGADO POR"
+                } else {
+                    "ESTADO DEL GASTO"
+                },
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = ColorTextoGris,
@@ -722,7 +658,7 @@ fun VistaDetalleGasto(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (pagadorNombre != null) {
                             val colorAvatar = viewModel.getColorPorNombreDinamico(pagadorNombre)
-                            AvatarConFoto(pagadorNombre, colorAvatar, gastoActualizado.pagadoPorFotoUrl, 36.dp)
+                            AvatarConFoto(pagadorNombre, colorAvatar, gasto.pagadoPorFotoUrl, 36.dp)
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(pagadorNombre, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         } else {
@@ -730,103 +666,63 @@ fun VistaDetalleGasto(
                                 modifier = Modifier.size(36.dp).background(Color(0xFFFFEBEE), CircleShape),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Icon(Icons.Default.Calculate, null, tint = ColorRojoSaldo)
+                                Icon(Icons.Default.Calculate, contentDescription = null, tint = ColorRojoSaldo)
                             }
                             Spacer(modifier = Modifier.width(12.dp))
-                            Text("Falta por pagar", color = ColorRojoSaldo, fontWeight = FontWeight.Bold)
+                            Text("Falta por pagar", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = ColorRojoSaldo)
                         }
                     }
-                    Text("${gastoActualizado.importe}€", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        "${gasto.importe}€",
+                        fontSize = 16.sp,
+                        color =
+                            if (pagadorNombre !=
+                                null
+                            ) {
+                                ColorVerdeSaldo
+                            } else {
+                                ColorRojoSaldo
+                            },
+                        fontWeight = FontWeight.Bold,
+                    )
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- SECCIÓN: PARTICIPANTES ---
         Column(modifier = Modifier.padding(horizontal = 20.dp).weight(1f)) {
-            Text("PARTICIPANTES", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = ColorTextoGris)
+            Text(
+                if (pagadorNombre !=
+                    null
+                ) {
+                    "FALTA POR PAGAR (PARTICIPANTES)"
+                } else {
+                    "REPARTO DEL GASTO"
+                },
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = ColorTextoGris,
+            )
             Spacer(modifier = Modifier.height(8.dp))
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(participantes) { part ->
-                    ItemParticipante(part, pagadorNombre ?: "Nadie", gastoActualizado, viewModel)
+                    ItemParticipante(part, pagadorNombre ?: "Nadie", gasto, viewModel, miNombre)
                 }
             }
         }
 
-        // --- BOTÓN MODIFICAR DATOS ---
         Box(modifier = Modifier.fillMaxWidth().padding(20.dp), contentAlignment = Alignment.Center) {
             OutlinedButton(
                 onClick = onEdit,
                 modifier = Modifier.width(200.dp),
                 shape = RoundedCornerShape(50),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = ColorTextoGris),
             ) {
-                Text("Modificar Datos")
+                Text("Modificar")
             }
         }
-    }
-
-    // TICKET A PANTALLA COMPLETA ---
-    if (showFullScreen && !gastoActualizado.fotoTicketUrl.isNullOrEmpty()) {
-        AlertDialog(
-            onDismissRequest = { showFullScreen = false },
-            containerColor = Color.Black,
-            properties =
-                androidx.compose.ui.window
-                    .DialogProperties(usePlatformDefaultWidth = false),
-            modifier = Modifier.fillMaxSize(),
-            title = null,
-            text = {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    // Imagen en grande
-                    SubcomposeAsyncImage(
-                        model = gastoActualizado.fotoTicketUrl,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize().align(Alignment.Center),
-                        contentScale = ContentScale.Fit,
-                    )
-
-                    // Botones de acción arriba
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(20.dp).align(Alignment.TopCenter),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        // Botón Cerrar
-                        IconButton(
-                            onClick = { showFullScreen = false },
-                            modifier = Modifier.background(Color.White.copy(0.2f), CircleShape),
-                        ) {
-                            Icon(Icons.Default.Close, null, tint = Color.White)
-                        }
-
-                        Row {
-                            // Botón Cambiar
-                            IconButton(
-                                onClick = {
-                                    photoPickerLauncher.launch(
-                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-                                    )
-                                },
-                                modifier = Modifier.background(Color.White.copy(0.2f), CircleShape),
-                            ) { Icon(Icons.Default.Edit, null, tint = Color.White) }
-
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            // Botón Borrar Ticket
-                            IconButton(
-                                onClick = {
-                                    viewModel.eliminarFotoTicket(gastoActualizado.id)
-                                    showFullScreen = false
-                                },
-                                modifier = Modifier.background(Color.Red.copy(0.6f), CircleShape),
-                            ) { Icon(Icons.Default.DeleteOutline, null, tint = Color.White) }
-                        }
-                    }
-                }
-            },
-            confirmButton = {},
-        )
     }
 }
 
@@ -836,9 +732,13 @@ fun ItemParticipante(
     pagadorPrincipal: String,
     gasto: Gasto,
     viewModel: GastosViewModel,
+    miNombre: String,
 ) {
     val context = LocalContext.current
-    val esElPagador = part.nombre == pagadorPrincipal
+
+    val esElPagadorDeLaFila = part.nombre == pagadorPrincipal
+    val soyElPagadorPrincipal = miNombre == pagadorPrincipal
+    val soyEsteParticipante = miNombre == part.nombre
 
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -856,7 +756,7 @@ fun ItemParticipante(
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(part.nombre, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                    if (esElPagador) Text("Ya pagado", fontSize = 12.sp, color = ColorVerdeSaldo)
+                    if (esElPagadorDeLaFila) Text("Ya pagado", fontSize = 12.sp, color = ColorVerdeSaldo)
                 }
             }
 
@@ -864,24 +764,46 @@ fun ItemParticipante(
                 Text(
                     "${String.format("%.2f", part.cantidad).replace('.', ',')}€",
                     fontSize = 16.sp,
-                    color = if (esElPagador) ColorTextoGris else ColorRojoSaldo,
+                    color = if (esElPagadorDeLaFila) ColorTextoGris else ColorRojoSaldo,
                     fontWeight = FontWeight.Bold,
                 )
 
-                if (!esElPagador && pagadorPrincipal != "Varios" && pagadorPrincipal != "Nadie") {
+                if (!esElPagadorDeLaFila && !pagadorPrincipal.startsWith("Varios") && pagadorPrincipal != "Nadie") {
                     Spacer(modifier = Modifier.width(12.dp))
-                    Box(
-                        modifier =
-                            Modifier
-                                .background(Color(0xFF00C4B3), RoundedCornerShape(8.dp))
-                                .clickable {
-                                    val acreedor = viewModel.usuariosDetectados.value.find { it.nombre == pagadorPrincipal }
-                                    if (acreedor != null) {
-                                        BizumUtils.abrirAppBancariaParaBizum(context, null, part.cantidad)
-                                        viewModel.realizarPago(acreedorId = acreedor.id, cantidad = part.cantidad, gastoId = gasto.id)
-                                    }
-                                }.padding(horizontal = 8.dp, vertical = 6.dp),
-                    ) { Text("Bizum", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
+
+                    if (soyElPagadorPrincipal) {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .background(Color(0xFF2196F3), RoundedCornerShape(8.dp))
+                                    .clickable {
+                                        BizumUtils.solicitarBizum(context, null, part.cantidad)
+                                    }.padding(horizontal = 8.dp, vertical = 6.dp),
+                        ) { Text("Solicitar", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
+                    } else if (soyEsteParticipante) {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .background(Color(0xFF00C4B3), RoundedCornerShape(8.dp))
+                                    .clickable {
+                                        val acreedor = viewModel.usuariosDetectados.value.find { it.nombre == pagadorPrincipal }
+                                        if (acreedor != null) {
+                                            BizumUtils.abrirAppBancariaParaBizum(context, null, part.cantidad)
+                                            viewModel.realizarPago(acreedorId = acreedor.id, cantidad = part.cantidad, gastoId = gasto.id)
+                                        }
+                                    }.padding(horizontal = 8.dp, vertical = 6.dp),
+                        ) { Text("Bizum", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.NotificationsActive,
+                            contentDescription = "Recordar",
+                            tint = Color(0xFFFFB300),
+                            modifier =
+                                Modifier.size(28.dp).clickable {
+                                    Toast.makeText(context, "Recordatorio enviado a ${part.nombre}", Toast.LENGTH_SHORT).show()
+                                },
+                        )
+                    }
                 }
             }
         }
@@ -902,7 +824,7 @@ fun AvatarConFoto(
     val inicial = nombre.firstOrNull()?.toString()?.uppercase() ?: "?"
     Box(modifier = Modifier.size(size).clip(CircleShape).background(colorFondo), contentAlignment = Alignment.Center) {
         Text(text = inicial, color = Color.White, fontWeight = FontWeight.Bold, fontSize = if (size < 30.dp) 12.sp else 16.sp)
-        if (!fotoUrl.isNullOrEmpty() && nombre != "Varios") {
+        if (!fotoUrl.isNullOrEmpty() && !nombre.startsWith("Varios")) {
             SubcomposeAsyncImage(
                 model =
                     ImageRequest

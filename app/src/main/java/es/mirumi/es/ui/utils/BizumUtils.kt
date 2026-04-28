@@ -42,13 +42,24 @@ object BizumUtils {
 
         val accionUri = if (esSolicitud) "request" else "pay"
         val phoneParam = telefono ?: ""
+        val uriBizum = Uri.parse("bizum://$accionUri?phone=$phoneParam&amount=$cantidad")
 
         for ((paquete, nombreBanco) in bancosSoportados) {
-            val intent = packageManager.getLaunchIntentForPackage(paquete)
-            if (intent != null) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                intent.data = Uri.parse("bizum://$accionUri?phone=$phoneParam&amount=$cantidad")
-                context.startActivity(intent)
+            // Comprobamos si la app de este banco está instalada
+            val intentLauncher = packageManager.getLaunchIntentForPackage(paquete)
+            if (intentLauncher != null) {
+                // Intentamos primero mandar la cantidad y número directos
+                val deepLinkIntent = Intent(Intent.ACTION_VIEW, uriBizum)
+                deepLinkIntent.setPackage(paquete)
+                deepLinkIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+                if (deepLinkIntent.resolveActivity(packageManager) != null) {
+                    context.startActivity(deepLinkIntent)
+                } else {
+                    // Si el banco no admite inyección directa, abrimos la app del banco
+                    intentLauncher.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intentLauncher)
+                }
 
                 val msg =
                     if (esSolicitud) {
@@ -63,19 +74,7 @@ object BizumUtils {
         }
 
         if (!appAbierta) {
-            try {
-                val fallbackIntent = Intent(Intent.ACTION_VIEW, Uri.parse("bizum://$accionUri"))
-                fallbackIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                context.startActivity(fallbackIntent)
-            } catch (e: Exception) {
-                val msg =
-                    if (esSolicitud) {
-                        "Abre tu app bancaria para solicitar el Bizum"
-                    } else {
-                        "Abre tu app bancaria para enviar el Bizum"
-                    }
-                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-            }
+            Toast.makeText(context, "No se encontró ninguna app bancaria compatible instalada", Toast.LENGTH_LONG).show()
         }
     }
 }
