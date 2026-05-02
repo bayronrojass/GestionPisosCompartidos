@@ -1,11 +1,15 @@
 package es.mirumi.es.ui.perfil
 
+import android.content.Context
+import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.data.remote.NetworkModule
 import es.mirumi.es.data.repository.repositories.RepositoryUsuario
 import es.mirumi.es.model.Usuario
+import es.mirumi.es.model.dtos.PerfilGamificacionDTO
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,21 +17,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import android.content.Context
-import android.net.Uri
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import uriToFile
 
-// 1. Estado de la UI unificado
 data class PerfilUiState(
     val isLoading: Boolean = false,
     val usuario: Usuario? = null,
+    val gamificacion: PerfilGamificacionDTO? = null,
     val error: String? = null,
 )
 
-// 2. Eventos de un solo uso (Toasts, Navegación)
 sealed class PerfilEvent {
     data class ShowToast(
         val message: String,
@@ -44,11 +45,9 @@ class PerfilViewModel(
     private val repository = RepositoryUsuario(NetworkModule.usuarioApiService)
     private val userId = sessionManager.fetchCurrentUserId()
 
-    // Manejo de Estado (StateFlow)
     private val _uiState = MutableStateFlow(PerfilUiState())
     val uiState: StateFlow<PerfilUiState> = _uiState.asStateFlow()
 
-    // Manejo de Eventos Únicos (Channel)
     private val _events = Channel<PerfilEvent>()
     val events = _events.receiveAsFlow()
 
@@ -61,7 +60,24 @@ class PerfilViewModel(
         viewModelScope.launch {
             try {
                 val user = repository.getUsuario(userId)
-                _uiState.update { it.copy(isLoading = false, usuario = user) }
+                val token = sessionManager.fetchAuthToken() ?: ""
+                val responseGamificacion = repository.getPerfilGamificacion(token, userId)
+
+                val gamificacionData =
+                    if (responseGamificacion != null && responseGamificacion.isSuccessful) {
+                        responseGamificacion.body()
+                    } else {
+                        Log.e("GAMIFICACION", "Error al obtener logros: ${responseGamificacion?.code()}")
+                        null
+                    }
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        usuario = user,
+                        gamificacion = gamificacionData,
+                    )
+                }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = e.message) }
             }
@@ -76,15 +92,11 @@ class PerfilViewModel(
         viewModelScope.launch {
             try {
                 repository.updateUsuario(userId, nuevoNombre, nuevoCorreo)
+                cargarPerfil()
 
-                val user = repository.getUsuario(userId)
-                _uiState.update { it.copy(isLoading = false, usuario = user) }
-
-                // Actualizamos también la sesión local
                 val token = sessionManager.fetchAuthToken()?.replace("Bearer ", "") ?: ""
                 sessionManager.saveAuthData(token, userId, nuevoCorreo)
 
-                // Disparamos el Toast
                 _events.send(PerfilEvent.ShowToast("Perfil actualizado correctamente"))
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = e.message) }
@@ -111,7 +123,6 @@ class PerfilViewModel(
         }
     }
 
-    // Limpia el error de la UI una vez mostrado
     fun errorShown() {
         _uiState.update { it.copy(error = null) }
     }
@@ -124,7 +135,6 @@ class PerfilViewModel(
         viewModelScope.launch {
             try {
                 val file = uriToFile(context, uri) ?: throw Exception("No se pudo procesar la imagen")
-
                 val requestFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
                 val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
 

@@ -2,6 +2,7 @@ package es.mirumi.es.data.repository.repositories
 
 import es.mirumi.es.data.repository.APIs.UsuarioAPI
 import es.mirumi.es.model.Usuario
+import es.mirumi.es.model.dtos.PerfilGamificacionDTO
 import es.mirumi.es.model.dtos.UsuarioDTO
 
 class RepositoryUsuario(
@@ -46,4 +47,15 @@ class RepositoryUsuario(
             throw Exception("Error eliminando usuario: ${response.code()}")
         }
     }
+
+    suspend fun getPerfilGamificacion(
+        token: String,
+        usuarioId: Long,
+    ): retrofit2.Response<PerfilGamificacionDTO>? =
+        try {
+            api.getPerfilGamificacion(token, usuarioId)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
 }

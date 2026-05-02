@@ -1,12 +1,14 @@
 package es.mirumi.es.data.repository.APIs
 
 import es.mirumi.es.model.Usuario
+import es.mirumi.es.model.dtos.PerfilGamificacionDTO
 import es.mirumi.es.model.dtos.UsuarioDTO
 import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.PUT
@@ -47,4 +49,10 @@ interface UsuarioAPI {
     suspend fun eliminarFotoPerfil(
         @Path("id") id: Long,
     ): Response<UsuarioDTO>
+
+    @GET("usuarios/{usuarioId}/gamificacion")
+    suspend fun getPerfilGamificacion(
+        @Header("Authorization") token: String,
+        @Path("usuarioId") usuarioId: Long,
+    ): retrofit2.Response<PerfilGamificacionDTO>
 }
