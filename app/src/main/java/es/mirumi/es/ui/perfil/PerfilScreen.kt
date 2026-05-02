@@ -69,8 +69,6 @@ fun PerfilScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showPhotoOptionsDialog by remember { mutableStateOf(false) }
-
-    // 🔥 NUEVOS ESTADOS PARA LOGROS
     var showPantallaLogros by remember { mutableStateOf(false) }
     var medallaSeleccionada by remember { mutableStateOf<UsuarioLogroDTO?>(null) }
 

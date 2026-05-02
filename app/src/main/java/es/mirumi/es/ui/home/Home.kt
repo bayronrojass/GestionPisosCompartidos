@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -42,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -51,10 +53,12 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import es.mirumi.es.R
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.model.Evento
 import es.mirumi.es.model.Tarea
+import es.mirumi.es.ui.navigation.Route
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModel
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModelFactory
 import es.mirumi.es.ui.pizarra.postits.PizarraScreen
@@ -71,6 +75,7 @@ fun HomeScreen(
     casaId: Long,
     viewModel: HomeViewModel,
     onNavigateToMonthlyView: () -> Unit,
+    navController: NavController, // 🔥 Añadido para la navegación
 ) {
     val userName by viewModel.userName.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoadingUser.collectAsStateWithLifecycle()
@@ -82,10 +87,7 @@ fun HomeScreen(
     val tareas by viewModel.tareasDelUsuario.collectAsStateWithLifecycle()
 
     val scrollState = rememberScrollState()
-    val isFloatingButtonVisible =
-        remember {
-            derivedStateOf { scrollState.value > 100 }
-        }
+    val isFloatingButtonVisible = remember { derivedStateOf { scrollState.value > 100 } }
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -101,9 +103,7 @@ fun HomeScreen(
     }
 
     Scaffold {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
             HomeContent(
                 modifier = modifier,
                 viewModel = viewModel,
@@ -116,15 +116,12 @@ fun HomeScreen(
                 eventos = eventos,
                 tareas = tareas,
                 casaId = casaId,
+                navController = navController, // 🔥 Pasado al contenido
             )
 
             ScrollToTopFloatingButton(
                 isVisible = isFloatingButtonVisible.value,
-                onClick = {
-                    coroutineScope.launch {
-                        scrollState.animateScrollTo(0)
-                    }
-                },
+                onClick = { coroutineScope.launch { scrollState.animateScrollTo(0) } },
             )
         }
     }
@@ -143,6 +140,7 @@ private fun HomeContent(
     eventos: List<Evento>,
     tareas: List<Tarea>,
     casaId: Long,
+    navController: NavController,
 ) {
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
@@ -154,10 +152,14 @@ private fun HomeContent(
                 .background(color = Color(0xfff8f8f8))
                 .verticalScroll(scrollState),
     ) {
-        HeaderSection(
-            userName = userName,
-            houseName = houseName,
+        HeaderSection(userName = userName, houseName = houseName)
+
+        // 🔥 NUEVO BANNER DE RANKING (El Gancho)
+        RankingBannerSection(
+            casaId = casaId,
+            onClick = { navController.navigate(Route.Ranking.createRoute(casaId)) },
         )
+        // 🔥 FIN NUEVO BANNER
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -173,11 +175,7 @@ private fun HomeContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        WeeklyEvents(
-            viewModel = viewModel,
-            tareas = tareas,
-            selectedDate = selectedDate ?: LocalDate.now(),
-        )
+        WeeklyEvents(viewModel = viewModel, tareas = tareas, selectedDate = selectedDate ?: LocalDate.now())
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -200,15 +198,7 @@ private fun HomeContent(
         Spacer(modifier = Modifier.height(80.dp))
     }
 
-    // FAB Pizarra (opcional, si lo quieres mantener)
-    val pizarraFabActions =
-        listOf(
-            FabActionItem(
-                icon = Icons.Default.NoteAdd,
-                label = "Crear Post-it",
-                action = FabActionType.POST_IT,
-            ),
-        )
+    val pizarraFabActions = listOf(FabActionItem(icon = Icons.Default.NoteAdd, label = "Crear Post-it", action = FabActionType.POST_IT))
     val model =
         androidx.lifecycle.viewmodel.compose.viewModel<DraggableViewModel>(
             key = "Home",
@@ -218,44 +208,78 @@ private fun HomeContent(
     PizarraScreen(
         model,
         fabActions = pizarraFabActions,
-        onFabActionSelected = { action ->
-            when (action.action) {
-                FabActionType.POST_IT -> {
-                    model.addNewPostIt()
-                }
-                else -> {}
-            }
-        },
+        onFabActionSelected = { action -> if (action.action == FabActionType.POST_IT) model.addNewPostIt() },
     )
 }
 
+// 🔥 SECCIÓN DEL BANNER DE RANKING
+@Composable
+fun RankingBannerSection(
+    casaId: Long,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .clip(RoundedCornerShape(15.dp))
+                .background(Color(0xFFFFD700).copy(alpha = 0.15f)) // Fondo dorado suave
+                .clickable { onClick() }
+                .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier.size(40.dp).background(Color(0xFFFFB300), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Default.EmojiEvents, contentDescription = "Trofeo", tint = Color.White)
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text("Ranking de Convivencia", fontSize = 14.sp, color = Color.DarkGray, fontWeight = FontWeight.Bold)
+                // TODO: Esto vendrá del backend después
+                Text("🏆 Natalia lidera con 150 pts", fontSize = 12.sp, color = Color(0xFFCD7F32))
+            }
+        }
+        Icon(
+            painter = painterResource(id = R.drawable.vector19),
+            contentDescription = "Flecha",
+            modifier = Modifier.size(16.dp).rotate(180f),
+            tint = Color(0xFFFFB300),
+        )
+    }
+}
+
+// (El resto de tus composables como HeaderSection, CalendarSection, etc. se quedan IGUAL, no los he modificado)
 @Composable
 private fun ScrollToTopFloatingButton(
     isVisible: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .padding(16.dp),
-        contentAlignment = Alignment.BottomCenter,
-    ) {
+    Box(modifier = modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.BottomCenter) {
         AnimatedVisibility(
             visible = isVisible,
             enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
-            exit = fadeOut() + slideOutVertically(targetOffsetY = { it }),
+            exit =
+                fadeOut() + slideOutVertically(targetOffsetY = { it }),
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.frame_125),
+                painter =
+                    painterResource(
+                        id = R.drawable.frame_125,
+                    ),
                 contentDescription = "Volver arriba",
                 tint = Color.Unspecified,
                 modifier =
                     Modifier
                         .size(80.dp)
-                        .clickable { onClick() }
-                        .padding(12.dp),
+                        .clickable {
+                            onClick()
+                        }.padding(12.dp),
             )
         }
     }
@@ -267,45 +291,25 @@ fun HeaderSection(
     houseName: String?,
 ) {
     Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column {
-            Text(
-                text = "Hola, $userName",
-                color = Color.Black,
-                style =
-                    TextStyle(
-                        fontSize = 36.sp,
-                        fontWeight = FontWeight.Bold,
-                    ),
-            )
-
+            Text("Hola, $userName", color = Color.Black, style = TextStyle(fontSize = 36.sp, fontWeight = FontWeight.Bold))
             Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "$houseName",
+                    "$houseName",
                     color = Color.White,
-                    style =
-                        TextStyle(
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                        ),
+                    style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
                     modifier =
                         Modifier
-                            .clip(MaterialTheme.shapes.medium)
-                            .background(Color(0xffff5686))
+                            .clip(
+                                MaterialTheme.shapes.medium,
+                            ).background(Color(0xffff5686))
                             .padding(horizontal = 12.dp, vertical = 6.dp),
                 )
-
                 Icon(
                     painter = painterResource(id = R.drawable.home_ellipse41),
                     contentDescription = "Location",
@@ -314,7 +318,6 @@ fun HeaderSection(
                 )
             }
         }
-
         Icon(
             painter = painterResource(id = R.drawable.dibujo_home),
             contentDescription = "Decoration",
@@ -324,6 +327,7 @@ fun HeaderSection(
     }
 }
 
+// --- Los demás composables (CalendarSection, DayItem, WeeklyEvents, etc.) se mantienen exactamente igual que en tu código original ---
 @Composable
 fun CalendarSection(
     list: List<LocalDateTime>,
@@ -334,12 +338,7 @@ fun CalendarSection(
     eventos: List<Evento>,
     tareas: List<Tarea>,
 ) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp),
-    ) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -350,37 +349,40 @@ fun CalendarSection(
                 color = Color.Black,
                 style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
             )
-
             Text(
                 text = "Vista mensual",
-                color = Color(0xff6c6c6c),
+                color =
+                    Color(
+                        0xff6c6c6c,
+                    ),
                 textDecoration = TextDecoration.Underline,
                 style = TextStyle(fontSize = 14.sp),
-                modifier = Modifier.clickable { onNavigateToMonthlyView() },
+                modifier =
+                    Modifier.clickable {
+                        onNavigateToMonthlyView()
+                    },
             )
         }
-
         Spacer(modifier = Modifier.height(16.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             list.forEachIndexed { index, ldt ->
                 val date = ldt.toLocalDate()
                 val isSelected = selectedDate?.let { it == date } ?: false
-
                 val hasEvent = eventos.any { viewModel.parseFechaSegura(it.fechaInicio) == date }
                 val hasTask = tareas.any { !it.fechaFin.isNullOrEmpty() && viewModel.parseFechaSegura(it.fechaFin) == date }
-
                 DayItem(
                     day = ldt.dayOfMonth.toString(),
-                    dayName = viewModel.diasTraducidos(ldt.dayOfWeek),
+                    dayName =
+                        viewModel.diasTraducidos(
+                            ldt.dayOfWeek,
+                        ),
                     isToday = index == 0,
                     isSelected = isSelected,
                     hasEvent = hasEvent,
                     hasTask = hasTask,
-                    onClick = { onDateSelected(date) },
+                    onClick = {
+                        onDateSelected(date)
+                    },
                 )
             }
         }
@@ -397,17 +399,11 @@ fun DayItem(
     hasTask: Boolean = false,
     onClick: () -> Unit,
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Card(
             modifier = Modifier.size(50.dp),
             shape = MaterialTheme.shapes.medium,
-            colors =
-                CardDefaults.cardColors(
-                    containerColor = if (isSelected) Color(0xfffeee91) else Color.White,
-                ),
+            colors = CardDefaults.cardColors(containerColor = if (isSelected) Color(0xfffeee91) else Color.White),
             border = CardDefaults.outlinedCardBorder(),
             onClick = onClick,
         ) {
@@ -416,55 +412,18 @@ fun DayItem(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                Text(
-                    text = day,
-                    style =
-                        TextStyle(
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium,
-                        ),
-                )
-                Text(
-                    text = dayName,
-                    style = TextStyle(fontSize = 12.sp),
-                )
-
-                // Indicadores
+                Text(text = day, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium))
+                Text(text = dayName, style = TextStyle(fontSize = 12.sp))
                 if (hasEvent || hasTask) {
                     Spacer(modifier = Modifier.height(2.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                        if (hasEvent) {
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .size(4.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0xffff5686)),
-                            )
-                        }
-                        if (hasTask) {
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .size(4.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0xFFDDC1FB)),
-                            )
-                        }
+                        if (hasEvent) Box(modifier = Modifier.size(4.dp).clip(CircleShape).background(Color(0xffff5686)))
+                        if (hasTask) Box(modifier = Modifier.size(4.dp).clip(CircleShape).background(Color(0xFFDDC1FB)))
                     }
                 }
             }
         }
-
-        if (isToday) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(8.dp)
-                        .clip(MaterialTheme.shapes.small)
-                        .background(Color(0xffff5686)),
-            )
-        }
+        if (isToday) Box(modifier = Modifier.size(8.dp).clip(MaterialTheme.shapes.small).background(Color(0xffff5686)))
     }
 }
 
@@ -475,7 +434,6 @@ fun WeeklyEvents(
     selectedDate: LocalDate,
 ) {
     val eventosDelDia by viewModel.eventosDelDia.collectAsStateWithLifecycle()
-
     val tareasFiltradas =
         remember(tareas, selectedDate) {
             val limit = selectedDate.plusDays(6)
@@ -485,7 +443,6 @@ fun WeeklyEvents(
                 !fecha.isBefore(selectedDate) && !fecha.isAfter(limit)
             }
         }
-
     val combinedList =
         remember(eventosDelDia, tareasFiltradas) {
             (eventosDelDia + tareasFiltradas).sortedBy {
@@ -496,13 +453,7 @@ fun WeeklyEvents(
                 }
             }
         }
-
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp),
-    ) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
         if (combinedList.isNotEmpty()) {
             for (i in combinedList.indices) {
                 val item = combinedList[i]
@@ -512,8 +463,6 @@ fun WeeklyEvents(
                         is Tarea -> viewModel.parseFechaSegura(item.fechaFin)
                         else -> LocalDate.now()
                     }
-
-                // Lógica de Cabeceras (Día de la semana)
                 val prevItemDate =
                     if (i > 0) {
                         when (val prev = combinedList[i - 1]) {
@@ -529,33 +478,17 @@ fun WeeklyEvents(
                     Text(
                         text = viewModel.diasTraducidos(itemDate.dayOfWeek),
                         color = Color.Black,
-                        style =
-                            TextStyle(
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Medium,
-                            ),
+                        style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Medium),
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                 }
-
-                // COLOR: Amarillo si es el día seleccionado, Blanco si no
                 val isSelectedDay = itemDate == selectedDate
                 val cardColor = if (isSelectedDay) Color(0xfffff8cf) else Color.White
-
                 if (item is Evento) {
-                    EventItem(
-                        title = item.nombre,
-                        color = cardColor,
-                        creadoPor = item.creadoPor,
-                        viewModel = viewModel,
-                    )
+                    EventItem(title = item.nombre, color = cardColor, creadoPor = item.creadoPor, viewModel = viewModel)
                 } else if (item is Tarea) {
-                    TimelineTaskItem(
-                        tarea = item,
-                        color = cardColor,
-                    )
+                    TimelineTaskItem(tarea = item, color = cardColor)
                 }
-
                 Spacer(modifier = Modifier.height(12.dp))
             }
         }
@@ -570,7 +503,6 @@ fun EventItem(
     viewModel: HomeViewModel,
 ) {
     var creadorName by remember { mutableStateOf<String?>(null) }
-
     LaunchedEffect(creadoPor) {
         creadorName =
             try {
@@ -579,38 +511,17 @@ fun EventItem(
                 null
             }
     }
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.small,
         colors = CardDefaults.cardColors(containerColor = color),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(8.dp)
-                        .clip(MaterialTheme.shapes.small)
-                        .background(Color(0xffff5686)),
-            )
-
+        Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(modifier = Modifier.size(8.dp).clip(MaterialTheme.shapes.small).background(Color(0xffff5686)))
             Spacer(modifier = Modifier.width(16.dp))
-
-            Text(
-                text = title,
-                style = TextStyle(fontSize = 15.sp),
-                modifier = Modifier.weight(1f),
-            )
-
-            Text(
-                text = "Creado por: ${creadorName ?: "Cargando..."}",
-                style = TextStyle(fontSize = 12.sp),
-                modifier = Modifier.weight(1f),
-            )
+            Text(text = title, style = TextStyle(fontSize = 15.sp), modifier = Modifier.weight(1f))
+            Text(text = "Creado por: ${creadorName ?: "Cargando..."}", style = TextStyle(fontSize = 12.sp), modifier = Modifier.weight(1f))
         }
     }
 }
@@ -626,46 +537,26 @@ fun TimelineTaskItem(
             "Media" -> Color(0xFFDDC1FB)
             else -> Color(0xFFA9E6A8)
         }
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.small,
         colors = CardDefaults.cardColors(containerColor = color),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(8.dp)
-                        .clip(MaterialTheme.shapes.small)
-                        .background(Color(0xFFDDC1FB)),
-            )
-
+        Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(modifier = Modifier.size(8.dp).clip(MaterialTheme.shapes.small).background(Color(0xFFDDC1FB)))
             Spacer(modifier = Modifier.width(16.dp))
-
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = tarea.nombre,
-                    style = TextStyle(fontSize = 15.sp),
-                )
+                Text(text = tarea.nombre, style = TextStyle(fontSize = 15.sp))
                 Text(
                     text = "Asignado a: ${tarea.asignadoA?.nombre ?: "Sin asignar"}",
                     style = TextStyle(fontSize = 12.sp, color = Color.Gray),
                 )
             }
-
             Text(
                 text = tarea.prioridad ?: "",
                 style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray),
-                modifier =
-                    Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(priorityColor)
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(priorityColor).padding(horizontal = 6.dp, vertical = 2.dp),
             )
         }
     }
@@ -673,31 +564,12 @@ fun TimelineTaskItem(
 
 @Composable
 fun NotificationsSection() {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp),
-    ) {
-        Text(
-            text = "NOTIFICACIONES",
-            color = Color.Black,
-            style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
-        )
-
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+        Text("NOTIFICACIONES", color = Color.Black, style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold))
         Spacer(modifier = Modifier.height(12.dp))
-
-        NotificationItem(
-            message = "Marta te ha pagado 20€",
-            showMore = true,
-        )
-
+        NotificationItem("Marta te ha pagado 20€", true)
         Spacer(modifier = Modifier.height(8.dp))
-
-        NotificationItem(
-            message = "Alguien te recuerda que limpies el baño",
-            showMore = true,
-        )
+        NotificationItem("Alguien te recuerda que limpies el baño", true)
     }
 }
 
@@ -717,22 +589,13 @@ fun NotificationItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = message,
-                style = TextStyle(fontSize = 16.sp),
-                modifier = Modifier.weight(1f),
-            )
-
+            Text(text = message, style = TextStyle(fontSize = 16.sp), modifier = Modifier.weight(1f))
             if (showMore) {
                 Text(
                     text = "Ver más",
                     color = Color(0xff6c6c6c),
                     textDecoration = TextDecoration.Underline,
-                    style =
-                        TextStyle(
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                        ),
+                    style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
                 )
             }
         }
@@ -742,20 +605,9 @@ fun NotificationItem(
 @Composable
 fun PendingTasksSection(viewModel: HomeViewModel) {
     val tareasPendientes = viewModel.tareasDelUsuario.collectAsStateWithLifecycle()
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp),
-    ) {
-        Text(
-            text = "MIS TAREAS PENDIENTES",
-            color = Color.Black,
-            style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
-        )
-
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+        Text("MIS TAREAS PENDIENTES", color = Color.Black, style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold))
         Spacer(modifier = Modifier.height(12.dp))
-
         for (tarea in tareasPendientes.value) {
             val (color, textColor) =
                 when (tarea.prioridad) {
@@ -763,10 +615,8 @@ fun PendingTasksSection(viewModel: HomeViewModel) {
                     "Media" -> Pair(Color(0xFFDDC1FB), Color(0xFF5D427A))
                     else -> Pair(Color(0xFFA9E6A8), Color(0xFF2D5C2C))
                 }
-
             val date = viewModel.parseFechaSegura(tarea.fechaFin)
             val taskDate = "${viewModel.diasTraducidos(date.dayOfWeek)}. ${date.dayOfMonth}"
-
             PendingTaskItem(
                 title = tarea.nombre,
                 priority = tarea.prioridad!!,
@@ -793,71 +643,32 @@ fun PendingTaskItem(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(
-                    text = title,
-                    style =
-                        TextStyle(
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Medium,
-                        ),
-                    modifier = Modifier.weight(1f),
-                )
-
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(text = title, style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Medium), modifier = Modifier.weight(1f))
                 Text(
                     text = priority,
                     color = textColor,
-                    style =
-                        TextStyle(
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                        ),
+                    style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
                     modifier =
                         Modifier
-                            .clip(MaterialTheme.shapes.large)
-                            .background(priorityColor)
+                            .clip(
+                                MaterialTheme.shapes.large,
+                            ).background(priorityColor)
                             .padding(horizontal = 12.dp, vertical = 4.dp),
                 )
             }
-
             Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = taskDate ?: "nil",
-                    color = textColor,
-                    style =
-                        TextStyle(
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                        ),
-                )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(text = taskDate ?: "nil", color = textColor, style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium))
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = "Solicitar cambio",
                         color = Color(0xff6c6c6c),
                         textDecoration = TextDecoration.Underline,
-                        style =
-                            TextStyle(
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                            ),
+                        style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
                     )
-
                     Spacer(modifier = Modifier.width(4.dp))
-
                     Icon(
                         painter = painterResource(id = R.drawable.home_iconocambio),
                         contentDescription = "Request change",

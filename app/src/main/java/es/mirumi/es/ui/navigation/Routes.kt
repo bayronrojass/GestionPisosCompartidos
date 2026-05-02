@@ -70,4 +70,8 @@ sealed class Route(
     object InicioSesion : Route("inicio_sesion")
 
     object Calendario : Route("calendario")
+
+    object Ranking : Route("ranking?casa_id={casa_id}") {
+        fun createRoute(casaId: Long) = "ranking?casa_id=$casaId"
+    }
 }

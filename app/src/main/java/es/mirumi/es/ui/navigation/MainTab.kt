@@ -129,7 +129,10 @@ fun MainScreenWithNavigation(
                     when (selectedTab) {
                         0 -> GastosScreen(viewModel = gastosViewModel, casaId = casaId, sessionManager = sessionManager)
                         1 -> TareasScreen(tareasViewModel, casaId = casaId, userId = sessionManager.fetchCurrentUserId())
-                        2 -> HomeScreen(casaId = casaId, viewModel = homeViewModel, onNavigateToMonthlyView = { showCalendar = true })
+                        2 ->
+                            HomeScreen(casaId = casaId, viewModel = homeViewModel, onNavigateToMonthlyView = {
+                                showCalendar = true
+                            }, navController = navController)
                         3 -> ListaScreen(listaViewModel, onNavigateToItem, casaId = casaId)
                         4 -> PerfilScreen(sessionManager, onLogout, navController, casaId)
                     }

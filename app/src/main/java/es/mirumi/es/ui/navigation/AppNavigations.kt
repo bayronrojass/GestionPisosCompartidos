@@ -207,5 +207,21 @@ fun AppNavigation(
                 viewModel = qrViewModel,
             )
         }
+
+        // RANKING DE CASA
+        composable(
+            route = Route.Ranking.route,
+            arguments =
+                listOf(
+                    navArgument("casa_id") { type = NavType.LongType },
+                ),
+        ) { backStackEntry ->
+            val casaId = backStackEntry.arguments?.getLong("casa_id") ?: 0L
+
+            es.mirumi.es.ui.ranking.RankingScreen(
+                navController = navController,
+                casaId = casaId,
+            )
+        }
     }
 }
