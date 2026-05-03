@@ -74,4 +74,8 @@ sealed class Route(
     object Ranking : Route("ranking?casa_id={casa_id}") {
         fun createRoute(casaId: Long) = "ranking?casa_id=$casaId"
     }
+
+    object Encuestas : Route("encuestas?casa_id={casa_id}") {
+        fun createRoute(casaId: Long) = "encuestas?casa_id=$casaId"
+    }
 }

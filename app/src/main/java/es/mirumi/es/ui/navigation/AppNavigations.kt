@@ -11,6 +11,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.model.Casa
+import es.mirumi.es.ui.encuestas.EncuestasScreen
+import es.mirumi.es.ui.encuestas.EncuestasViewModel
+import es.mirumi.es.ui.encuestas.EncuestasViewModelFactory
 import es.mirumi.es.ui.home.CalendarioScreen
 import es.mirumi.es.ui.home.HomeViewModel
 import es.mirumi.es.ui.home.HomeViewModelFactory
@@ -221,6 +224,25 @@ fun AppNavigation(
             es.mirumi.es.ui.ranking.RankingScreen(
                 navController = navController,
                 casaId = casaId,
+            )
+        }
+
+        composable(
+            route = Route.Encuestas.route,
+            arguments =
+                listOf(
+                    navArgument("casa_id") { type = NavType.LongType },
+                ),
+        ) { backStackEntry ->
+            val casaId = backStackEntry.arguments?.getLong("casa_id") ?: 0L
+
+            val viewModel: EncuestasViewModel =
+                viewModel(
+                    factory = EncuestasViewModelFactory(casaId),
+                )
+
+            es.mirumi.es.ui.encuestas.EncuestasScreen(
+                viewModel = viewModel,
             )
         }
     }

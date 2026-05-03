@@ -26,6 +26,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.NoteAdd
+import androidx.compose.material.icons.filled.HowToVote
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -75,7 +76,7 @@ fun HomeScreen(
     casaId: Long,
     viewModel: HomeViewModel,
     onNavigateToMonthlyView: () -> Unit,
-    navController: NavController, // 🔥 Añadido para la navegación
+    navController: NavController,
 ) {
     val userName by viewModel.userName.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoadingUser.collectAsStateWithLifecycle()
@@ -116,7 +117,7 @@ fun HomeScreen(
                 eventos = eventos,
                 tareas = tareas,
                 casaId = casaId,
-                navController = navController, // 🔥 Pasado al contenido
+                navController = navController,
             )
 
             ScrollToTopFloatingButton(
@@ -154,12 +155,15 @@ private fun HomeContent(
     ) {
         HeaderSection(userName = userName, houseName = houseName)
 
-        // 🔥 NUEVO BANNER DE RANKING (El Gancho)
         RankingBannerSection(
             casaId = casaId,
             onClick = { navController.navigate(Route.Ranking.createRoute(casaId)) },
         )
-        // 🔥 FIN NUEVO BANNER
+
+        EncuestasBannerSection(
+            casaId = casaId,
+            onClick = { navController.navigate(Route.Encuestas.createRoute(casaId)) },
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -212,7 +216,6 @@ private fun HomeContent(
     )
 }
 
-// 🔥 SECCIÓN DEL BANNER DE RANKING
 @Composable
 fun RankingBannerSection(
     casaId: Long,
@@ -249,6 +252,46 @@ fun RankingBannerSection(
             contentDescription = "Flecha",
             modifier = Modifier.size(16.dp).rotate(180f),
             tint = Color(0xFFFFB300),
+        )
+    }
+}
+
+@Composable
+fun EncuestasBannerSection(
+    casaId: Long,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .clip(RoundedCornerShape(15.dp))
+                .background(Color(0xFF2196F3).copy(alpha = 0.15f))
+                .clickable { onClick() }
+                .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier.size(40.dp).background(Color(0xFF2196F3), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                // Usamos el icono HowToVote (urna de votación)
+                Icon(Icons.Default.HowToVote, contentDescription = "Encuestas", tint = Color.White)
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text("Encuestas del Piso", fontSize = 14.sp, color = Color.DarkGray, fontWeight = FontWeight.Bold)
+                Text("¡Vota en las decisiones conjuntas!", fontSize = 12.sp, color = Color(0xFF1976D2))
+            }
+        }
+        Icon(
+            painter = painterResource(id = R.drawable.vector19),
+            contentDescription = "Flecha",
+            modifier = Modifier.size(16.dp).rotate(180f),
+            tint = Color(0xFF2196F3),
         )
     }
 }
