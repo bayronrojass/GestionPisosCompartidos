@@ -102,9 +102,9 @@ fun AppNavigation(
 
         // INVITACIONES:
         composable(route = Route.Invitaciones.route) {
-            val sessionManager = rememberSessionManager()
+            val sessionManagerLocal = rememberSessionManager()
             InvitacionesScreen(
-                sessionManager = sessionManager,
+                sessionManager = sessionManagerLocal,
                 navController = navController,
             )
         }
@@ -191,7 +191,12 @@ fun AppNavigation(
 
         composable(
             route = "qr_screen/{casaId}",
-            arguments = listOf(androidx.navigation.navArgument("casaId") { type = androidx.navigation.NavType.LongType }),
+            arguments =
+                listOf(
+                    androidx.navigation.navArgument("casaId") {
+                        type = androidx.navigation.NavType.LongType
+                    },
+                ),
         ) { backStackEntry ->
             val casaId = backStackEntry.arguments?.getLong("casaId") ?: 0L
 
@@ -236,12 +241,15 @@ fun AppNavigation(
         ) { backStackEntry ->
             val casaId = backStackEntry.arguments?.getLong("casa_id") ?: 0L
 
+            // Importante: Usar el SessionManager actualizado
+            val sessionManagerLocal = rememberSessionManager()
+
             val viewModel: EncuestasViewModel =
                 viewModel(
-                    factory = EncuestasViewModelFactory(casaId),
+                    factory = EncuestasViewModelFactory(casaId, sessionManagerLocal),
                 )
 
-            es.mirumi.es.ui.encuestas.EncuestasScreen(
+            EncuestasScreen(
                 viewModel = viewModel,
             )
         }
