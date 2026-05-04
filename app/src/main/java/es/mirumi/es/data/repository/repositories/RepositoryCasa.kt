@@ -9,6 +9,7 @@ import es.mirumi.es.model.Casa
 import es.mirumi.es.model.Evento
 import es.mirumi.es.model.Gasto
 import es.mirumi.es.model.Usuario
+import es.mirumi.es.model.dtos.UsuarioRankingDTO
 import es.mirumi.es.model.requests.CasaRequest
 import es.mirumi.es.model.requests.GastoRequest
 import es.mirumi.es.model.requests.JoinCasaRequest
@@ -134,4 +135,15 @@ class RepositoryCasa(
         casaId: Long,
         gastoId: Long,
     ) = apiService.eliminarFotoTicket(token, casaId, gastoId)
+
+    suspend fun getRankingCasa(
+        token: String,
+        casaId: Long,
+    ): Response<List<UsuarioRankingDTO>>? =
+        try {
+            apiService.getRankingCasa(token, casaId)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
 }

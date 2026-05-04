@@ -9,6 +9,7 @@ import es.mirumi.es.model.responses.CasaDetailsResponseDTO
 import es.mirumi.es.model.responses.CasaResponse
 import es.mirumi.es.model.Casa
 import es.mirumi.es.model.dtos.BorradorGastoDTO
+import es.mirumi.es.model.dtos.UsuarioRankingDTO
 import es.mirumi.es.model.requests.PagoBizumRequest
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -125,4 +126,10 @@ interface CasaAPI {
         @Path("casaId") casaId: Long,
         @Path("gastoId") gastoId: Long,
     ): Response<Unit>
+
+    @GET("casas/{casaId}/ranking")
+    suspend fun getRankingCasa(
+        @Header("Authorization") token: String,
+        @Path("casaId") casaId: Long,
+    ): Response<List<UsuarioRankingDTO>>
 }

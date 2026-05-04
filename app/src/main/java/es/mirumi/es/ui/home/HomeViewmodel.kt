@@ -13,6 +13,7 @@ import es.mirumi.es.data.repository.repositories.RepositoryUsuario
 import es.mirumi.es.model.Evento
 import es.mirumi.es.model.Tarea
 import es.mirumi.es.model.Usuario
+import es.mirumi.es.model.dtos.UsuarioRankingDTO
 import es.mirumi.es.model.requests.eventRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -76,10 +77,14 @@ class HomeViewModel(
     private val _eventosDelMes = MutableStateFlow<List<Evento>>(emptyList())
     val eventosDelMes: StateFlow<List<Evento>> = _eventosDelMes
 
+    private val _topUser = MutableStateFlow<UsuarioRankingDTO?>(null)
+    val topUser: StateFlow<UsuarioRankingDTO?> = _topUser.asStateFlow()
+
     init {
         cargarEventos()
         cargarUsuario()
         cargarTareas()
+        cargarRankingResumen()
     }
 
     fun cargarUsuario() {
@@ -442,6 +447,23 @@ class HomeViewModel(
             "OCTOBER" -> return "Octubre"
             "NOVEMBER" -> return "Noviembre"
             else -> return "Diciembre"
+        }
+    }
+
+    fun cargarRankingResumen() {
+        viewModelScope.launch {
+            val token = sessionManager.fetchAuthToken() ?: return@launch
+            try {
+                val response = repository.getRankingCasa(token, casaId)
+                if (response != null && response.isSuccessful) {
+                    val ranking = response.body()
+                    if (!ranking.isNullOrEmpty()) {
+                        _topUser.value = ranking[0]
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Error cargando ranking resumen", e)
+            }
         }
     }
 }

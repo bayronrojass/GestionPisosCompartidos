@@ -25,8 +25,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.HowToVote
+import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -34,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -47,18 +48,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import es.mirumi.es.R
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.model.Evento
 import es.mirumi.es.model.Tarea
+import es.mirumi.es.model.dtos.UsuarioRankingDTO
 import es.mirumi.es.ui.navigation.Route
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModel
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModelFactory
@@ -83,6 +88,7 @@ fun HomeScreen(
     val houseName by viewModel.currentHouse.collectAsStateWithLifecycle()
     val selectedDate by viewModel.fechaSeleccionada.collectAsStateWithLifecycle()
     val next7days = viewModel.next7days()
+    val topUser by viewModel.topUser.collectAsStateWithLifecycle()
 
     val eventos by viewModel.eventos.collectAsStateWithLifecycle()
     val tareas by viewModel.tareasDelUsuario.collectAsStateWithLifecycle()
@@ -103,6 +109,18 @@ fun HomeScreen(
         }
     }
 
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) {
+                    viewModel.cargarRankingResumen()
+                }
+            }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     Scaffold {
         Box(modifier = Modifier.fillMaxSize()) {
             HomeContent(
@@ -118,6 +136,7 @@ fun HomeScreen(
                 tareas = tareas,
                 casaId = casaId,
                 navController = navController,
+                topUser = topUser,
             )
 
             ScrollToTopFloatingButton(
@@ -142,6 +161,7 @@ private fun HomeContent(
     tareas: List<Tarea>,
     casaId: Long,
     navController: NavController,
+    topUser: UsuarioRankingDTO?,
 ) {
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
@@ -156,7 +176,7 @@ private fun HomeContent(
         HeaderSection(userName = userName, houseName = houseName)
 
         RankingBannerSection(
-            casaId = casaId,
+            topUser = topUser,
             onClick = { navController.navigate(Route.Ranking.createRoute(casaId)) },
         )
 
@@ -218,7 +238,7 @@ private fun HomeContent(
 
 @Composable
 fun RankingBannerSection(
-    casaId: Long,
+    topUser: UsuarioRankingDTO?,
     onClick: () -> Unit,
 ) {
     Row(
@@ -227,7 +247,7 @@ fun RankingBannerSection(
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 8.dp)
                 .clip(RoundedCornerShape(15.dp))
-                .background(Color(0xFFFFD700).copy(alpha = 0.15f)) // Fondo dorado suave
+                .background(Color(0xFFFFD700).copy(alpha = 0.15f))
                 .clickable { onClick() }
                 .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -243,8 +263,11 @@ fun RankingBannerSection(
             Spacer(modifier = Modifier.width(12.dp))
             Column {
                 Text("Ranking de Convivencia", fontSize = 14.sp, color = Color.DarkGray, fontWeight = FontWeight.Bold)
-                // TODO: Esto vendrá del backend después
-                Text("🏆 Natalia lidera con 150 pts", fontSize = 12.sp, color = Color(0xFFCD7F32))
+                if (topUser != null) {
+                    Text("🏆 ${topUser.nombre} lidera con ${topUser.puntos} pts", fontSize = 12.sp, color = Color(0xFFCD7F32))
+                } else {
+                    Text("🏆 Cargando líder...", fontSize = 12.sp, color = Color(0xFFCD7F32))
+                }
             }
         }
         Icon(
@@ -278,7 +301,6 @@ fun EncuestasBannerSection(
                 modifier = Modifier.size(40.dp).background(Color(0xFF2196F3), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                // Usamos el icono HowToVote (urna de votación)
                 Icon(Icons.Default.HowToVote, contentDescription = "Encuestas", tint = Color.White)
             }
             Spacer(modifier = Modifier.width(12.dp))
@@ -296,7 +318,6 @@ fun EncuestasBannerSection(
     }
 }
 
-// (El resto de tus composables como HeaderSection, CalendarSection, etc. se quedan IGUAL, no los he modificado)
 @Composable
 private fun ScrollToTopFloatingButton(
     isVisible: Boolean,
@@ -370,7 +391,6 @@ fun HeaderSection(
     }
 }
 
-// --- Los demás composables (CalendarSection, DayItem, WeeklyEvents, etc.) se mantienen exactamente igual que en tu código original ---
 @Composable
 fun CalendarSection(
     list: List<LocalDateTime>,

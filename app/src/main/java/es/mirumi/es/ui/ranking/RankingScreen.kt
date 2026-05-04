@@ -16,34 +16,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import es.mirumi.es.model.dtos.UsuarioDTO // Asegúrate de que esta ruta sea correcta
-
-// --- DATO DE PRUEBA (Para ver cómo queda visualmente) ---
-// Todo esto lo reemplazaremos cuando hagas el GET al Backend
-data class UsuarioRanking(
-    val posicion: Int,
-    val usuario: UsuarioDTO,
-    val puntos: Int,
-)
-
-val rankingSimulado =
-    listOf(
-        UsuarioRanking(1, UsuarioDTO(1L, "Natalia", "nat@mail.com"), 250),
-        UsuarioRanking(2, UsuarioDTO(2L, "Manolo", "man@mail.com"), 180),
-        UsuarioRanking(3, UsuarioDTO(3L, "David", "dav@mail.com"), 120),
-        UsuarioRanking(4, UsuarioDTO(4L, "Paula", "pau@mail.com"), 50),
-    )
+import coil.compose.SubcomposeAsyncImage
+import es.mirumi.es.data.SessionManager
+import es.mirumi.es.model.dtos.UsuarioRankingDTO
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RankingScreen(
     navController: NavController,
     casaId: Long,
+    sessionManager: SessionManager = SessionManager(androidx.compose.ui.platform.LocalContext.current),
 ) {
+    val viewModel: RankingViewModel = viewModel(factory = RankingViewModelFactory(sessionManager, casaId))
+    val rankingLista by viewModel.ranking.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -73,18 +67,24 @@ fun RankingScreen(
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // --- EL PÓDIUM (Top 3) ---
-            PodiumSection(rankingSimulado.take(3))
+            if (isLoading) {
+                CircularProgressIndicator(color = Color(0xFF8061A2))
+            } else if (rankingLista.isEmpty()) {
+                Text("Aún no hay puntos en esta casa.", color = Color.Gray)
+            } else {
+                // --- EL PÓDIUM (Top 3) ---
+                PodiumSection(rankingLista.take(3))
 
-            Spacer(modifier = Modifier.height(40.dp))
+                Spacer(modifier = Modifier.height(40.dp))
 
-            // --- LISTA (El resto) ---
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                itemsIndexed(rankingSimulado.drop(3)) { index, item ->
-                    RankingListItem(item)
+                // --- LISTA (El resto, a partir del 4º puesto) ---
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    itemsIndexed(rankingLista.drop(3)) { _, item ->
+                        RankingListItem(item)
+                    }
                 }
             }
         }
@@ -92,26 +92,21 @@ fun RankingScreen(
 }
 
 @Composable
-fun PodiumSection(top3: List<UsuarioRanking>) {
+fun PodiumSection(top3: List<UsuarioRankingDTO>) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.Bottom, // Se alinean por abajo para que el pódium quede bien
+        verticalAlignment = Alignment.Bottom,
     ) {
-        // Segundo lugar (Plata)
         if (top3.size > 1) PodiumItem(top3[1], color = Color(0xFFC0C0C0), height = 120.dp)
-
-        // Primer lugar (Oro) - Más alto
         if (top3.isNotEmpty()) PodiumItem(top3[0], color = Color(0xFFFFD700), height = 160.dp, isWinner = true)
-
-        // Tercer lugar (Bronce)
         if (top3.size > 2) PodiumItem(top3[2], color = Color(0xFFCD7F32), height = 90.dp)
     }
 }
 
 @Composable
 fun PodiumItem(
-    user: UsuarioRanking,
+    user: UsuarioRankingDTO,
     color: Color,
     height: androidx.compose.ui.unit.Dp,
     isWinner: Boolean = false,
@@ -120,32 +115,49 @@ fun PodiumItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Bottom,
     ) {
-        // Avatar
+        val size = if (isWinner) 70.dp else 50.dp
+        val fontSize = if (isWinner) 24.sp else 18.sp
+
+        // Avatar (Foto o Inicial)
         Box(
             modifier =
                 Modifier
-                    .size(if (isWinner) 70.dp else 50.dp)
+                    .size(size)
                     .clip(CircleShape)
                     .background(Color(0xFF8061A2))
                     .border(3.dp, color, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                user.usuario.nombre
-                    .take(1)
-                    .uppercase(),
-                color = Color.White,
-                fontSize = if (isWinner) 24.sp else 18.sp,
-                fontWeight = FontWeight.Bold,
-            )
+            if (!user.fotoUrl.isNullOrEmpty()) {
+                SubcomposeAsyncImage(
+                    model =
+                        coil.request.ImageRequest
+                            .Builder(LocalContext.current)
+                            .data("${user.fotoUrl}?v=${System.currentTimeMillis()}")
+                            .crossfade(true)
+                            .build(),
+                    contentDescription = "Foto de perfil",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                    error = {
+                        Text(
+                            user.nombre.take(1).uppercase(),
+                            color = Color.White,
+                            fontSize = fontSize,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    },
+                )
+            } else {
+                Text(user.nombre.take(1).uppercase(), color = Color.White, fontSize = fontSize, fontWeight = FontWeight.Bold)
+            }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
-        Text(user.usuario.nombre, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        Text(user.nombre, fontWeight = FontWeight.Bold, fontSize = 14.sp)
         Text("${user.puntos} pts", color = Color.Gray, fontSize = 12.sp)
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Bloque del Pódium
         Box(
             modifier =
                 Modifier
@@ -167,7 +179,7 @@ fun PodiumItem(
 }
 
 @Composable
-fun RankingListItem(user: UsuarioRanking) {
+fun RankingListItem(user: UsuarioRankingDTO) {
     Row(
         modifier =
             Modifier
@@ -179,18 +191,31 @@ fun RankingListItem(user: UsuarioRanking) {
     ) {
         Text("${user.posicion}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Gray, modifier = Modifier.width(30.dp))
 
-        Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF8061A2)), contentAlignment = Alignment.Center) {
-            Text(
-                user.usuario.nombre
-                    .take(1)
-                    .uppercase(),
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-            )
+        // Avatar en lista (Foto o Inicial)
+        Box(
+            modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF8061A2)),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (!user.fotoUrl.isNullOrEmpty()) {
+                SubcomposeAsyncImage(
+                    model =
+                        coil.request.ImageRequest
+                            .Builder(LocalContext.current)
+                            .data("${user.fotoUrl}?v=${System.currentTimeMillis()}")
+                            .crossfade(true)
+                            .build(),
+                    contentDescription = "Foto de perfil",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                    error = { Text(user.nombre.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold) },
+                )
+            } else {
+                Text(user.nombre.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold)
+            }
         }
 
         Spacer(modifier = Modifier.width(16.dp))
-        Text(user.usuario.nombre, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+        Text(user.nombre, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("${user.puntos}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF8061A2))
