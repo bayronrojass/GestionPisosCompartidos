@@ -118,7 +118,7 @@ fun PodiumItem(
         val size = if (isWinner) 70.dp else 50.dp
         val fontSize = if (isWinner) 24.sp else 18.sp
 
-        // Avatar (Foto o Inicial)
+        // Avatar
         Box(
             modifier =
                 Modifier
@@ -191,7 +191,7 @@ fun RankingListItem(user: UsuarioRankingDTO) {
     ) {
         Text("${user.posicion}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Gray, modifier = Modifier.width(30.dp))
 
-        // Avatar en lista (Foto o Inicial)
+        // Avatar en lista
         Box(
             modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF8061A2)),
             contentAlignment = Alignment.Center,
