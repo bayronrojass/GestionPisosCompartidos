@@ -6,20 +6,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -27,41 +15,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.DirectionsBus
-import androidx.compose.material.icons.filled.DocumentScanner
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Lightbulb
-import androidx.compose.material.icons.filled.NoteAdd
-import androidx.compose.material.icons.filled.NotificationsActive
-import androidx.compose.material.icons.filled.RestaurantMenu
-import androidx.compose.material.icons.filled.SentimentSatisfiedAlt
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -102,7 +58,7 @@ val ColorMoradoOscuro = Color(0xFF58337F)
 fun GastosScreen(
     viewModel: GastosViewModel,
     casaId: Long,
-    sessionManager: SessionManager, // <-- Recibe el parámetro de MainTab
+    sessionManager: SessionManager,
 ) {
     val gastos by viewModel.gastos.collectAsState()
     val stats by viewModel.stats.collectAsState()
@@ -118,10 +74,22 @@ fun GastosScreen(
     val borrador by viewModel.borradorEscaneado.collectAsState()
     val context = LocalContext.current
 
+    var showSourceDialog by remember { mutableStateOf(false) }
+    var tempImageUri by remember { mutableStateOf<Uri?>(null) }
+
     val photoPickerLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.PickVisualMedia(),
         ) { uri: Uri? -> if (uri != null) viewModel.escanearTicketIA(context, uri) }
+
+    val cameraLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.TakePicture(),
+        ) { success ->
+            if (success && tempImageUri != null) {
+                viewModel.escanearTicketIA(context, tempImageUri!!)
+            }
+        }
 
     if (borrador != null) {
         NuevoGastoDialog(
@@ -166,15 +134,12 @@ fun GastosScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Gastos", fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                        Text("gastos", fontSize = 32.sp, fontWeight = FontWeight.Bold)
                         Text(
                             "Estadísticas",
                             fontSize = 14.sp,
                             textDecoration = TextDecoration.Underline,
-                            modifier =
-                                Modifier.clickable {
-                                    viewModel.toggleVista(true)
-                                },
+                            modifier = Modifier.clickable { viewModel.toggleVista(true) },
                         )
                     }
 
@@ -199,7 +164,7 @@ fun GastosScreen(
                                                 RoundedCornerShape(50),
                                             ).clickable { tabSeleccionado = 0 },
                                     contentAlignment = Alignment.Center,
-                                ) { Text("Gastos", fontWeight = FontWeight.Medium, fontSize = 14.sp) }
+                                ) { Text("gastos", fontWeight = FontWeight.Medium, fontSize = 14.sp) }
 
                                 Box(
                                     modifier =
@@ -278,6 +243,38 @@ fun GastosScreen(
                     }
                 }
             }
+
+            if (showSourceDialog) {
+                AlertDialog(
+                    onDismissRequest = { showSourceDialog = false },
+                    title = { Text("Escanear Ticket") },
+                    text = { Text("¿Desde dónde quieres obtener la foto del ticket?") },
+                    containerColor = Color.White,
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                showSourceDialog = false
+                                val uri = viewModel.createTempUri(context)
+                                tempImageUri = uri
+                                cameraLauncher.launch(uri)
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = ColorLila),
+                        ) {
+                            Text("Cámara", color = ColorMoradoOscuro)
+                        }
+                    },
+                    dismissButton = {
+                        OutlinedButton(
+                            onClick = {
+                                showSourceDialog = false
+                                photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                            },
+                        ) {
+                            Text("Galería", color = ColorMoradoOscuro)
+                        }
+                    },
+                )
+            }
         }
     }
 
@@ -286,19 +283,18 @@ fun GastosScreen(
             listOf(
                 FabActionItem(icon = Icons.Default.NoteAdd, label = "Crear Post-it", action = FabActionType.POST_IT),
                 FabActionItem(icon = Icons.Default.Add, label = "Crear Gasto Manual", action = FabActionType.CREAR_GASTO),
-                FabActionItem(icon = Icons.Default.DocumentScanner, label = "Escanear Ticket (IA)", action = FabActionType.ESCANEAR_TICKET),
+                FabActionItem(icon = Icons.Default.DocumentScanner, label = "Escanear Ticket", action = FabActionType.ESCANEAR_TICKET),
             )
 
         val keyStr =
             if (mostrarEstadisticas) {
-                "Gastos Estadisticas"
+                "gastos Estadisticas"
             } else if (tabSeleccionado == 0) {
-                "Gastos"
+                "gastos"
             } else {
-                "Gastos Saldo"
+                "gastos Saldo"
             }
 
-        // Pasa el sessionManager a la Pizarra 👇
         val model = viewModel<DraggableViewModel>(key = keyStr, factory = DraggableViewModelFactory(keyStr, casaId, sessionManager))
 
         PizarraScreen(
@@ -311,10 +307,9 @@ fun GastosScreen(
                         isEditing = false
                         showDialog = true
                     }
-                    FabActionType.ESCANEAR_TICKET ->
-                        photoPickerLauncher.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-                        )
+                    FabActionType.ESCANEAR_TICKET -> {
+                        showSourceDialog = true
+                    }
                     else -> {}
                 }
             },
@@ -322,10 +317,7 @@ fun GastosScreen(
     }
 }
 
-// =================================================================================
 // COMPONENTES SECUNDARIOS (Listas, Tarjetas, Diálogos)
-// =================================================================================
-
 @Composable
 fun VistaListaGastosContent(
     gastos: List<Gasto>,
@@ -540,10 +532,7 @@ fun DialogPlanPagos(
     )
 }
 
-// =================================================================================
 // VISTAS DETALLADAS DE GASTOS Y PARTICIPANTES
-// =================================================================================
-
 @Composable
 fun ItemGasto(
     gasto: Gasto,
@@ -810,10 +799,7 @@ fun ItemParticipante(
     }
 }
 
-// =================================================================================
 // UTILIDADES GRÁFICAS (Avatar y Estadísticas)
-// =================================================================================
-
 @Composable
 fun AvatarConFoto(
     nombre: String,

@@ -25,6 +25,7 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import uriToFile
+import java.io.File
 import kotlin.math.abs
 
 data class UsuarioPiso(
@@ -416,6 +417,25 @@ class GastosViewModel(
 
     fun limpiarMensajePago() {
         _mensajePago.value = null
+    }
+
+    fun createTempUri(context: Context): Uri {
+        val tempFile =
+            File
+                .createTempFile(
+                    "TICKET_ESCANER_",
+                    ".jpg",
+                    context.cacheDir,
+                ).apply {
+                    createNewFile()
+                    deleteOnExit()
+                }
+
+        return androidx.core.content.FileProvider.getUriForFile(
+            context,
+            "es.mirumi.es.fileprovider",
+            tempFile,
+        )
     }
 }
 
