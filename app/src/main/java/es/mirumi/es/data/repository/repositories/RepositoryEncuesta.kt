@@ -10,27 +10,22 @@ class RepositoryEncuesta(
 ) {
     private val api = NetworkModule.retrofit.create(EncuestaAPI::class.java)
 
-    // Esta función saca el token fresco de las preferencias CADA VEZ que se llama
-    private fun getAuthToken(): String {
-        val token = sessionManager.fetchAuthToken()
-        if (token.isNullOrEmpty()) {
-            println("⚠️ ALERTA: Intentando hacer petición de encuesta sin Token guardado.")
-            return ""
-        }
-        return token
-    }
+    // Funciones auxiliares para coger SIEMPRE los datos frescos
+    private fun getAuthToken(): String = sessionManager.fetchAuthToken() ?: ""
 
-    suspend fun obtenerEncuestas(casaId: Long) = api.obtenerEncuestas(getAuthToken(), casaId)
+    private fun getUserId(): Long = sessionManager.fetchCurrentUserId()
+
+    suspend fun obtenerEncuestas(casaId: Long) = api.obtenerEncuestas(getAuthToken(), getUserId(), casaId)
 
     suspend fun crearEncuesta(
         casaId: Long,
         request: EncuestaRequest,
-    ) = api.crearEncuesta(getAuthToken(), casaId, request)
+    ) = api.crearEncuesta(getAuthToken(), getUserId(), casaId, request)
 
     suspend fun votar(
         encuestaId: Long,
         opcionId: Long,
-    ) = api.votar(getAuthToken(), encuestaId, opcionId)
+    ) = api.votar(getAuthToken(), getUserId(), encuestaId, opcionId)
 
-    suspend fun cerrarEncuesta(encuestaId: Long) = api.cerrarEncuesta(getAuthToken(), encuestaId)
+    suspend fun cerrarEncuesta(encuestaId: Long) = api.cerrarEncuesta(getAuthToken(), getUserId(), encuestaId)
 }

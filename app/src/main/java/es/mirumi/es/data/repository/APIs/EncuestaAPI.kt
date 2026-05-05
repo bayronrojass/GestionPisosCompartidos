@@ -13,27 +13,31 @@ import retrofit2.http.Path
 interface EncuestaAPI {
     @POST("api/casa/{casaId}/lista-encuestas")
     suspend fun crearEncuesta(
-        @Header("Authorization") token: String, // <- AÑADIDO
+        @Header("Authorization") token: String,
+        @Header("X-User-Id") userId: Long, // <- AÑADIDO
         @Path("casaId") casaId: Long,
         @Body request: EncuestaRequest,
     ): Response<EncuestaResponse>
 
     @GET("api/casa/{casaId}/lista-encuestas")
     suspend fun obtenerEncuestas(
-        @Header("Authorization") token: String, // <- AÑADIDO
+        @Header("Authorization") token: String,
+        @Header("X-User-Id") userId: Long, // <- AÑADIDO
         @Path("casaId") casaId: Long,
     ): Response<List<EncuestaResponse>>
 
     @POST("api/encuestas/{encuestaId}/votar-opcion/{opcionId}")
     suspend fun votar(
-        @Header("Authorization") token: String, // <- AÑADIDO
+        @Header("Authorization") token: String,
+        @Header("X-User-Id") userId: Long, // <- AÑADIDO
         @Path("encuestaId") encuestaId: Long,
         @Path("opcionId") opcionId: Long,
     ): Response<Map<String, String>>
 
     @PUT("api/encuestas/{encuestaId}/cerrar-encuesta")
     suspend fun cerrarEncuesta(
-        @Header("Authorization") token: String, // <- AÑADIDO
+        @Header("Authorization") token: String,
+        @Header("X-User-Id") userId: Long, // <- AÑADIDO
         @Path("encuestaId") encuestaId: Long,
     ): Response<Map<String, String>>
 }
