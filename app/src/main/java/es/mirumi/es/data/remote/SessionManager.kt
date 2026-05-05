@@ -12,8 +12,6 @@ class SessionManager(
 ) {
     companion object {
         private const val PREFS_FILENAME = "es.mirumi.es.AUTH_PREFS"
-
-        // Claves
         private const val KEY_AUTH_TOKEN = "AUTH_TOKEN"
         private const val KEY_USER_ID = "USER_ID"
         private const val KEY_USER_EMAIL = "USER_EMAIL"

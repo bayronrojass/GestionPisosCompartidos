@@ -45,12 +45,12 @@ class DraggableViewModel(
             val newPostItStates =
                 postitIdsFromApi.map { dto ->
                     PostItState(
-                        id = dto.id!!,
+                        id = dto.id ?: 0L,
                         offset = Offset(dto.posicionX, dto.posicionY),
                         location = dto.localizacion,
                         lienzoId = dto.lienzoId ?: 0L,
                         isExpanded = _postIts.value.find { it.id == dto.id }?.isExpanded ?: false,
-                        tipo = dto.tipo,
+                        tipo = dto.tipo ?: "DIBUJO",
                         rutaAudio = dto.rutaAudio,
                     )
                 }
@@ -142,7 +142,6 @@ class DraggableViewModel(
                     location = location,
                     archivo = archivo,
                 )
-
                 syncPostIts()
             } catch (e: Exception) {
                 Log.e("AUDIO", "Error al crear el Post-it de audio: ${e.message}")
