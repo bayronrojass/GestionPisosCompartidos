@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
 
 class DraggableViewModel(
     private val casaId: Long,
@@ -47,8 +48,10 @@ class DraggableViewModel(
                         id = dto.id!!,
                         offset = Offset(dto.posicionX, dto.posicionY),
                         location = dto.localizacion,
-                        lienzoId = dto.lienzoId!!,
+                        lienzoId = dto.lienzoId ?: 0L,
                         isExpanded = _postIts.value.find { it.id == dto.id }?.isExpanded ?: false,
+                        tipo = dto.tipo,
+                        rutaAudio = dto.rutaAudio,
                     )
                 }
             _postIts.value = newPostItStates
@@ -127,6 +130,22 @@ class DraggableViewModel(
                 } catch (e: Exception) {
                     Log.e("DRAG_END", "Error al actualizar la posición del Post-it: ${e.message}")
                 }
+            }
+        }
+    }
+
+    fun crearPostItDeAudio(archivo: File) {
+        viewModelScope.launch {
+            try {
+                postItRepository.createAudioPostIt(
+                    casaId = casaId,
+                    location = location,
+                    archivo = archivo,
+                )
+
+                syncPostIts()
+            } catch (e: Exception) {
+                Log.e("AUDIO", "Error al crear el Post-it de audio: ${e.message}")
             }
         }
     }

@@ -167,5 +167,6 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("androidx.navigation:navigation-fragment-ktx:2.9.5")
     implementation("androidx.compose.material:material-icons-extended:1.5.4")
+    implementation("com.google.accompanist:accompanist-permissions:0.34.0")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }

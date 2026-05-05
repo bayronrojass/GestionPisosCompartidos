@@ -8,4 +8,6 @@ open class PostItDTO(
     val width: Int = 0,
     val height: Int = 0,
     val localizacion: String,
+    val tipo: String = "DIBUJO",
+    val rutaAudio: String? = null,
 )

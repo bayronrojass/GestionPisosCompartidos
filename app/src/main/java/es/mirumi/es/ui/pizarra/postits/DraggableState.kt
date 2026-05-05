@@ -8,4 +8,6 @@ data class PostItState(
     val location: String = "",
     val lienzoId: Long = 0,
     val isExpanded: Boolean = false,
+    val tipo: String = "DIBUJO",
+    val rutaAudio: String? = null,
 )

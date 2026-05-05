@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.outlined.Circle
@@ -51,6 +52,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.model.Elemento
+import es.mirumi.es.ui.pizarra.postits.DialogoGrabarAudio // Asegúrate de que esta ruta coincida con tu proyecto
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModel
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModelFactory
 import es.mirumi.es.ui.pizarra.postits.PizarraScreen
@@ -83,6 +85,9 @@ fun ItemScreen(
     var showEditDialog by remember { mutableStateOf<Elemento?>(null) }
     var showDeleteDialog by remember { mutableStateOf<Elemento?>(null) }
 
+    // 🔴 NUEVO ESTADO PARA EL DIÁLOGO DE AUDIO 🔴
+    var showAudioDialog by remember { mutableStateOf(false) }
+
     val itemsOrdenados =
         remember(items) {
             items.sortedWith(
@@ -102,14 +107,22 @@ fun ItemScreen(
             factory = DraggableViewModelFactory(postItKey, casaId, sessionManager),
         )
 
+    // 🔴 LA CLAVE MAGICA: Lista con DOS opciones para que el MultiFAB se despliegue 🔴
     val pizarraFabActions =
-        listOf(
-            FabActionItem(
-                icon = Icons.Default.NoteAdd,
-                label = "Crear Post-it",
-                action = FabActionType.POST_IT,
-            ),
-        )
+        remember {
+            listOf(
+                FabActionItem(
+                    icon = Icons.Default.NoteAdd,
+                    label = "Crear Post-it",
+                    action = FabActionType.POST_IT,
+                ),
+                FabActionItem(
+                    icon = Icons.Default.Mic,
+                    label = "Nota de Voz",
+                    action = FabActionType.AUDIO_NOTA,
+                ),
+            )
+        }
 
     Scaffold(
         containerColor = BackgroundGray,
@@ -157,7 +170,7 @@ fun ItemScreen(
                     )
                 }
 
-                // Input para añadir nuevo elemento (Botón y texto SEPARADOS)
+                // Input para añadir nuevo elemento
                 AddItemRow(
                     modifier =
                         Modifier
@@ -205,12 +218,20 @@ fun ItemScreen(
                 }
             }
 
+            // 🔴 LA PIZARRA CON EL MULTIFAB 🔴
             PizarraScreen(
                 viewModel = draggableViewModel,
                 fabActions = pizarraFabActions,
                 onFabActionSelected = { action ->
-                    if (action.action == FabActionType.POST_IT) {
-                        draggableViewModel.addNewPostIt()
+                    when (action.action) {
+                        FabActionType.POST_IT -> {
+                            draggableViewModel.addNewPostIt()
+                        }
+                        FabActionType.AUDIO_NOTA -> {
+                            // AQUÍ MOSTRAMOS EL DIÁLOGO DE GRABAR AUDIO
+                            showAudioDialog = true
+                        }
+                        else -> {}
                     }
                 },
             )
@@ -249,10 +270,22 @@ fun ItemScreen(
             },
         )
     }
+
+    // 🔴 DIÁLOGO DE AUDIO: Cuando showAudioDialog es true, se pinta el popup 🔴
+    if (showAudioDialog) {
+        DialogoGrabarAudio(
+            onDismiss = { showAudioDialog = false },
+            onAudioGrabado = { archivoFisico ->
+                showAudioDialog = false
+                // Aquí llamamos a la función que sube el archivo al servidor (asegúrate de que existe en DraggableViewModel)
+                draggableViewModel.crearPostItDeAudio(archivoFisico)
+            },
+        )
+    }
 }
 
 // ==========================================
-// COMPONENTES UI
+// COMPONENTES UI (Se mantienen igual que los tenías)
 // ==========================================
 
 @Composable
@@ -263,21 +296,18 @@ fun AddItemRow(
     var text by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
 
-    // CORRECCIÓN: Usamos Row como contenedor principal para separar Texto y Botón
     Row(
-        modifier = modifier, // El padding externo se aplica aquí
+        modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // 1. CAJA DE TEXTO (Con borde discontinuo)
-        // Ocupa todo el espacio disponible menos el del botón
         Box(
             modifier =
                 Modifier
                     .weight(1f)
-                    .height(50.dp) // Altura fija para buen aspecto visual
+                    .height(50.dp)
                     .clip(RoundedCornerShape(15.dp))
                     .background(Color.White)
-                    .dashedBorder(1.dp, GrayText, 15.dp) // Borde SOLO aquí
+                    .dashedBorder(1.dp, GrayText, 15.dp)
                     .padding(horizontal = 16.dp),
             contentAlignment = Alignment.CenterStart,
         ) {
@@ -306,16 +336,14 @@ fun AddItemRow(
             )
         }
 
-        Spacer(modifier = Modifier.width(12.dp)) // Separación visual
+        Spacer(modifier = Modifier.width(12.dp))
 
-        // 2. BOTÓN DE AÑADIR (Fuera del borde, independiente)
-        // Usamos Box + clickable en lugar de IconButton para control total del tamaño
         Box(
             modifier =
                 Modifier
-                    .size(24.dp) // Tamaño fijo y pequeño (círculo exterior)
+                    .size(24.dp)
                     .clip(CircleShape)
-                    .background(Color.White) // Fondo blanco para tapar líneas si las hubiera
+                    .background(Color.White)
                     .border(1.dp, GrayText, CircleShape)
                     .clickable {
                         if (text.isNotBlank()) {
@@ -336,7 +364,6 @@ fun AddItemRow(
     }
 }
 
-// Función auxiliar para crear el borde discontinuo
 fun Modifier.dashedBorder(
     strokeWidth: Dp,
     color: Color,

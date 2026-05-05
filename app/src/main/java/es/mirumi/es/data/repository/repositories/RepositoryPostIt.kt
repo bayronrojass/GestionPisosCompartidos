@@ -6,6 +6,11 @@ import es.mirumi.es.data.remote.RemoteRepository
 import es.mirumi.es.data.repository.APIs.PostItAPI
 import es.mirumi.es.model.dtos.PostItDTO
 import es.mirumi.es.utils.ApiResult
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.File
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 
 class RepositoryPostIt {
     private val repository = RemoteRepository(NetworkModule.retrofit.create(PostItAPI::class.java))
@@ -117,6 +122,34 @@ class RepositoryPostIt {
 
             is ApiResult.Throws -> {
                 Log.e("Postit", "Throws eliminando postit " + request.exception.message)
+                return null
+            }
+        }
+    }
+
+    suspend fun createAudioPostIt(
+        casaId: Long,
+        location: String,
+        archivo: File,
+    ): PostItDTO? {
+        // Preparamos los datos para ser enviados por red
+        val locationBody = location.toRequestBody("text/plain".toMediaTypeOrNull())
+        val requestFile = archivo.asRequestBody("audio/mp4".toMediaTypeOrNull())
+        val filePart = MultipartBody.Part.createFormData("file", archivo.name, requestFile)
+
+        val request = repository.request { crearPostItAudio(casaId, locationBody, filePart) }
+
+        when (request) {
+            is ApiResult.Error -> {
+                Log.e("Postit", "Error creando postit de audio: " + request.message + " " + request.code)
+                return null
+            }
+            is ApiResult.Success<PostItDTO> -> {
+                Log.d("Postit", "Postit de audio creado con ID: " + request.data.id)
+                return request.data
+            }
+            is ApiResult.Throws -> {
+                Log.e("Postit", "Throws creando postit de audio: " + request.exception.message)
                 return null
             }
         }

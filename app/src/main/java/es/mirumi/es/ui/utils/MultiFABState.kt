@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 enum class FabActionType {
     POST_IT,
+    AUDIO_NOTA,
     CREAR_GASTO,
     CREAR_LISTA,
     CREAR_TAREA,
