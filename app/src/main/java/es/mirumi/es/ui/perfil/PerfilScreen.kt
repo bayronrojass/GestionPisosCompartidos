@@ -171,7 +171,7 @@ fun PerfilScreen(
                                     coil.request.ImageRequest
                                         .Builder(
                                             LocalContext.current,
-                                        ).data("$fotoUrl?v=${System.currentTimeMillis()}")
+                                        ).data(fotoUrl)
                                         .crossfade(true)
                                         .build(),
                                 contentDescription = "Foto",

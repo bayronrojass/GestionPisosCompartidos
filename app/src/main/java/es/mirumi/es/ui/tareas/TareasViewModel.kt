@@ -96,10 +96,14 @@ class TareasViewModel(
         }
     }
 
-    fun toggleCompletado(tarea: Tarea) {
+    fun toggleCompletado(
+        tarea: Tarea,
+        onCompletada: () -> Unit = {},
+    ) {
         viewModelScope.launch {
+            val marcandoComoCompletada = !tarea.completado
             val nuevaFechaFin =
-                if (!tarea.completado) {
+                if (marcandoComoCompletada) {
                     val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
                     sdf.format(Date())
                 } else {
@@ -109,7 +113,7 @@ class TareasViewModel(
                 TareaRequest(
                     tarea.nombre,
                     tarea.descripcion,
-                    !tarea.completado,
+                    marcandoComoCompletada,
                     nuevaFechaFin,
                     tarea.frecuencia,
                     tarea.periodica,
@@ -120,6 +124,10 @@ class TareasViewModel(
             try {
                 repository.actualizarTarea(tarea.id, request)
                 cargarTareas()
+
+                if (marcandoComoCompletada) {
+                    onCompletada()
+                }
             } catch (e: Exception) {
                 Log.e("TareasViewModel", "Error en toggleCompletado", e)
                 _error.value = e.message
@@ -150,7 +158,6 @@ class TareasViewModel(
         creadoPor: Long?,
     ) {
         viewModelScope.launch {
-            // Si asignadoAId es null, enviamos -1L, de lo contrario enviamos el ID real
             val idParaEnviar = asignadoAId ?: -1L
             val esPeriodica = !nuevaFrecuencia.isNullOrBlank()
             val request =

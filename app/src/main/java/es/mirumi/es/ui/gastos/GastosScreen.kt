@@ -815,7 +815,7 @@ fun AvatarConFoto(
                 model =
                     ImageRequest
                         .Builder(LocalContext.current)
-                        .data("$fotoUrl?v=${System.currentTimeMillis()}")
+                        .data(fotoUrl)
                         .crossfade(true)
                         .build(),
                 contentDescription = "Foto",
