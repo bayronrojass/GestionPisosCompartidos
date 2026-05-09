@@ -31,6 +31,7 @@ import kotlin.math.abs
 data class UsuarioPiso(
     val id: Long,
     val nombre: String,
+    val fotoUrl: String?,
 )
 
 data class PieChartData(
@@ -44,12 +45,14 @@ data class SaldoUsuario(
     val nombre: String,
     val cantidad: Double,
     val colorAvatar: Color,
+    val fotoUrl: String?,
 )
 
 data class ParticipantePago(
     val nombre: String,
     val cantidad: Double,
     val colorAvatar: Color,
+    val fotoUrl: String?,
 )
 
 class GastosViewModel(
@@ -112,16 +115,23 @@ class GastosViewModel(
         cargarGastos()
     }
 
-    private fun cargarUsuariosCasa() {
+    fun getFotoPorNombre(nombre: String): String? = _usuariosDetectados.value.find { it.nombre == nombre }?.fotoUrl
+
+    fun cargarUsuariosCasa() {
         viewModelScope.launch {
             val token = sessionManager.fetchAuthToken() ?: return@launch
             val miId = sessionManager.fetchCurrentUserId()
             try {
                 val response = repository.getPisoMiembros(token, casaId)
                 if (response.isSuccessful) {
-                    val miembros = response.body()?.map { UsuarioPiso(it.id, it.nombre) } ?: emptyList()
+                    val miembros = response.body()?.map { UsuarioPiso(it.id, it.nombre, it.fotoUrl) } ?: emptyList()
                     _usuariosDetectados.value = miembros
                     _miNombre.value = miembros.find { it.id == miId }?.nombre ?: ""
+
+                    if (listaCompleta.isNotEmpty()) {
+                        calcularEstadisticas(listaCompleta)
+                        calcularSaldosYPlanPagos(listaCompleta)
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("GASTOS", "Error cargando miembros: ${e.message}")
@@ -165,7 +175,7 @@ class GastosViewModel(
         categoria: String,
         beneficiarios: List<String>,
         pagadorId: Long,
-        onSuccess: () -> Unit = {}
+        onSuccess: () -> Unit = {},
     ) {
         viewModelScope.launch {
             val token = sessionManager.fetchAuthToken() ?: return@launch
@@ -259,7 +269,7 @@ class GastosViewModel(
         val saldosCalculados =
             balances
                 .map { (nombre, balance) ->
-                    SaldoUsuario(nombre, balance, getColorPorNombreDinamico(nombre))
+                    SaldoUsuario(nombre, balance, getColorPorNombreDinamico(nombre), getFotoPorNombre(nombre))
                 }.sortedByDescending { it.cantidad }
 
         _saldos.value = saldosCalculados
@@ -329,7 +339,7 @@ class GastosViewModel(
 
         val cuota = gasto.importe / beneficiariosDelGasto.size
         return beneficiariosDelGasto.map { nombre ->
-            ParticipantePago(nombre, cuota, getColorPorNombreDinamico(nombre))
+            ParticipantePago(nombre, cuota, getColorPorNombreDinamico(nombre), getFotoPorNombre(nombre))
         }
     }
 
@@ -368,7 +378,7 @@ class GastosViewModel(
         acreedorId: Long,
         cantidad: Double,
         gastoId: Long? = null,
-        onSuccess: () -> Unit = {}
+        onSuccess: () -> Unit = {},
     ) {
         viewModelScope.launch {
             try {

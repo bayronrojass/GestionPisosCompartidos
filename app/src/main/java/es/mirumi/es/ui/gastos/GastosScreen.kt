@@ -58,11 +58,12 @@ val ColorRojoSaldo = Color(0xFFFF1744)
 val ColorTextoGris = Color(0xFF6C6C6C)
 val ColorMoradoOscuro = Color(0xFF58337F)
 
-fun android.content.Context.getActivity(): ComponentActivity? = when (this) {
-    is ComponentActivity -> this
-    is ContextWrapper -> baseContext.getActivity()
-    else -> null
-}
+fun android.content.Context.getActivity(): ComponentActivity? =
+    when (this) {
+        is ComponentActivity -> this
+        is ContextWrapper -> baseContext.getActivity()
+        else -> null
+    }
 
 @Composable
 fun GastosScreen(
@@ -84,20 +85,35 @@ fun GastosScreen(
     val borrador by viewModel.borradorEscaneado.collectAsState()
     val context = LocalContext.current
 
-    val activity = remember(context) {
-        var ctx = context
-        while (ctx is ContextWrapper) {
-            if (ctx is ComponentActivity) break
-            ctx = ctx.baseContext
+    val activity =
+        remember(context) {
+            var ctx = context
+            while (ctx is ContextWrapper) {
+                if (ctx is ComponentActivity) break
+                ctx = ctx.baseContext
+            }
+            ctx as? ComponentActivity
         }
-        ctx as? ComponentActivity
-    }
 
-    val logrosGlobalViewModel: LogrosGlobalViewModel? = activity?.let {
-        viewModel(
-            viewModelStoreOwner = it,
-            factory = remember { LogrosGlobalViewModelFactory(sessionManager) }
-        )
+    val logrosGlobalViewModel: LogrosGlobalViewModel? =
+        activity?.let {
+            viewModel(
+                viewModelStoreOwner = it,
+                factory = remember { LogrosGlobalViewModelFactory(sessionManager) },
+            )
+        }
+
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer =
+            androidx.lifecycle.LifecycleEventObserver { _, event ->
+                if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                    viewModel.cargarUsuariosCasa()
+                    viewModel.cargarGastos()
+                }
+            }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     var showSourceDialog by remember { mutableStateOf(false) }
@@ -247,7 +263,7 @@ fun GastosScreen(
                         if (isEditing && gastoSeleccionado != null) {
                             viewModel.editarGasto(gastoSeleccionado!!.id, nombre, importe, categoria, beneficiarios, pagadoPorTodos)
                         } else {
-                            viewModel.crearGasto(nombre, importe, categoria, beneficiarios, pagadoPorTodos){
+                            viewModel.crearGasto(nombre, importe, categoria, beneficiarios, pagadoPorTodos) {
                                 logrosGlobalViewModel?.comprobarNuevosLogros(silencioso = false)
                             }
                         }
@@ -434,7 +450,7 @@ fun ItemSaldo(saldo: SaldoUsuario) {
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                AvatarConInicial(saldo.nombre, saldo.colorAvatar)
+                AvatarConFoto(saldo.nombre, saldo.colorAvatar, saldo.fotoUrl)
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(saldo.nombre, fontSize = 16.sp, fontWeight = FontWeight.Medium)
             }
@@ -460,12 +476,13 @@ fun DialogPlanPagos(
     val context = LocalContext.current
 
     val activity = context.getActivity()
-    val logrosGlobalViewModel: LogrosGlobalViewModel? = activity?.let {
-        viewModel(
-            viewModelStoreOwner = it,
-            factory = remember { LogrosGlobalViewModelFactory(SessionManager(context)) }
-        )
-    }
+    val logrosGlobalViewModel: LogrosGlobalViewModel? =
+        activity?.let {
+            viewModel(
+                viewModelStoreOwner = it,
+                factory = remember { LogrosGlobalViewModelFactory(SessionManager(context)) },
+            )
+        }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -491,14 +508,24 @@ fun DialogPlanPagos(
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                     ) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                            AvatarConInicial(deuda.de, viewModel.getColorPorNombreDinamico(deuda.de), 30.dp)
+                                            AvatarConFoto(
+                                                deuda.de,
+                                                viewModel.getColorPorNombreDinamico(deuda.de),
+                                                viewModel.getFotoPorNombre(deuda.de),
+                                                30.dp,
+                                            )
                                             Icon(
                                                 Icons.Default.ArrowForward,
                                                 contentDescription = "Paga a",
                                                 modifier = Modifier.padding(horizontal = 8.dp).size(16.dp),
                                                 tint = ColorTextoGris,
                                             )
-                                            AvatarConInicial(deuda.para, viewModel.getColorPorNombreDinamico(deuda.para), 30.dp)
+                                            AvatarConFoto(
+                                                deuda.para,
+                                                viewModel.getColorPorNombreDinamico(deuda.para),
+                                                viewModel.getFotoPorNombre(deuda.para),
+                                                30.dp,
+                                            )
                                         }
                                         Text(
                                             "${String.format("%.2f", deuda.cantidad)}€",
@@ -527,9 +554,8 @@ fun DialogPlanPagos(
                                                                     viewModel.realizarPago(
                                                                         acreedorId = acreedor.id,
                                                                         cantidad = deuda.cantidad,
-                                                                    ){
+                                                                    ) {
                                                                         logrosGlobalViewModel?.comprobarNuevosLogros(silencioso = false)
-
                                                                     }
                                                                 }
                                                             }.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -607,7 +633,9 @@ fun ItemGasto(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (pagadorNombre != null) {
                         val colorAvatar = viewModel.getColorPorNombreDinamico(pagadorNombre)
-                        AvatarConFoto(pagadorNombre, colorAvatar, gasto.pagadoPorFotoUrl, 24.dp)
+                        val fotoAvatar = viewModel.getFotoPorNombre(pagadorNombre)
+
+                        AvatarConFoto(pagadorNombre, colorAvatar, fotoAvatar, 24.dp)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Pagado por: $pagadorNombre", fontSize = 13.sp, color = ColorTextoGris)
                     } else {
@@ -687,7 +715,9 @@ fun VistaDetalleGasto(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (pagadorNombre != null) {
                             val colorAvatar = viewModel.getColorPorNombreDinamico(pagadorNombre)
-                            AvatarConFoto(pagadorNombre, colorAvatar, gasto.pagadoPorFotoUrl, 36.dp)
+                            val fotoAvatar = viewModel.getFotoPorNombre(pagadorNombre)
+
+                            AvatarConFoto(pagadorNombre, colorAvatar, fotoAvatar, 36.dp)
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(pagadorNombre, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         } else {
@@ -766,12 +796,13 @@ fun ItemParticipante(
     val context = LocalContext.current
 
     val activity = context.getActivity()
-    val logrosGlobalViewModel: LogrosGlobalViewModel? = activity?.let {
-        viewModel(
-            viewModelStoreOwner = it,
-            factory = remember { LogrosGlobalViewModelFactory(SessionManager(context)) }
-        )
-    }
+    val logrosGlobalViewModel: LogrosGlobalViewModel? =
+        activity?.let {
+            viewModel(
+                viewModelStoreOwner = it,
+                factory = remember { LogrosGlobalViewModelFactory(SessionManager(context)) },
+            )
+        }
 
     val esElPagadorDeLaFila = part.nombre == pagadorPrincipal
     val soyElPagadorPrincipal = miNombre == pagadorPrincipal
@@ -789,7 +820,7 @@ fun ItemParticipante(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                AvatarConInicial(part.nombre, part.colorAvatar, 36.dp)
+                AvatarConFoto(part.nombre, part.colorAvatar, part.fotoUrl, 36.dp)
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(part.nombre, fontSize = 16.sp, fontWeight = FontWeight.Medium)
@@ -830,7 +861,7 @@ fun ItemParticipante(
                                             viewModel.realizarPago(
                                                 acreedorId = acreedor.id,
                                                 cantidad = part.cantidad,
-                                                gastoId = gasto.id
+                                                gastoId = gasto.id,
                                             ) {
                                                 logrosGlobalViewModel?.comprobarNuevosLogros(silencioso = false)
                                             }
@@ -863,6 +894,21 @@ fun AvatarConFoto(
     size: Dp = 40.dp,
 ) {
     val inicial = nombre.firstOrNull()?.toString()?.uppercase() ?: "?"
+
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    var cacheKey by remember { mutableStateOf(System.currentTimeMillis()) }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer =
+            androidx.lifecycle.LifecycleEventObserver { _, event ->
+                if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                    cacheKey = System.currentTimeMillis()
+                }
+            }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     Box(modifier = Modifier.size(size).clip(CircleShape).background(colorFondo), contentAlignment = Alignment.Center) {
         Text(text = inicial, color = Color.White, fontWeight = FontWeight.Bold, fontSize = if (size < 30.dp) 12.sp else 16.sp)
         if (!fotoUrl.isNullOrEmpty() && !nombre.startsWith("Varios")) {
@@ -870,7 +916,7 @@ fun AvatarConFoto(
                 model =
                     ImageRequest
                         .Builder(LocalContext.current)
-                        .data(fotoUrl)
+                        .data("$fotoUrl?v=$cacheKey")
                         .crossfade(true)
                         .build(),
                 contentDescription = "Foto",
