@@ -44,6 +44,10 @@ import es.mirumi.es.ui.utils.BizumUtils
 import es.mirumi.es.ui.utils.FabActionItem
 import es.mirumi.es.ui.utils.FabActionType
 import es.mirumi.es.utils.Deuda
+import android.content.ContextWrapper
+import androidx.activity.ComponentActivity
+import es.mirumi.es.ui.utils.LogrosGlobalViewModel
+import es.mirumi.es.ui.utils.LogrosGlobalViewModelFactory
 
 val ColorFondo = Color(0xFFF8F8F8)
 val ColorLila = Color(0xFFDDC1FB)
@@ -53,6 +57,12 @@ val ColorVerdeSaldo = Color(0xFF00C853)
 val ColorRojoSaldo = Color(0xFFFF1744)
 val ColorTextoGris = Color(0xFF6C6C6C)
 val ColorMoradoOscuro = Color(0xFF58337F)
+
+fun android.content.Context.getActivity(): ComponentActivity? = when (this) {
+    is ComponentActivity -> this
+    is ContextWrapper -> baseContext.getActivity()
+    else -> null
+}
 
 @Composable
 fun GastosScreen(
@@ -73,6 +83,22 @@ fun GastosScreen(
     val isScanning by viewModel.isScanningTicket.collectAsState()
     val borrador by viewModel.borradorEscaneado.collectAsState()
     val context = LocalContext.current
+
+    val activity = remember(context) {
+        var ctx = context
+        while (ctx is ContextWrapper) {
+            if (ctx is ComponentActivity) break
+            ctx = ctx.baseContext
+        }
+        ctx as? ComponentActivity
+    }
+
+    val logrosGlobalViewModel: LogrosGlobalViewModel? = activity?.let {
+        viewModel(
+            viewModelStoreOwner = it,
+            factory = remember { LogrosGlobalViewModelFactory(sessionManager) }
+        )
+    }
 
     var showSourceDialog by remember { mutableStateOf(false) }
     var tempImageUri by remember { mutableStateOf<Uri?>(null) }
@@ -221,7 +247,9 @@ fun GastosScreen(
                         if (isEditing && gastoSeleccionado != null) {
                             viewModel.editarGasto(gastoSeleccionado!!.id, nombre, importe, categoria, beneficiarios, pagadoPorTodos)
                         } else {
-                            viewModel.crearGasto(nombre, importe, categoria, beneficiarios, pagadoPorTodos)
+                            viewModel.crearGasto(nombre, importe, categoria, beneficiarios, pagadoPorTodos){
+                                logrosGlobalViewModel?.comprobarNuevosLogros(silencioso = false)
+                            }
                         }
                         showDialog = false
                         if (isEditing) gastoSeleccionado = null
@@ -430,6 +458,15 @@ fun DialogPlanPagos(
     miNombre: String,
 ) {
     val context = LocalContext.current
+
+    val activity = context.getActivity()
+    val logrosGlobalViewModel: LogrosGlobalViewModel? = activity?.let {
+        viewModel(
+            viewModelStoreOwner = it,
+            factory = remember { LogrosGlobalViewModelFactory(SessionManager(context)) }
+        )
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Plan de Pagos", fontSize = 20.sp, fontWeight = FontWeight.Bold) },
@@ -490,7 +527,10 @@ fun DialogPlanPagos(
                                                                     viewModel.realizarPago(
                                                                         acreedorId = acreedor.id,
                                                                         cantidad = deuda.cantidad,
-                                                                    )
+                                                                    ){
+                                                                        logrosGlobalViewModel?.comprobarNuevosLogros(silencioso = false)
+
+                                                                    }
                                                                 }
                                                             }.padding(horizontal = 12.dp, vertical = 8.dp),
                                                 ) {
@@ -725,6 +765,14 @@ fun ItemParticipante(
 ) {
     val context = LocalContext.current
 
+    val activity = context.getActivity()
+    val logrosGlobalViewModel: LogrosGlobalViewModel? = activity?.let {
+        viewModel(
+            viewModelStoreOwner = it,
+            factory = remember { LogrosGlobalViewModelFactory(SessionManager(context)) }
+        )
+    }
+
     val esElPagadorDeLaFila = part.nombre == pagadorPrincipal
     val soyElPagadorPrincipal = miNombre == pagadorPrincipal
     val soyEsteParticipante = miNombre == part.nombre
@@ -778,7 +826,14 @@ fun ItemParticipante(
                                         val acreedor = viewModel.usuariosDetectados.value.find { it.nombre == pagadorPrincipal }
                                         if (acreedor != null) {
                                             BizumUtils.abrirAppBancariaParaBizum(context, null, part.cantidad)
-                                            viewModel.realizarPago(acreedorId = acreedor.id, cantidad = part.cantidad, gastoId = gasto.id)
+
+                                            viewModel.realizarPago(
+                                                acreedorId = acreedor.id,
+                                                cantidad = part.cantidad,
+                                                gastoId = gasto.id
+                                            ) {
+                                                logrosGlobalViewModel?.comprobarNuevosLogros(silencioso = false)
+                                            }
                                         }
                                     }.padding(horizontal = 8.dp, vertical = 6.dp),
                         ) { Text("Bizum", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold) }

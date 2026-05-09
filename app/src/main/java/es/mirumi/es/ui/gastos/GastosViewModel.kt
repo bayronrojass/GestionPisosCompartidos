@@ -159,13 +159,13 @@ class GastosViewModel(
         _gastos.value = if (categoria == "TODOS") listaCompleta else listaCompleta.filter { it.categoria == categoria }
     }
 
-    // --- NUEVA LÓGICA: SOPORTA DECIDIR QUIÉN PAGA ---
     fun crearGasto(
         nombre: String,
         importe: String,
         categoria: String,
         beneficiarios: List<String>,
         pagadorId: Long,
+        onSuccess: () -> Unit = {}
     ) {
         viewModelScope.launch {
             val token = sessionManager.fetchAuthToken() ?: return@launch
@@ -185,7 +185,10 @@ class GastosViewModel(
                 )
 
             try {
-                if (repository.crearGasto(token, casaId, request).isSuccessful) cargarGastos()
+                if (repository.crearGasto(token, casaId, request).isSuccessful) {
+                    cargarGastos()
+                    onSuccess()
+                }
             } catch (e: Exception) {
                 Log.e("GASTOS", "Excepción creando gasto: ${e.message}")
             }
@@ -291,7 +294,6 @@ class GastosViewModel(
             return
         }
 
-        // Recolectar lo que ha pagado cada persona en toda la historia (incluyendo gastos a medias)
         val pagosPorPersona = mutableMapOf<String, Double>()
         lista.forEach { gasto ->
             if (!gasto.aportaciones.isNullOrEmpty()) {
@@ -366,6 +368,7 @@ class GastosViewModel(
         acreedorId: Long,
         cantidad: Double,
         gastoId: Long? = null,
+        onSuccess: () -> Unit = {}
     ) {
         viewModelScope.launch {
             try {
@@ -373,6 +376,7 @@ class GastosViewModel(
                 if (repository.notificarPagoBizum(sessionManager.fetchAuthToken() ?: "", casaId, req).isSuccessful) {
                     _mensajePago.value = "Pago notificado. Esperando confirmación del receptor."
                     cargarGastos()
+                    onSuccess()
                 }
             } catch (e: Exception) {
                 _mensajePago.value = "Error de red al procesar el pago"
