@@ -122,7 +122,7 @@ fun ListaCasasScreen(
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(bottom = 80.dp)) {
                     items(uiState.casas, key = { it.id }) { casa ->
                         CasaCard(casa) {
-                            sessionManager.saveCasaActivaId(casa.id)
+                            sessionManager.saveCasaActiva(casa.id, casa.nombre)
                             navController.navigate(Route.Home.createRoute(casa.id, casa.nombre))
                         }
                     }
@@ -246,7 +246,6 @@ private fun handleQrAction(
             return
         }
 
-        // Hacemos la llamada al backend con retrofit
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val token = sm.fetchAuthToken() ?: ""

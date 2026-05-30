@@ -15,14 +15,12 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-// Estado visual de la pantalla
 data class InvitacionesUiState(
     val isLoading: Boolean = false,
     val invitaciones: List<InvitacionResponse> = emptyList(),
     val error: String? = null,
 )
 
-// Eventos de un solo uso (Navegación y Toasts)
 sealed class InvitacionEvent {
     data class ShowToast(
         val message: String,
@@ -101,12 +99,9 @@ class InvitacionesViewModel(
 
                 if (response.isSuccessful) {
                     if (esAceptar) {
-                        // 1. Guardamos la casa como la "Casa Activa" en el móvil
-                        sessionManager.saveCasaActivaId(invitacion.casaId)
-                        // 2. Avisamos a la UI para que salte al Home de esa casa
+                        sessionManager.saveCasaActiva(invitacion.casaId, invitacion.casaNombre)
                         _events.send(InvitacionEvent.NavigateToCasa(invitacion.casaId, invitacion.casaNombre))
                     } else {
-                        // Si se rechaza, avisamos y recargamos la lista
                         _events.send(InvitacionEvent.ShowToast("Invitación rechazada"))
                         fetchMisInvitaciones()
                     }

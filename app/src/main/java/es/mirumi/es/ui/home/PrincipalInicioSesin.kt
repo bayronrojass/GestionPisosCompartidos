@@ -7,39 +7,15 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredHeight
-import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -72,6 +48,7 @@ import es.mirumi.es.ui.login.LoginUiState
 import es.mirumi.es.ui.login.LoginViewModel
 import es.mirumi.es.ui.login.LoginViewModelFactory
 import es.mirumi.es.ui.navigation.Route
+import es.mirumi.es.utils.BiometricHelper
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ArraySerializer
 import kotlinx.serialization.json.Json
@@ -84,26 +61,29 @@ fun PrincipalInicioSesin(
 ) {
     val viewModel: LoginViewModel =
         viewModel(
-            factory =
-                LoginViewModelFactory(
-                    RepositoryLogin(NetworkModule.loginApiService, LocalContext.current),
-                ),
+            factory = LoginViewModelFactory(RepositoryLogin(NetworkModule.loginApiService, LocalContext.current)),
         )
 
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    var username by remember { mutableStateOf("") }
+    // Cargamos el email guardado si existe para facilitar el login
+    var username by remember { mutableStateOf(sessionManager.fetchUserEmail() ?: "") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var rememberBiometric by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState) {
         when (val state = uiState) {
             is LoginUiState.Error -> {
                 Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
-                viewModel.resetState() // Limpiamos para no volver a mostrarlo al rotar la pantalla
+                viewModel.resetState()
             }
             is LoginUiState.Success -> {
+                if (rememberBiometric) {
+                    sessionManager.setBiometricEnabled(true)
+                }
+
                 handleLoginSuccess(
                     context = context,
                     response = state.response,
@@ -112,30 +92,40 @@ fun PrincipalInicioSesin(
                 )
                 viewModel.resetState()
             }
-            else -> {} // Idle o Loading, no hacemos nada especial aquí
+            else -> {}
         }
     }
 
-    // Interfaz de usuario
     LoginScreenUI(
         modifier = modifier,
         username = username,
         password = password,
         passwordVisible = passwordVisible,
-        isLoading = uiState is LoginUiState.Loading, // Extraemos isLoading del estado
+        isLoading = uiState is LoginUiState.Loading,
+        rememberBiometric = rememberBiometric,
+        sessionManager = sessionManager,
         onUsernameChange = { username = it },
         onPasswordChange = { password = it },
         onPasswordVisibilityToggle = { passwordVisible = !passwordVisible },
+        onRememberBiometricChange = { rememberBiometric = it },
         onLoginClick = { viewModel.login(username.trim(), password.trim()) },
-        onRegisterClick = {
-            Toast.makeText(context, "Ir a Registro", Toast.LENGTH_SHORT).show()
+        onBiometricSuccess = {
+            val casaId = sessionManager.getCasaActivaId()
+            val casaNombre = sessionManager.getCasaActivaNombre()
+
+            if (casaId != -1L) {
+                navController.navigate(Route.Home.createRoute(casaId, casaNombre)) {
+                    popUpTo(0) { inclusive = true }
+                }
+            } else {
+                navController.navigate(Route.ListaCasas.createRoute("[]")) {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
         },
-        onForgotPasswordClick = {
-            Toast.makeText(context, "Recuperar contraseña", Toast.LENGTH_SHORT).show()
-        },
-        onSocialLogin = { provider ->
-            Toast.makeText(context, "Iniciar sesión con $provider", Toast.LENGTH_SHORT).show()
-        },
+        onRegisterClick = { Toast.makeText(context, "Ir a Registro", Toast.LENGTH_SHORT).show() },
+        onForgotPasswordClick = { Toast.makeText(context, "Recuperar contraseña", Toast.LENGTH_SHORT).show() },
+        onSocialLogin = { provider -> Toast.makeText(context, "Iniciar sesión con $provider", Toast.LENGTH_SHORT).show() },
     )
 }
 
@@ -147,81 +137,82 @@ fun LoginScreenUI(
     password: String,
     passwordVisible: Boolean,
     isLoading: Boolean,
+    rememberBiometric: Boolean,
+    sessionManager: SessionManager,
     onUsernameChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onPasswordVisibilityToggle: () -> Unit,
+    onRememberBiometricChange: (Boolean) -> Unit,
     onLoginClick: () -> Unit,
+    onBiometricSuccess: () -> Unit,
     onRegisterClick: () -> Unit,
     onForgotPasswordClick: () -> Unit,
     onSocialLogin: (String) -> Unit,
 ) {
+    val context = LocalContext.current
+    val canUseBiometrics = remember { BiometricHelper.isBiometricAvailable(context) }
+    val isBiometricEnabled = sessionManager.isBiometricEnabled() && sessionManager.hasSavedToken()
+
     Box(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .fillMaxHeight()
-                .background(color = Color(0xfff8f8f8)),
+        modifier = modifier.fillMaxWidth().fillMaxHeight().background(color = Color(0xfff8f8f8)),
     ) {
         Box(
             modifier =
                 Modifier
-                    .align(alignment = Alignment.TopStart)
+                    .align(Alignment.TopStart)
                     .offset(x = 27.dp, y = 4.dp)
-                    .requiredWidth(width = 343.dp)
-                    .requiredHeight(height = 40.dp),
+                    .requiredWidth(343.dp)
+                    .requiredHeight(40.dp),
         )
         Box(
             modifier =
                 Modifier
-                    .align(alignment = Alignment.TopStart)
-                    .offset(x = 0.dp, y = 80.dp)
-                    .requiredWidth(width = 390.dp)
-                    .requiredHeight(height = 885.dp)
-                    .clip(shape = RoundedCornerShape(40.dp))
-                    .background(color = Color(0xfff8f8f8)),
+                    .align(
+                        Alignment.TopStart,
+                    ).offset(
+                        x = 0.dp,
+                        y = 80.dp,
+                    ).requiredWidth(390.dp)
+                    .requiredHeight(885.dp)
+                    .clip(RoundedCornerShape(40.dp))
+                    .background(Color(0xfff8f8f8)),
         )
         Box(
             modifier =
                 Modifier
-                    .align(alignment = Alignment.TopCenter)
-                    .offset(x = 0.dp, y = 100.dp)
-                    .requiredWidth(width = 50.dp)
-                    .requiredHeight(height = 10.dp)
-                    .clip(shape = RoundedCornerShape(20.dp))
-                    .background(color = Color(0xff6c6c6c)),
+                    .align(
+                        Alignment.TopCenter,
+                    ).offset(
+                        x = 0.dp,
+                        y = 100.dp,
+                    ).requiredWidth(50.dp)
+                    .requiredHeight(10.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color(0xff6c6c6c)),
         )
         Image(
             painter = painterResource(id = R.drawable.ilustracioniniciosesion),
-            contentDescription = "ilustracion inicio sesin",
+            contentDescription = "ilustracion",
             contentScale = ContentScale.Crop,
             modifier =
                 Modifier
-                    .align(alignment = Alignment.TopStart)
+                    .align(Alignment.TopStart)
                     .offset(x = 142.dp, y = 153.dp)
-                    .requiredWidth(width = 108.dp)
-                    .requiredHeight(height = 153.dp),
+                    .requiredWidth(108.dp)
+                    .requiredHeight(153.dp),
         )
+
         Text(
             text = "¡Hola, de nuevo!",
             color = Color.Black,
             textAlign = TextAlign.Center,
             lineHeight = 1.33.em,
             style = MaterialTheme.typography.displaySmall,
-            modifier =
-                Modifier
-                    .align(alignment = Alignment.TopCenter)
-                    .offset(x = 1.dp, y = 342.dp)
-                    .requiredWidth(width = 350.dp),
+            modifier = Modifier.align(Alignment.TopCenter).offset(x = 1.dp, y = 342.dp).requiredWidth(350.dp),
         )
 
-        // Campo de usuario
-        Column(
-            modifier =
-                Modifier
-                    .align(alignment = Alignment.TopStart)
-                    .offset(x = 20.dp, y = 430.dp)
-                    .requiredWidth(width = 350.dp),
-        ) {
+        // CAMPO USUARIO
+        Column(modifier = Modifier.align(Alignment.TopStart).offset(x = 20.dp, y = 410.dp).requiredWidth(350.dp)) {
             OutlinedTextField(
                 value = username,
                 onValueChange = onUsernameChange,
@@ -233,14 +224,8 @@ fun LoginScreenUI(
             )
         }
 
-        // Campo de contraseña
-        Column(
-            modifier =
-                Modifier
-                    .align(alignment = Alignment.TopStart)
-                    .offset(x = 20.dp, y = 500.dp)
-                    .requiredWidth(width = 350.dp),
-        ) {
+        // CAMPO CONTRASEÑA
+        Column(modifier = Modifier.align(Alignment.TopStart).offset(x = 20.dp, y = 480.dp).requiredWidth(350.dp)) {
             OutlinedTextField(
                 value = password,
                 onValueChange = onPasswordChange,
@@ -260,29 +245,70 @@ fun LoginScreenUI(
                 singleLine = true,
                 shape = RoundedCornerShape(15.dp),
             )
-        }
 
-        // Botón de inicio de sesión
-        Button(
-            onClick = onLoginClick,
-            modifier =
-                Modifier
-                    .align(alignment = Alignment.TopStart)
-                    .offset(x = 20.dp, y = 580.dp)
-                    .requiredWidth(width = 350.dp)
-                    .height(52.dp),
-            enabled = !isLoading && username.isNotEmpty() && password.isNotEmpty(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xff581327)),
-            shape = RoundedCornerShape(15.dp),
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.requiredSize(24.dp))
-            } else {
-                Text("Iniciar sesión", color = Color.White, fontSize = 16.sp)
+            // CHECKBOX PARA RECORDAR HUELLA
+            if (canUseBiometrics && !isBiometricEnabled) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 4.dp),
+                ) {
+                    Checkbox(
+                        checked = rememberBiometric,
+                        onCheckedChange = onRememberBiometricChange,
+                        colors = CheckboxDefaults.colors(checkedColor = Color(0xff581327)),
+                    )
+                    Text("Usar huella la próxima vez", fontSize = 14.sp, color = Color.DarkGray)
+                }
             }
         }
 
-        // Enlace de recuperar contraseña
+        Row(
+            modifier = Modifier.align(Alignment.TopStart).offset(x = 20.dp, y = 585.dp).requiredWidth(350.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Button(
+                onClick = onLoginClick,
+                modifier = Modifier.weight(1f).height(52.dp),
+                enabled = !isLoading && username.isNotEmpty() && password.isNotEmpty(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xff581327)),
+                shape = RoundedCornerShape(15.dp),
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.requiredSize(24.dp))
+                } else {
+                    Text("Iniciar sesión", color = Color.White, fontSize = 16.sp)
+                }
+            }
+
+            // BOTÓN DE HUELLA
+            if (canUseBiometrics && isBiometricEnabled) {
+                Box(
+                    modifier =
+                        Modifier
+                            .size(52.dp)
+                            .clip(RoundedCornerShape(15.dp))
+                            .background(Color(0xFFE8D5DC))
+                            .clickable {
+                                BiometricHelper.showBiometricPrompt(
+                                    context = context,
+                                    onSuccess = { onBiometricSuccess() },
+                                    onError = { error -> Toast.makeText(context, error, Toast.LENGTH_SHORT).show() },
+                                )
+                            },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Fingerprint,
+                        contentDescription = "Huella",
+                        tint = Color(0xff581327),
+                        modifier = Modifier.size(32.dp),
+                    )
+                }
+            }
+        }
+
+        // [TUS ENLACES INFERIORES INTACTOS]
         Text(
             text = "¿Has olvidado tu contraseña?",
             color = Color(0xff581327),
@@ -290,127 +316,159 @@ fun LoginScreenUI(
             style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium),
             modifier =
                 Modifier
-                    .align(alignment = Alignment.TopCenter)
-                    .offset(x = 1.dp, y = 640.dp)
+                    .align(
+                        Alignment.TopCenter,
+                    ).offset(x = 1.dp, y = 650.dp)
                     .clickable(onClick = onForgotPasswordClick)
-                    .requiredWidth(width = 212.dp)
-                    .requiredHeight(height = 20.dp),
+                    .requiredWidth(212.dp),
         )
-
         Text(
             text = "o",
             color = Color(0xff6c6c6c),
             textAlign = TextAlign.Center,
             style = TextStyle(fontSize = 16.sp),
-            modifier = Modifier.align(alignment = Alignment.TopCenter).offset(x = 0.dp, y = 680.dp),
+            modifier = Modifier.align(Alignment.TopCenter).offset(x = 0.dp, y = 680.dp),
         )
         Image(
             painter = painterResource(id = R.drawable.line3),
             contentDescription = "Line 3",
             modifier =
                 Modifier
-                    .align(alignment = Alignment.TopStart)
-                    .offset(x = 220.dp, y = 690.5.dp)
-                    .requiredWidth(width = 160.dp)
-                    .border(border = BorderStroke(1.dp, Color(0xff6c6c6c))),
+                    .align(
+                        Alignment.TopStart,
+                    ).offset(x = 220.dp, y = 690.5.dp)
+                    .requiredWidth(160.dp)
+                    .border(BorderStroke(1.dp, Color(0xff6c6c6c))),
         )
         Image(
             painter = painterResource(id = R.drawable.line4),
             contentDescription = "Line 4",
             modifier =
                 Modifier
-                    .align(alignment = Alignment.TopStart)
-                    .offset(x = 20.dp, y = 690.5.dp)
-                    .requiredWidth(width = 160.dp)
-                    .border(border = BorderStroke(1.dp, Color(0xff6c6c6c))),
+                    .align(
+                        Alignment.TopStart,
+                    ).offset(x = 20.dp, y = 690.5.dp)
+                    .requiredWidth(160.dp)
+                    .border(BorderStroke(1.dp, Color(0xff6c6c6c))),
         )
 
-        // Botones de login social
         Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+            horizontalArrangement =
+                Arrangement.spacedBy(
+                    10.dp,
+                    Alignment.CenterHorizontally,
+                ),
             verticalAlignment = Alignment.CenterVertically,
             modifier =
                 Modifier
-                    .align(alignment = Alignment.TopStart)
-                    .offset(x = 245.dp, y = 730.dp)
-                    .requiredWidth(width = 60.dp)
-                    .requiredHeight(height = 50.dp)
-                    .clip(shape = RoundedCornerShape(15.dp))
-                    .background(color = Color.White)
-                    .border(border = BorderStroke(1.dp, Color(0xff6c6c6c)), shape = RoundedCornerShape(15.dp))
-                    .clickable { onSocialLogin("facebook") },
+                    .align(
+                        Alignment.TopStart,
+                    ).offset(
+                        x = 245.dp,
+                        y = 730.dp,
+                    ).requiredSize(
+                        60.dp,
+                        50.dp,
+                    ).clip(
+                        RoundedCornerShape(15.dp),
+                    ).background(Color.White)
+                    .border(BorderStroke(1.dp, Color(0xff6c6c6c)), RoundedCornerShape(15.dp))
+                    .clickable {
+                        onSocialLogin("facebook")
+                    },
         ) {
             Image(
                 painter = painterResource(id = R.drawable.facebook),
                 contentDescription = "facebook",
-                modifier = Modifier.requiredSize(size = 28.dp),
+                modifier = Modifier.requiredSize(28.dp),
             )
         }
-
         Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+            horizontalArrangement =
+                Arrangement.spacedBy(
+                    10.dp,
+                    Alignment.CenterHorizontally,
+                ),
             verticalAlignment = Alignment.CenterVertically,
             modifier =
                 Modifier
-                    .align(alignment = Alignment.TopStart)
-                    .offset(x = 165.dp, y = 730.dp)
-                    .requiredWidth(width = 60.dp)
-                    .requiredHeight(height = 50.dp)
-                    .clip(shape = RoundedCornerShape(15.dp))
-                    .background(color = Color.White)
-                    .border(border = BorderStroke(1.dp, Color(0xff6c6c6c)), shape = RoundedCornerShape(15.dp))
-                    .clickable { onSocialLogin("google") },
+                    .align(
+                        Alignment.TopStart,
+                    ).offset(
+                        x = 165.dp,
+                        y = 730.dp,
+                    ).requiredSize(
+                        60.dp,
+                        50.dp,
+                    ).clip(
+                        RoundedCornerShape(15.dp),
+                    ).background(Color.White)
+                    .border(BorderStroke(1.dp, Color(0xff6c6c6c)), RoundedCornerShape(15.dp))
+                    .clickable {
+                        onSocialLogin("google")
+                    },
         ) {
             Image(
                 painter = painterResource(id = R.drawable.google),
                 contentDescription = "google",
-                modifier = Modifier.requiredSize(size = 24.dp),
+                modifier = Modifier.requiredSize(24.dp),
             )
         }
-
         Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+            horizontalArrangement =
+                Arrangement.spacedBy(
+                    10.dp,
+                    Alignment.CenterHorizontally,
+                ),
             verticalAlignment = Alignment.CenterVertically,
             modifier =
                 Modifier
-                    .align(alignment = Alignment.TopStart)
-                    .offset(x = 85.dp, y = 730.dp)
-                    .requiredWidth(width = 60.dp)
-                    .requiredHeight(height = 50.dp)
-                    .clip(shape = RoundedCornerShape(15.dp))
-                    .background(color = Color.White)
-                    .border(border = BorderStroke(1.dp, Color(0xff6c6c6c)), shape = RoundedCornerShape(15.dp))
-                    .padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 12.dp)
-                    .clickable { onSocialLogin("apple") },
+                    .align(
+                        Alignment.TopStart,
+                    ).offset(
+                        x = 85.dp,
+                        y = 730.dp,
+                    ).requiredSize(
+                        60.dp,
+                        50.dp,
+                    ).clip(
+                        RoundedCornerShape(15.dp),
+                    ).background(
+                        Color.White,
+                    ).border(
+                        BorderStroke(1.dp, Color(0xff6c6c6c)),
+                        RoundedCornerShape(15.dp),
+                    ).padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 12.dp)
+                    .clickable {
+                        onSocialLogin("apple")
+                    },
         ) {
             Image(
                 painter = painterResource(id = R.drawable.apple),
                 contentDescription = "apple",
                 colorFilter = ColorFilter.tint(Color.Black),
-                modifier = Modifier.requiredSize(size = 30.dp),
+                modifier = Modifier.requiredSize(30.dp),
             )
         }
 
-        // Enlace de registro
         Text(
             textAlign = TextAlign.Center,
             text =
                 buildAnnotatedString {
-                    withStyle(style = SpanStyle(color = Color(0xff6c6c6c), fontSize = 15.sp, fontWeight = FontWeight.Medium)) {
-                        append("¿No tienes cuenta todavía?")
-                    }
                     withStyle(
-                        style = SpanStyle(color = Color(0xff581327), fontSize = 15.sp, fontWeight = FontWeight.Medium),
-                    ) { append(" ") }
-                    withStyle(style = SpanStyle(color = Color(0xff581327), fontSize = 15.sp)) { append("Regístrate") }
+                        SpanStyle(color = Color(0xff6c6c6c), fontSize = 15.sp, fontWeight = FontWeight.Medium),
+                    ) { append("¿No tienes cuenta todavía?") }
+                    withStyle(SpanStyle(color = Color(0xff581327), fontSize = 15.sp, fontWeight = FontWeight.Medium)) { append(" ") }
+                    withStyle(SpanStyle(color = Color(0xff581327), fontSize = 15.sp)) { append("Regístrate") }
                 },
             modifier =
                 Modifier
-                    .align(alignment = Alignment.TopCenter)
-                    .offset(x = 1.5.dp, y = 800.dp)
+                    .align(
+                        Alignment.TopCenter,
+                    ).offset(x = 1.5.dp, y = 800.dp)
                     .clickable(onClick = onRegisterClick)
-                    .requiredWidth(width = 273.dp)
-                    .requiredHeight(height = 19.dp),
+                    .requiredWidth(273.dp)
+                    .requiredHeight(19.dp),
         )
     }
 }
@@ -441,23 +499,22 @@ private fun handleLoginSuccess(
             )
         }
 
-    // 3. Lógica directa de navegación a la Casa Activa
     if (casasList.isNotEmpty()) {
         val casaGuardadaId = sessionManager.getCasaActivaId()
-
         var casaActiva = casasList.find { it.id == casaGuardadaId }
 
         if (casaActiva == null) {
             casaActiva = casasList[0]
-            sessionManager.saveCasaActivaId(casaActiva.id)
         }
+
+        // ¡NUEVO! Guardamos el ID y el Nombre para que la biometria funcione luego
+        sessionManager.saveCasaActiva(casaActiva.id, casaActiva.nombre)
 
         navController.navigate(Route.Home.createRoute(casaActiva.id, casaActiva.nombre)) {
             popUpTo(0) { inclusive = true }
         }
     } else {
         val casasJson = Json.encodeToString(ArraySerializer(Casa.serializer()), casasList.toTypedArray())
-
         navController.navigate(Route.ListaCasas.createRoute(casasJson)) {
             popUpTo(0) { inclusive = true }
         }
