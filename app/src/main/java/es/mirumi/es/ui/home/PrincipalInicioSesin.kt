@@ -480,8 +480,6 @@ private fun handleLoginSuccess(
     sessionManager: SessionManager,
     navController: NavController,
 ) {
-    Toast.makeText(context, "¡Bienvenido, ${response.user.nombre}!", Toast.LENGTH_SHORT).show()
-
     sessionManager.saveAuthData(
         token = response.authToken,
         userId = response.user.id,
@@ -507,7 +505,6 @@ private fun handleLoginSuccess(
             casaActiva = casasList[0]
         }
 
-        // ¡NUEVO! Guardamos el ID y el Nombre para que la biometria funcione luego
         sessionManager.saveCasaActiva(casaActiva.id, casaActiva.nombre)
 
         navController.navigate(Route.Home.createRoute(casaActiva.id, casaActiva.nombre)) {

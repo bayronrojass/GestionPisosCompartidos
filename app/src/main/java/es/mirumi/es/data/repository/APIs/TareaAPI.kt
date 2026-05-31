@@ -22,7 +22,7 @@ interface TareaAPI {
         @Body nuevaTarea: TareaRequest,
     ): Response<Tarea>
 
-    @POST("tareas/{tareaId}/notify")
+    @PUT("tareas/{tareaId}/notify")
     suspend fun notificarTarea(
         @Path("tareaId") tareaId: Long,
     ): Response<Void>

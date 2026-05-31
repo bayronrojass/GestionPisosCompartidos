@@ -18,8 +18,12 @@ class RepositoryTarea(
     }
 
     suspend fun notificarTarea(tareaId: Long) {
-        apiService.notificarTarea(tareaId)
-        return
+        val response = apiService.notificarTarea(tareaId)
+        if (!response.isSuccessful) {
+            val code = response.code()
+            Log.e("notificarTarea", "Error HTTP $code: ${response.message()}")
+            throw Exception("No se pudo enviar el recordatorio (HTTP $code)")
+        }
     }
 
     suspend fun crearTarea(
