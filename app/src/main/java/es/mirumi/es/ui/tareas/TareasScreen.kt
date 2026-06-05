@@ -1,5 +1,6 @@
 package es.mirumi.es.ui.tareas
 
+import TinderTaskCard
 import android.app.DatePickerDialog
 import android.content.Context
 import android.content.ContextWrapper
@@ -38,6 +39,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -71,6 +73,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -148,6 +151,7 @@ fun TareasScreen(
     var selectedTab by remember { mutableIntStateOf(0) }
     var showCreateDialog by remember { mutableStateOf(false) }
     var taskToEdit by remember { mutableStateOf<Tarea?>(null) }
+    var showTinderDialog by remember { mutableStateOf(false) }
 
     val tareasFiltradas =
         remember(tareas, selectedTab) {
@@ -186,6 +190,13 @@ fun TareasScreen(
     }
 
     val tareasPendientes = remember(tareas) { tareas.filter { !it.completado } }
+
+    // 🔴 NUEVO: Filtramos SOLO las que no tienen dueño todavía para pasarlas al Tinder
+    val tareasSinAsignar =
+        remember(tareasPendientes) {
+            tareasPendientes.filter { it.asignadoA == null }
+        }
+
     val tareasCompletadas = remember(tareas) { tareas.filter { it.completado } }
 
     val tareasSemanales =
@@ -311,6 +322,18 @@ fun TareasScreen(
                                 modifier = Modifier.padding(bottom = 10.dp),
                             )
                             AsignacionMensualComponent()
+
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = { showTinderDialog = true },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xffddc1fb)),
+                                shape = RoundedCornerShape(15.dp),
+                            ) {
+                                Icon(Icons.Default.ExpandMore, contentDescription = "Tinder", tint = Color(0xff5d427a))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Reparto inteligente (Votar tareas)", color = Color(0xff5d427a), fontWeight = FontWeight.Bold)
+                            }
                         }
 
                         if (tareasUsuarioActual.isNotEmpty()) {
@@ -517,6 +540,27 @@ fun TareasScreen(
                 }
             },
         )
+    }
+
+    if (showTinderDialog) {
+        if (tareasSinAsignar.isEmpty()) {
+            Toast.makeText(context, "No hay tareas sin asignar para repartir.", Toast.LENGTH_SHORT).show()
+            showTinderDialog = false
+        } else {
+            RepartoTinderDialog(
+                tareasPendientes = tareasSinAsignar,
+                onDismiss = { showTinderDialog = false },
+                onVote = { tareaId, puntuacion ->
+                    viewModel.votarTarea(tareaId, puntuacion)
+                },
+                onFinish = {
+                    viewModel.repartirTareas { mensajeServidor ->
+                        Toast.makeText(context, mensajeServidor, Toast.LENGTH_LONG).show()
+                    }
+                    showTinderDialog = false
+                },
+            )
+        }
     }
 }
 
@@ -1695,6 +1739,90 @@ fun UserSelectionItem(
             Text(text = usuario.nombre, color = if (selected) Color.White else Color.Black, style = TextStyle(fontSize = 14.sp))
         }
     }
+}
+
+@Composable
+fun RepartoTinderDialog(
+    tareasPendientes: List<Tarea>,
+    onDismiss: () -> Unit,
+    onVote: (tareaId: Long, puntuacion: Int) -> Unit,
+    onFinish: () -> Unit,
+) {
+    var currentIndex by remember { mutableIntStateOf(0) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                "¡Reparto Justo!",
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth().height(380.dp),
+            ) {
+                Text(
+                    "Desliza a la DERECHA si te gustaría hacer la tarea, o a la IZQUIERDA si prefieres evitarla.",
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 16.dp),
+                )
+
+                if (currentIndex < tareasPendientes.size) {
+                    val tareaActual = tareasPendientes[currentIndex]
+
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        key(tareaActual.id) {
+                            TinderTaskCard(
+                                tarea = tareaActual,
+                                onVote = { meGusta ->
+                                    val puntuacion = if (meGusta) 1 else -1
+                                    onVote(tareaActual.id, puntuacion)
+                                    currentIndex++
+                                },
+                            )
+                        }
+                    }
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 40.dp)) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = "Listo",
+                            tint = Color(0xFF4CAF50),
+                            modifier = Modifier.size(80.dp).padding(bottom = 16.dp),
+                        )
+                        Text("¡Has valorado todo!", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "Pulsa en 'Repartir' para que el algoritmo asigne las tareas.",
+                            textAlign = TextAlign.Center,
+                            color = Color.Gray,
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (currentIndex >= tareasPendientes.size) {
+                        onFinish()
+                    }
+                    onDismiss()
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xff581327)),
+            ) {
+                Text(if (currentIndex < tareasPendientes.size) "Cerrar" else "¡Repartir Tareas!", color = Color.White)
+            }
+        },
+        containerColor = Color(0xfff8f8f8),
+    )
 }
 
 @Preview

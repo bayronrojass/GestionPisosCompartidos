@@ -9,6 +9,7 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface TareaAPI {
     @GET("casas/{casaId}/tareas")
@@ -37,4 +38,16 @@ interface TareaAPI {
     suspend fun borrarTarea(
         @Path("tareaId") tareaId: Long,
     ): Response<Void>
+
+    @POST("tareas/{tareaId}/votar")
+    suspend fun votarTarea(
+        @Path("tareaId") tareaId: Long,
+        @Query("usuarioId") usuarioId: Long,
+        @Query("puntuacion") puntuacion: Int,
+    ): retrofit2.Response<Void>
+
+    @POST("tareas/repartir/casa/{casaId}")
+    suspend fun ejecutarRepartoInteligente(
+        @Path("casaId") casaId: Long,
+    ): retrofit2.Response<okhttp3.ResponseBody>
 }

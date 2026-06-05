@@ -60,4 +60,14 @@ class RepositoryTarea(
             throw Exception("Error al borrar tarea: ${response.message()}")
         }
     }
+
+    suspend fun votarTarea(
+        tareaId: Long,
+        usuarioId: Long,
+        puntuacion: Int,
+    ) {
+        apiService.votarTarea(tareaId, usuarioId, puntuacion)
+    }
+
+    suspend fun repartirTareas(casaId: Long): retrofit2.Response<okhttp3.ResponseBody> = apiService.ejecutarRepartoInteligente(casaId)
 }

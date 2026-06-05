@@ -74,6 +74,7 @@ class TareasViewModel(
         viewModelScope.launch {
             try {
                 val esPeriodica = !frecuencia.isNullOrBlank()
+                val idParaEnviar = asignadoAId ?: -1L
                 val request =
                     TareaRequest(
                         nombre,
@@ -82,7 +83,7 @@ class TareasViewModel(
                         fechaFin,
                         frecuencia,
                         esPeriodica,
-                        asignadoAId,
+                        idParaEnviar,
                         prioridad,
                         creadoPor,
                     )
@@ -192,6 +193,42 @@ class TareasViewModel(
                 }
             } catch (e: Exception) {
                 Log.e("TareasViewModel", "Excepción cargando miembros", e)
+            }
+        }
+    }
+
+    fun votarTarea(
+        tareaId: Long,
+        puntuacion: Int,
+    ) {
+        viewModelScope.launch {
+            try {
+                // Ahora sí guarda el voto en tu base de datos
+                repository.votarTarea(tareaId, userId, puntuacion)
+                Log.d("TareasViewModel", "Voto guardado: Tarea $tareaId -> $puntuacion")
+            } catch (e: Exception) {
+                Log.e("TareasViewModel", "Error al votar tarea", e)
+            }
+        }
+    }
+
+    fun repartirTareas(onResult: (String) -> Unit) {
+        _isLoading.value = true
+        viewModelScope.launch {
+            try {
+                val response = repository.repartirTareas(casaId)
+                if (response.isSuccessful) {
+                    cargarTareas()
+                    onResult("¡Reparto completado con éxito! ✨")
+                } else {
+                    val errorBody = response.errorBody()?.string() ?: "No se pudo repartir."
+                    onResult(errorBody)
+                }
+            } catch (e: Exception) {
+                Log.e("TareasViewModel", "Error al repartir tareas", e)
+                onResult("Error de conexión al repartir.")
+            } finally {
+                _isLoading.value = false
             }
         }
     }
