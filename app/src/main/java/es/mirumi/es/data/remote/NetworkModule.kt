@@ -6,8 +6,9 @@ import com.google.gson.Strictness
 import com.google.gson.TypeAdapter
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
-import es.mirumi.es.BuildConfig // ¡Importante! Importa tu BuildConfig
+import es.mirumi.es.BuildConfig
 import es.mirumi.es.data.repository.APIs.CasaAPI
+import es.mirumi.es.data.repository.APIs.CatalogoAPI
 import es.mirumi.es.data.repository.APIs.DatabaseAPI
 import es.mirumi.es.data.repository.APIs.EventoAPI
 import es.mirumi.es.data.repository.APIs.InvitacionAPI
@@ -70,6 +71,9 @@ object NetworkModule {
         retrofit.create(ItemAPI::class.java)
     }
 
+    val catalogoApiService: CatalogoAPI by lazy {
+        retrofit.create(CatalogoAPI::class.java)
+    }
     val tareaApiService: TareaAPI by lazy {
         retrofit.create(TareaAPI::class.java)
     }

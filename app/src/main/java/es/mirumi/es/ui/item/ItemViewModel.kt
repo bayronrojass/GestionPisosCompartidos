@@ -5,7 +5,9 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.mirumi.es.data.remote.NetworkModule
+import es.mirumi.es.data.repository.repositories.RepositoryCatalogo
 import es.mirumi.es.data.repository.repositories.RepositoryItem
+import es.mirumi.es.model.CatalogoProducto
 import es.mirumi.es.model.Elemento
 import es.mirumi.es.model.requests.ElementoRequest
 import kotlinx.coroutines.launch
@@ -24,8 +26,37 @@ class ItemViewModel(
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
+    private val catalogoRepo = RepositoryCatalogo(NetworkModule.catalogoApiService)
+
+    private val _sugerencias = MutableLiveData<List<CatalogoProducto>>(emptyList())
+    val sugerencias: LiveData<List<CatalogoProducto>> = _sugerencias
+
+    private val _populares = MutableLiveData<List<CatalogoProducto>>(emptyList())
+    val populares: LiveData<List<CatalogoProducto>> = _populares
+
     init {
         cargarItems()
+        cargarPopulares()
+    }
+
+    private fun cargarPopulares() {
+        viewModelScope.launch {
+            _populares.value = catalogoRepo.getPopulares()
+        }
+    }
+
+    fun buscarEnCatalogo(query: String) {
+        viewModelScope.launch {
+            if (query.length >= 2) {
+                _sugerencias.value = catalogoRepo.buscarProductos(query)
+            } else {
+                _sugerencias.value = emptyList()
+            }
+        }
+    }
+
+    fun limpiarSugerencias() {
+        _sugerencias.value = emptyList()
     }
 
     fun cargarItems() {
@@ -36,7 +67,7 @@ class ItemViewModel(
                 _items.value = repository.getElementosByListaId(listaId)
             } catch (e: Exception) {
                 _error.value = e.message ?: "Error cargando items"
-                _items.value = emptyList() // Asegura lista vacía en caso de error
+                _items.value = emptyList()
             } finally {
                 _isLoading.value = false
             }
@@ -46,17 +77,15 @@ class ItemViewModel(
     fun crearElemento(
         nombre: String,
         descripcion: String?,
+        iconoKey: String? = null,
     ) {
         _isLoading.value = true
         _error.value = null
         viewModelScope.launch {
             try {
-                val request = ElementoRequest(nombre, descripcion, false, 1)
+                val request = ElementoRequest(nombre, descripcion, false, 1, iconoKey)
                 repository.crearElementoEnLista(listaId, request)
                 cargarItems()
-                // Añade el nuevo elemento a la lista local
-                // val itemsActuales = _items.value ?: emptyList()
-                // _items.value = itemsActuales + nuevoElemento
             } catch (e: Exception) {
                 _error.value = e.message ?: "Error al crear el item"
             } finally {

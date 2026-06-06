@@ -15,7 +15,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Mic
@@ -52,7 +51,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.model.Elemento
-import es.mirumi.es.ui.pizarra.postits.DialogoGrabarAudio // Asegúrate de que esta ruta coincida con tu proyecto
+import es.mirumi.es.ui.pizarra.postits.DialogoGrabarAudio
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModel
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModelFactory
 import es.mirumi.es.ui.pizarra.postits.PizarraScreen
@@ -61,6 +60,9 @@ import es.mirumi.es.ui.utils.FabActionType
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 
 // Definición de colores del diseño
 val GrayText = Color(0xFF6C6C6C)
@@ -85,7 +87,6 @@ fun ItemScreen(
     var showEditDialog by remember { mutableStateOf<Elemento?>(null) }
     var showDeleteDialog by remember { mutableStateOf<Elemento?>(null) }
 
-    // 🔴 NUEVO ESTADO PARA EL DIÁLOGO DE AUDIO 🔴
     var showAudioDialog by remember { mutableStateOf(false) }
 
     val itemsOrdenados =
@@ -107,7 +108,6 @@ fun ItemScreen(
             factory = DraggableViewModelFactory(postItKey, casaId, sessionManager),
         )
 
-    // 🔴 LA CLAVE MAGICA: Lista con DOS opciones para que el MultiFAB se despliegue 🔴
     val pizarraFabActions =
         remember {
             listOf(
@@ -171,14 +171,12 @@ fun ItemScreen(
                 }
 
                 // Input para añadir nuevo elemento
-                AddItemRow(
+                PredictiveAddItemRow(
+                    viewModel = viewModel,
                     modifier =
                         Modifier
                             .padding(horizontal = 20.dp, vertical = 10.dp)
                             .fillMaxWidth(),
-                    onAddItem = { nombre ->
-                        viewModel.crearElemento(nombre, null)
-                    },
                 )
 
                 // Lista de Elementos
@@ -218,7 +216,6 @@ fun ItemScreen(
                 }
             }
 
-            // 🔴 LA PIZARRA CON EL MULTIFAB 🔴
             PizarraScreen(
                 viewModel = draggableViewModel,
                 fabActions = pizarraFabActions,
@@ -271,95 +268,141 @@ fun ItemScreen(
         )
     }
 
-    // 🔴 DIÁLOGO DE AUDIO: Cuando showAudioDialog es true, se pinta el popup 🔴
     if (showAudioDialog) {
         DialogoGrabarAudio(
             onDismiss = { showAudioDialog = false },
             onAudioGrabado = { archivoFisico ->
                 showAudioDialog = false
-                // Aquí llamamos a la función que sube el archivo al servidor (asegúrate de que existe en DraggableViewModel)
+                // Aquí llamamos a la función que sube el archivo al servidor
                 draggableViewModel.crearPostItDeAudio(archivoFisico)
             },
         )
     }
 }
 
-// ==========================================
-// COMPONENTES UI (Se mantienen igual que los tenías)
-// ==========================================
+// COMPONENTES UI
 
 @Composable
-fun AddItemRow(
+fun PredictiveAddItemRow(
+    viewModel: ItemViewModel,
     modifier: Modifier = Modifier,
-    onAddItem: (String) -> Unit,
 ) {
     var text by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
 
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .height(50.dp)
-                    .clip(RoundedCornerShape(15.dp))
-                    .background(Color.White)
-                    .dashedBorder(1.dp, GrayText, 15.dp)
-                    .padding(horizontal = 16.dp),
-            contentAlignment = Alignment.CenterStart,
-        ) {
-            if (text.isEmpty()) {
-                Text(
-                    text = "Nuevo",
-                    color = GrayText.copy(alpha = 0.5f),
-                    fontSize = 16.sp,
-                )
+    val sugerencias by viewModel.sugerencias.observeAsState(emptyList())
+    val populares by viewModel.populares.observeAsState(emptyList())
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .height(50.dp)
+                            .clip(RoundedCornerShape(15.dp))
+                            .background(Color.White)
+                            .dashedBorder(1.dp, GrayText, 15.dp)
+                            .padding(horizontal = 16.dp),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    if (text.isEmpty()) {
+                        Text("Añadir producto...", color = GrayText.copy(alpha = 0.5f), fontSize = 16.sp)
+                    }
+                    BasicTextField(
+                        value = text,
+                        onValueChange = {
+                            text = it
+                            viewModel.buscarEnCatalogo(it) // Dispara la busqueda
+                        },
+                        textStyle = TextStyle(fontSize = 16.sp, color = BlackText),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions =
+                            KeyboardActions(onDone = {
+                                if (text.isNotBlank()) {
+                                    viewModel.crearElemento(text, null, null) // Producto personalizado
+                                    text = ""
+                                    viewModel.limpiarSugerencias()
+                                    focusManager.clearFocus()
+                                }
+                            }),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Box(
+                    modifier =
+                        Modifier
+                            .size(24.dp)
+                            .clip(CircleShape)
+                            .background(Color.White)
+                            .border(1.dp, GrayText, CircleShape)
+                            .clickable {
+                                if (text.isNotBlank()) {
+                                    viewModel.crearElemento(text, null, null)
+                                    text = ""
+                                    viewModel.limpiarSugerencias()
+                                    focusManager.clearFocus()
+                                }
+                            },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Default.Add, "Añadir", tint = GrayText, modifier = Modifier.size(14.dp))
+                }
             }
-            BasicTextField(
-                value = text,
-                onValueChange = { text = it },
-                textStyle = TextStyle(fontSize = 16.sp, color = BlackText),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions =
-                    KeyboardActions(onDone = {
-                        if (text.isNotBlank()) {
-                            onAddItem(text)
+
+            DropdownMenu(
+                expanded = sugerencias.isNotEmpty() && text.isNotBlank(),
+                onDismissRequest = { viewModel.limpiarSugerencias() },
+                modifier = Modifier.fillMaxWidth(0.8f).background(Color.White),
+            ) {
+                sugerencias.forEach { producto ->
+                    DropdownMenuItem(
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                // Aquí podrías poner una imagen usando producto.iconoKey
+                                Text(producto.nombre, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(producto.categoria, style = TextStyle(fontSize = 12.sp, color = Color.Gray))
+                            }
+                        },
+                        onClick = {
+                            viewModel.crearElemento(producto.nombre, null, producto.iconoKey)
                             text = ""
+                            viewModel.limpiarSugerencias()
                             focusManager.clearFocus()
-                        }
-                    }),
-                modifier = Modifier.fillMaxWidth(),
-            )
+                        },
+                    )
+                }
+            }
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        Box(
-            modifier =
-                Modifier
-                    .size(24.dp)
-                    .clip(CircleShape)
-                    .background(Color.White)
-                    .border(1.dp, GrayText, CircleShape)
-                    .clickable {
-                        if (text.isNotBlank()) {
-                            onAddItem(text)
-                            text = ""
-                            focusManager.clearFocus()
-                        }
-                    },
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.Default.Check,
-                contentDescription = "Añadir",
-                tint = GrayText,
-                modifier = Modifier.size(14.dp),
-            )
+        if (populares.isNotEmpty() && text.isEmpty()) {
+            Text("Añadir rápido:", fontSize = 14.sp, color = GrayText, modifier = Modifier.padding(bottom = 8.dp))
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                items(populares) { popular ->
+                    Box(
+                        modifier =
+                            Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(Color(0xFFE8F5E9)) // Un verdecito claro
+                                .clickable {
+                                    viewModel.crearElemento(popular.nombre, null, popular.iconoKey)
+                                }.padding(horizontal = 12.dp, vertical = 6.dp),
+                    ) {
+                        Text(popular.nombre, color = Color(0xFF2E7D32), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    }
+                }
+            }
         }
     }
 }

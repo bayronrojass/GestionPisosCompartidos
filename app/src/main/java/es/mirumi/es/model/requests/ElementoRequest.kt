@@ -5,4 +5,5 @@ data class ElementoRequest(
     val descripcion: String?,
     val completado: Boolean,
     val cantidad: Int = 1,
+    val iconoKey: String? = null,
 )
