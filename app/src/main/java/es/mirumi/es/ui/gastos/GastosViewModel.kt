@@ -27,6 +27,12 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import uriToFile
 import java.io.File
 import kotlin.math.abs
+import android.content.ContentValues
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
+import android.widget.Toast
+import java.io.InputStream
 
 data class UsuarioPiso(
     val id: Long,
@@ -450,6 +456,70 @@ class GastosViewModel(
             "es.mirumi.es.fileprovider",
             tempFile,
         )
+    }
+
+    fun descargarPdfCuentas(
+        context: Context,
+        nombreCasa: String = "Piso",
+    ) {
+        viewModelScope.launch {
+            val token = sessionManager.fetchAuthToken() ?: return@launch
+            try {
+                // Avisamos de que empieza la descarga
+                Toast.makeText(context, "Generando PDF...", Toast.LENGTH_SHORT).show()
+
+                val response = repository.descargarPdfGastos(token, casaId)
+
+                if (response.isSuccessful && response.body() != null) {
+                    val inputStream = response.body()!!.byteStream()
+                    guardarPdfEnDescargas(context, inputStream, "Cuentas_$nombreCasa.pdf")
+                } else {
+                    Toast.makeText(context, "Error al generar el PDF", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "Error de red", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun guardarPdfEnDescargas(
+        context: Context,
+        inputStream: InputStream,
+        nombreArchivo: String,
+    ) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Móviles modernos (Android 10+)
+                val resolver = context.contentResolver
+                val contentValues =
+                    ContentValues().apply {
+                        put(MediaStore.MediaColumns.DISPLAY_NAME, nombreArchivo)
+                        put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
+                        put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                    }
+                val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+                if (uri != null) {
+                    resolver.openOutputStream(uri)?.use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                    Toast.makeText(context, "PDF guardado en Descargas", Toast.LENGTH_LONG).show()
+                }
+            } else {
+                // Móviles antiguos (Android 9 y anteriores)
+                @Suppress("DEPRECATION")
+                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                if (!downloadsDir.exists()) downloadsDir.mkdirs()
+                val file = File(downloadsDir, nombreArchivo)
+                file.outputStream().use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+                Toast.makeText(context, "PDF guardado en Descargas", Toast.LENGTH_LONG).show()
+            }
+        } catch (e: Exception) {
+            Toast.makeText(context, "Error guardando el archivo", Toast.LENGTH_SHORT).show()
+        } finally {
+            inputStream.close()
+        }
     }
 }
 

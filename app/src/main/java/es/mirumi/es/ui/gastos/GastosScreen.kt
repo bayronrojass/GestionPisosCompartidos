@@ -1,5 +1,6 @@
 package es.mirumi.es.ui.gastos
 
+import android.content.Context
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -46,6 +47,11 @@ import es.mirumi.es.ui.utils.FabActionType
 import es.mirumi.es.utils.Deuda
 import android.content.ContextWrapper
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import es.mirumi.es.ui.utils.LogrosGlobalViewModel
 import es.mirumi.es.ui.utils.LogrosGlobalViewModelFactory
 
@@ -58,7 +64,7 @@ val ColorRojoSaldo = Color(0xFFFF1744)
 val ColorTextoGris = Color(0xFF6C6C6C)
 val ColorMoradoOscuro = Color(0xFF58337F)
 
-fun android.content.Context.getActivity(): ComponentActivity? =
+fun Context.getActivity(): ComponentActivity? =
     when (this) {
         is ComponentActivity -> this
         is ContextWrapper -> baseContext.getActivity()
@@ -103,11 +109,11 @@ fun GastosScreen(
             )
         }
 
-    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer =
-            androidx.lifecycle.LifecycleEventObserver { _, event ->
-                if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) {
                     viewModel.cargarUsuariosCasa()
                     viewModel.cargarGastos()
                 }
@@ -155,7 +161,11 @@ fun GastosScreen(
     Scaffold(containerColor = ColorFondo) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             if (mostrarEstadisticas) {
-                VistaEstadisticas(stats = stats, onBack = { viewModel.toggleVista(false) })
+                VistaEstadisticas(
+                    stats = stats,
+                    onBack = { viewModel.toggleVista(false) },
+                    viewModel = viewModel,
+                )
             } else if (gastoSeleccionado != null) {
                 VistaDetalleGasto(
                     gasto = gastoSeleccionado!!,
@@ -776,7 +786,7 @@ fun VistaDetalleGasto(
                 onClick = onEdit,
                 modifier = Modifier.width(200.dp),
                 shape = RoundedCornerShape(50),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray),
+                border = BorderStroke(1.dp, Color.Gray),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = ColorTextoGris),
             ) {
                 Text("Modificar")
@@ -895,13 +905,13 @@ fun AvatarConFoto(
 ) {
     val inicial = nombre.firstOrNull()?.toString()?.uppercase() ?: "?"
 
-    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     var cacheKey by remember { mutableStateOf(System.currentTimeMillis()) }
 
     DisposableEffect(lifecycleOwner) {
         val observer =
-            androidx.lifecycle.LifecycleEventObserver { _, event ->
-                if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) {
                     cacheKey = System.currentTimeMillis()
                 }
             }
@@ -939,8 +949,11 @@ fun AvatarConInicial(
 @Composable
 fun VistaEstadisticas(
     stats: List<PieChartData>,
+    viewModel: GastosViewModel,
     onBack: () -> Unit,
 ) {
+    val context = LocalContext.current
+
     Column(modifier = Modifier.fillMaxSize().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver") }
@@ -1012,6 +1025,20 @@ fun VistaEstadisticas(
             }
         }
         Spacer(modifier = Modifier.height(20.dp))
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Button(
+            onClick = { viewModel.descargarPdfCuentas(context) },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = ColorMoradoOscuro),
+        ) {
+            Icon(Icons.Default.Download, contentDescription = "Descargar", tint = Color.White)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Descargar Cuentas en PDF", color = Color.White)
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
     }
 }
 
@@ -1022,7 +1049,7 @@ fun BubbleShape(
     size: Dp? = null,
     width: Dp? = null,
     height: Dp? = null,
-    shape: androidx.compose.ui.graphics.Shape,
+    shape: Shape,
     rotation: Float,
     offset: DpOffset,
     modifier: Modifier,

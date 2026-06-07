@@ -132,4 +132,10 @@ interface CasaAPI {
         @Header("Authorization") token: String,
         @Path("casaId") casaId: Long,
     ): Response<List<UsuarioRankingDTO>>
+
+    @GET("casas/{casaId}/gastos/pdf")
+    suspend fun descargarPdfGastos(
+        @Header("Authorization") token: String,
+        @Path("casaId") casaId: Long,
+    ): Response<ResponseBody>
 }

@@ -146,4 +146,9 @@ class RepositoryCasa(
             e.printStackTrace()
             null
         }
+
+    suspend fun descargarPdfGastos(
+        token: String,
+        casaId: Long,
+    ): Response<ResponseBody> = apiService.descargarPdfGastos("Bearer $token", casaId)
 }
