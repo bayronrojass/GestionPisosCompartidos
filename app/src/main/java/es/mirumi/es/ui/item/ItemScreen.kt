@@ -1,6 +1,7 @@
 package es.mirumi.es.ui.item
 
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -47,6 +48,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import es.mirumi.es.data.SessionManager
@@ -57,12 +59,15 @@ import es.mirumi.es.ui.pizarra.postits.DraggableViewModelFactory
 import es.mirumi.es.ui.pizarra.postits.PizarraScreen
 import es.mirumi.es.ui.utils.FabActionItem
 import es.mirumi.es.ui.utils.FabActionType
+import es.mirumi.es.R
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.res.painterResource
 
 // Definición de colores del diseño
 val GrayText = Color(0xFF6C6C6C)
@@ -359,12 +364,20 @@ fun PredictiveAddItemRow(
                 expanded = sugerencias.isNotEmpty() && text.isNotBlank(),
                 onDismissRequest = { viewModel.limpiarSugerencias() },
                 modifier = Modifier.fillMaxWidth(0.8f).background(Color.White),
+                properties = PopupProperties(focusable = false),
             ) {
                 sugerencias.forEach { producto ->
                     DropdownMenuItem(
                         text = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                // Aquí podrías poner una imagen usando producto.iconoKey
+                                Image(
+                                    painter = painterResource(id = GetIconoPorNombre(producto.iconoKey)),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(24.dp),
+                                    colorFilter = ColorFilter.tint(Color.DarkGray),
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+
                                 Text(producto.nombre, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(producto.categoria, style = TextStyle(fontSize = 12.sp, color = Color.Gray))
@@ -394,12 +407,22 @@ fun PredictiveAddItemRow(
                         modifier =
                             Modifier
                                 .clip(RoundedCornerShape(20.dp))
-                                .background(Color(0xFFE8F5E9)) // Un verdecito claro
+                                .background(Color(0xFFE8F5E9))
                                 .clickable {
                                     viewModel.crearElemento(popular.nombre, null, popular.iconoKey)
                                 }.padding(horizontal = 12.dp, vertical = 6.dp),
                     ) {
-                        Text(popular.nombre, color = Color(0xFF2E7D32), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Image(
+                                painter = painterResource(id = GetIconoPorNombre(popular.iconoKey)),
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                colorFilter = ColorFilter.tint(Color(0xFF2E7D32)),
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+
+                            Text(popular.nombre, color = Color(0xFF2E7D32), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        }
                     }
                 }
             }
@@ -667,4 +690,13 @@ fun ItemDialog(
         },
         dismissButton = { Button(onClick = onDismiss) { Text("Cancelar") } },
     )
+}
+
+@Composable
+fun GetIconoPorNombre(iconKey: String?): Int {
+    val context = LocalContext.current
+    if (iconKey.isNullOrBlank()) return R.drawable.ic_shopping_bag
+
+    val resId = context.resources.getIdentifier(iconKey, "drawable", context.packageName)
+    return if (resId != 0) resId else R.drawable.ic_shopping_bag
 }
