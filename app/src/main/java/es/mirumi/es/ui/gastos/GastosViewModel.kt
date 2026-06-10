@@ -102,6 +102,12 @@ class GastosViewModel(
     private val _mensajePago = MutableStateFlow<String?>(null)
     val mensajePago: StateFlow<String?> = _mensajePago.asStateFlow()
 
+    private val _statsPorPersona = MutableStateFlow<List<PieChartData>>(emptyList())
+    val statsPorPersona: StateFlow<List<PieChartData>> = _statsPorPersona.asStateFlow()
+
+    private val _statsPorCategoria = MutableStateFlow<List<PieChartData>>(emptyList())
+    val statsPorCategoria: StateFlow<List<PieChartData>> = _statsPorCategoria.asStateFlow()
+
     private val colorPalette =
         listOf(
             Color(0xFF536DFE),
@@ -180,21 +186,24 @@ class GastosViewModel(
         importe: String,
         categoria: String,
         beneficiarios: List<String>,
-        pagadorId: Long,
+        pagadoresMap: Map<Long, Double>,
         onSuccess: () -> Unit = {},
     ) {
         viewModelScope.launch {
             val token = sessionManager.fetchAuthToken() ?: return@launch
             val importeDouble = importe.toDoubleOrNull() ?: 0.0
-            val aportaciones = listOf(AportacionRequest(pagadorId, importeDouble))
             val urlDelEscaner = _borradorEscaneado.value?.urlTicket
+
+            // Transformamos el mapa en la lista de aportaciones que espera el servidor
+            val aportaciones = pagadoresMap.map { AportacionRequest(it.key, it.value) }
+            val pagadorPrincipalId = pagadoresMap.keys.firstOrNull() ?: 0L
 
             val request =
                 GastoRequest(
                     nombre = nombre,
                     importe = importeDouble,
                     categoria = categoria,
-                    pagadoPorId = pagadorId,
+                    pagadoPorId = pagadorPrincipalId,
                     aportaciones = aportaciones,
                     beneficiarios = beneficiarios,
                     urlTicket = urlDelEscaner,
@@ -217,13 +226,14 @@ class GastosViewModel(
         importe: String,
         categoria: String,
         beneficiarios: List<String>,
-        pagadorId: Long,
+        pagadoresMap: Map<Long, Double>,
     ) {
         viewModelScope.launch {
             val token = sessionManager.fetchAuthToken() ?: return@launch
             val importeDouble = importe.toDoubleOrNull() ?: 0.0
 
-            val aportaciones = listOf(AportacionRequest(pagadorId, importeDouble))
+            val aportaciones = pagadoresMap.map { AportacionRequest(it.key, it.value) }
+            val pagadorPrincipalId = pagadoresMap.keys.firstOrNull() ?: 0L
             val urlExistente = listaCompleta.find { it.id == gastoId }?.fotoTicketUrl
 
             val request =
@@ -231,7 +241,7 @@ class GastosViewModel(
                     nombre = nombre,
                     importe = importeDouble,
                     categoria = categoria,
-                    pagadoPorId = pagadorId,
+                    pagadoPorId = pagadorPrincipalId,
                     aportaciones = aportaciones,
                     beneficiarios = beneficiarios,
                     urlTicket = urlExistente,
@@ -249,6 +259,13 @@ class GastosViewModel(
         calcularSaldosYPlanPagos(listaCompleta)
     }
 
+    fun calcularSaldos(lista: List<Gasto> = listaCompleta) {
+        calcularSaldosYPlanPagos(lista)
+    }
+
+    // Función auxiliar para arreglar el problema de los decimales infinitos (10 / 3)
+    private fun Double.redondear(): Double = Math.round(this * 100.0) / 100.0
+
     private fun calcularSaldosYPlanPagos(lista: List<Gasto>) {
         val todosLosUsuariosNombres = _usuariosDetectados.value.map { it.nombre }
         if (todosLosUsuariosNombres.isEmpty()) return
@@ -259,9 +276,11 @@ class GastosViewModel(
             val beneficiariosDelGasto = gasto.beneficiarios?.takeIf { it.isNotEmpty() } ?: todosLosUsuariosNombres
             if (beneficiariosDelGasto.isEmpty()) return@forEach
 
-            val costoPorPersona = gasto.importe / beneficiariosDelGasto.size
+            val costoPorPersona = (gasto.importe / beneficiariosDelGasto.size).redondear()
 
-            beneficiariosDelGasto.forEach { b -> balances[b] = (balances[b] ?: 0.0) - costoPorPersona }
+            beneficiariosDelGasto.forEach { b ->
+                balances[b] = (balances[b] ?: 0.0) - costoPorPersona
+            }
 
             if (!gasto.aportaciones.isNullOrEmpty()) {
                 gasto.aportaciones.forEach { aportacion ->
@@ -272,33 +291,38 @@ class GastosViewModel(
             }
         }
 
+        // Redondeamos todo al final para limpiar la basura de decimales
         val saldosCalculados =
             balances
                 .map { (nombre, balance) ->
-                    SaldoUsuario(nombre, balance, getColorPorNombreDinamico(nombre), getFotoPorNombre(nombre))
+                    SaldoUsuario(nombre, balance.redondear(), getColorPorNombreDinamico(nombre), getFotoPorNombre(nombre))
                 }.sortedByDescending { it.cantidad }
 
         _saldos.value = saldosCalculados
 
-        val deudores = saldosCalculados.filter { it.cantidad < -0.01 }.map { it.copy() }.toMutableList()
-        val acreedores = saldosCalculados.filter { it.cantidad > 0.01 }.map { it.copy() }.toMutableList()
+        val deudores = saldosCalculados.filter { it.cantidad < -0.05 }.map { it.copy() }.toMutableList()
+        val acreedores = saldosCalculados.filter { it.cantidad > 0.05 }.map { it.copy() }.toMutableList()
 
         val nuevoPlan = mutableListOf<Deuda>()
         var d = 0
         var a = 0
 
+        // Bucle seguro a prueba de céntimos sueltos
         while (d < deudores.size && a < acreedores.size) {
             val deudor = deudores[d]
             val acreedor = acreedores[a]
 
-            val deudaAPagar = minOf(abs(deudor.cantidad), acreedor.cantidad)
-            if (deudaAPagar > 0.01) nuevoPlan.add(Deuda(deudor.nombre, acreedor.nombre, deudaAPagar))
+            val deudaAPagar = minOf(abs(deudor.cantidad), acreedor.cantidad).redondear()
 
-            deudores[d] = deudor.copy(cantidad = deudor.cantidad + deudaAPagar)
-            acreedores[a] = acreedor.copy(cantidad = acreedor.cantidad - deudaAPagar)
+            if (deudaAPagar > 0.05) {
+                nuevoPlan.add(Deuda(deudor.nombre, acreedor.nombre, deudaAPagar))
+            }
 
-            if (abs(deudores[d].cantidad) < 0.01) d++
-            if (acreedores[a].cantidad < 0.01) a++
+            deudores[d] = deudor.copy(cantidad = (deudor.cantidad + deudaAPagar).redondear())
+            acreedores[a] = acreedor.copy(cantidad = (acreedor.cantidad - deudaAPagar).redondear())
+
+            if (abs(deudores[d].cantidad) <= 0.05) d++
+            if (acreedores[a].cantidad <= 0.05) a++
         }
         _planDePagos.value = nuevoPlan
     }
@@ -306,12 +330,16 @@ class GastosViewModel(
     fun calcularEstadisticas(lista: List<Gasto> = listaCompleta) {
         val total = lista.sumOf { it.importe }
         if (total == 0.0) {
-            _stats.value = emptyList()
+            _statsPorPersona.value = emptyList()
+            _statsPorCategoria.value = emptyList()
             return
         }
 
         val pagosPorPersona = mutableMapOf<String, Double>()
+        val pagosPorCategoria = mutableMapOf<String, Double>()
+
         lista.forEach { gasto ->
+            // Agrupar por persona
             if (!gasto.aportaciones.isNullOrEmpty()) {
                 gasto.aportaciones.forEach { ap ->
                     pagosPorPersona[ap.nombre] = (pagosPorPersona[ap.nombre] ?: 0.0) + ap.cantidad
@@ -321,22 +349,35 @@ class GastosViewModel(
             } else {
                 pagosPorPersona["Varios"] = (pagosPorPersona["Varios"] ?: 0.0) + gasto.importe
             }
+
+            // Agrupar por categoría
+            val cat = gasto.categoria ?: "OTROS"
+            pagosPorCategoria[cat] = (pagosPorCategoria[cat] ?: 0.0) + gasto.importe
         }
 
-        val datosOrdenados =
+        // Llenamos la lista 1 (Por Persona)
+        _statsPorPersona.value =
             pagosPorPersona
                 .map { (nombre, pagado) ->
-                    Pair(nombre, (pagado / total).toFloat())
-                }.sortedByDescending { it.second }
+                    val porcentaje = (pagado / total).toFloat()
+                    PieChartData(nombre, porcentaje, "${(porcentaje * 100).toInt()}%", getColorPorNombreDinamico(nombre))
+                }.sortedByDescending { it.porcentaje }
 
-        _stats.value =
-            datosOrdenados.map { (nombre, porcentaje) ->
-                PieChartData(nombre, porcentaje, "${(porcentaje * 100).toInt()}%", getColorPorNombreDinamico(nombre))
-            }
-    }
-
-    fun calcularSaldos(lista: List<Gasto> = listaCompleta) {
-        calcularSaldosYPlanPagos(lista)
+        // Llenamos la lista 2 (Por Categoría)
+        _statsPorCategoria.value =
+            pagosPorCategoria
+                .map { (cat, pagado) ->
+                    val porcentaje = (pagado / total).toFloat()
+                    val colorCat =
+                        when (cat.uppercase()) {
+                            "COMIDA" -> Color(0xFFFF9800)
+                            "ALQUILER" -> Color(0xFF2196F3)
+                            "SUMINISTROS" -> Color(0xFF00BCD4)
+                            "OCIO" -> Color(0xFFE91E63)
+                            else -> Color(0xFF9E9E9E)
+                        }
+                    PieChartData(cat, porcentaje, "${(porcentaje * 100).toInt()}%", colorCat)
+                }.sortedByDescending { it.porcentaje }
     }
 
     fun obtenerParticipantesGasto(gasto: Gasto): List<ParticipantePago> {

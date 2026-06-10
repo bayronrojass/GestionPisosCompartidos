@@ -1,46 +1,33 @@
 package es.mirumi.es.ui.gastos
 
+import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import es.mirumi.es.model.Gasto
 import es.mirumi.es.model.dtos.BorradorGastoDTO
+import java.util.Locale
+import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -49,26 +36,30 @@ fun NuevoGastoDialog(
     gastoEditar: Gasto? = null,
     borradorInicial: BorradorGastoDTO? = null,
     miembrosCasa: List<UsuarioPiso>,
-    onConfirm: (String, String, String, List<String>, Long) -> Unit,
+    onConfirm: (String, String, String, List<String>, Map<Long, Double>) -> Unit,
 ) {
     var nombre by remember { mutableStateOf(borradorInicial?.concepto ?: gastoEditar?.nombre ?: "") }
     var importe by remember { mutableStateOf(borradorInicial?.total?.toString() ?: gastoEditar?.importe?.toString() ?: "") }
     var categoriaSelected by remember { mutableStateOf(gastoEditar?.categoria ?: "COMIDA") }
 
-    // BENEFICIARIOS (Los que participan en el gasto) -> Guardamos sus NOMBRES
+    // Tipado explícito a Set<String>
     var beneficiariosSelected by remember {
-        mutableStateOf(
+        mutableStateOf<Set<String>>(
             gastoEditar?.beneficiarios?.takeIf { it.isNotEmpty() }?.toSet()
                 ?: miembrosCasa.map { it.nombre }.toSet(),
         )
     }
-    // PAGADOR (El que puso el dinero) -> Guardamos su ID
-    var pagadorIdSelected by remember {
-        mutableStateOf(
-            gastoEditar?.let { g -> miembrosCasa.find { it.nombre == g.pagadoPorNombre }?.id }
-                ?: miembrosCasa.firstOrNull()?.id ?: 0L,
+
+    var pagadoresMap by remember {
+        mutableStateOf<Map<Long, Double>>(
+            gastoEditar?.aportaciones?.associate { it.usuarioId to it.cantidad } ?: emptyMap(),
         )
     }
+
+    // CÁLCULOS DINÁMICOS PARA LA UI
+    val importeTotal = importe.replace(',', '.').toDoubleOrNull() ?: 0.0
+    val totalPagado = pagadoresMap.values.sum()
+    val diferencia = importeTotal - totalPagado
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -91,112 +82,198 @@ fun NuevoGastoDialog(
             }
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 // TICKET ESCANEADO
                 if (borradorInicial?.urlTicket != null) {
-                    AsyncImage(
-                        model = borradorInicial.urlTicket,
-                        contentDescription = "Ticket escaneado",
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .height(120.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Color.LightGray),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                    )
-                }
-
-                // NOMBRE
-                OutlinedTextField(
-                    value = nombre,
-                    onValueChange = { nombre = it },
-                    label = { Text("Nombre del gasto") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                )
-
-                // IMPORTE
-                OutlinedTextField(
-                    value = importe,
-                    onValueChange = { importe = it },
-                    label = { Text("Importe (€)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    shape = RoundedCornerShape(12.dp),
-                )
-
-                // CATEGORÍA
-                Text("Categoría:", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    CategoryChip("COMIDA", categoriaSelected) { categoriaSelected = it }
-                    CategoryChip("OCIO", categoriaSelected) { categoriaSelected = it }
-                    CategoryChip("OTROS", categoriaSelected) { categoriaSelected = it }
-                }
-
-                // 🔥 NUEVA SECCIÓN: QUIÉN PAGA (CHIPS VERDES - SELECCIÓN ÚNICA)
-                Text("¿Quién lo ha pagado?", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    miembrosCasa.forEach { miembro ->
-                        val isSelected = pagadorIdSelected == miembro.id
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = { pagadorIdSelected = miembro.id },
-                            label = { Text(miembro.nombre) },
-                            colors =
-                                FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = Color(0xFF00E676), // Verde Bizum
-                                    containerColor = ColorFondo,
-                                ),
+                    item {
+                        AsyncImage(
+                            model = borradorInicial.urlTicket,
+                            contentDescription = "Ticket escaneado",
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(120.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color.LightGray),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                         )
                     }
                 }
 
-                // BENEFICIARIOS (CHIPS LILAS - SELECCIÓN MÚLTIPLE)
-                Text("¿Para quién es?", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    miembrosCasa.forEach { usuario ->
-                        val nombreMiembro = usuario.nombre
-                        val isSelected = beneficiariosSelected.contains(nombreMiembro)
-                        FilterChip(
-                            selected = isSelected,
+                // NOMBRE
+                item {
+                    OutlinedTextField(
+                        value = nombre,
+                        onValueChange = { nombre = it },
+                        label = { Text("Nombre del gasto") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                    )
+                }
+
+                // IMPORTE TOTAL
+                item {
+                    OutlinedTextField(
+                        value = importe,
+                        onValueChange = { importe = it },
+                        label = { Text("Importe Total (€)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = RoundedCornerShape(12.dp),
+                    )
+                }
+
+                // CATEGORÍA
+                item {
+                    Text("Categoría:", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    val todasLasCategorias = listOf("ALQUILER", "COMIDA", "SUMINISTROS", "OCIO", "TRANSPORTE", "OTROS")
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        todasLasCategorias.forEach { cat ->
+                            CategoryChip(cat, categoriaSelected) { categoriaSelected = it }
+                        }
+                    }
+                }
+
+                // QUIÉN LO HA PAGADO Y CUÁNTO
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("¿Quién lo ha pagado?", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+
+                        // Botón mágico para repartir a medias el pago
+                        TextButton(
                             onClick = {
-                                val current = beneficiariosSelected.toMutableSet()
-                                if (isSelected) {
-                                    if (current.size > 1) current.remove(nombreMiembro)
-                                } else {
-                                    current.add(nombreMiembro)
+                                if (importeTotal > 0 && miembrosCasa.isNotEmpty()) {
+                                    val aPagarPorCabeza = Math.round((importeTotal / miembrosCasa.size) * 100.0) / 100.0
+                                    pagadoresMap = miembrosCasa.associate { it.id to aPagarPorCabeza }
                                 }
-                                beneficiariosSelected = current
                             },
-                            label = { Text(nombreMiembro) },
-                            leadingIcon =
-                                if (isSelected) {
-                                    { Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp)) }
+                            contentPadding = PaddingValues(0.dp),
+                        ) {
+                            Text("A partes iguales", color = ColorMoradoOscuro, fontSize = 12.sp, textDecoration = TextDecoration.Underline)
+                        }
+                    }
+                }
+
+                // Lista de usuarios con Inputs
+                items(miembrosCasa) { miembro ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(miembro.nombre, modifier = Modifier.weight(1f), fontSize = 16.sp)
+
+                        val montoActual =
+                            pagadoresMap[miembro.id]?.let {
+                                if (it == 0.0) "" else String.format(Locale.US, "%.2f", it)
+                            } ?: ""
+
+                        OutlinedTextField(
+                            value = montoActual,
+                            onValueChange = { text ->
+                                val limpio = text.replace(',', '.')
+                                val nuevoMapa = pagadoresMap.toMutableMap()
+                                val valor = limpio.toDoubleOrNull()
+                                if (valor != null && valor > 0) {
+                                    nuevoMapa[miembro.id] = valor
                                 } else {
-                                    null
-                                },
-                            colors =
-                                FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = ColorLila,
-                                    containerColor = ColorFondo,
-                                ),
+                                    nuevoMapa.remove(miembro.id)
+                                }
+                                pagadoresMap = nuevoMapa
+                            },
+                            label = { Text("0.00 €") },
+                            modifier = Modifier.width(120.dp),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            shape = RoundedCornerShape(8.dp),
                         )
+                    }
+                }
+
+                // INDICADOR VISUAL DE CUÁNTO FALTA O SOBRA
+                item {
+                    val colorMensaje =
+                        when {
+                            diferencia > 0.01 -> ColorRojoSaldo // Falta dinero
+                            diferencia < -0.01 -> Color(0xFFFFA000) // Sobra dinero
+                            else -> ColorVerdeSaldo // Cuadra perfecto
+                        }
+
+                    val textoMensaje =
+                        when {
+                            diferencia > 0.01 -> "Falta asignar: ${String.format("%.2f", diferencia)}€"
+                            diferencia < -0.01 -> "Sobran: ${String.format("%.2f", abs(diferencia))}€"
+                            else -> "¡Las cuentas cuadran! (0.00€)"
+                        }
+
+                    Text(
+                        text = textoMensaje,
+                        color = colorMensaje,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.End,
+                    )
+                }
+
+                // BENEFICIARIOS
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("¿Para quién es?", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        miembrosCasa.forEach { usuario ->
+                            val nombreMiembro = usuario.nombre
+                            val isSelected = beneficiariosSelected.contains(nombreMiembro)
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    val current = beneficiariosSelected.toMutableSet()
+                                    if (isSelected) {
+                                        if (current.size > 1) current.remove(nombreMiembro)
+                                    } else {
+                                        current.add(nombreMiembro)
+                                    }
+                                    beneficiariosSelected = current
+                                },
+                                label = { Text(nombreMiembro) },
+                                leadingIcon =
+                                    if (isSelected) {
+                                        { Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp)) }
+                                    } else {
+                                        null
+                                    },
+                                colors =
+                                    FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = ColorLila,
+                                        containerColor = ColorFondo,
+                                    ),
+                            )
+                        }
                     }
                 }
             }
         },
         confirmButton = {
+            val context = LocalContext.current
             Button(
                 onClick = {
-                    if (nombre.isNotEmpty() && importe.isNotEmpty()) {
-                        onConfirm(nombre, importe, categoriaSelected, beneficiariosSelected.toList(), pagadorIdSelected)
+                    if (nombre.isEmpty() || importeTotal <= 0) {
+                        Toast.makeText(context, "Introduce un nombre e importe válidos", Toast.LENGTH_SHORT).show()
+                    } else if (pagadoresMap.isEmpty()) {
+                        Toast.makeText(context, "Debes indicar al menos un pagador", Toast.LENGTH_SHORT).show()
+                    } else if (abs(diferencia) > 0.05) {
+                        Toast.makeText(context, "Los pagos no cuadran con el total.", Toast.LENGTH_SHORT).show()
+                    } else {
+                        onConfirm(nombre, importeTotal.toString(), categoriaSelected, beneficiariosSelected.toList(), pagadoresMap)
                         onDismiss()
                     }
                 },

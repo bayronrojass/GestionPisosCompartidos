@@ -50,6 +50,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import es.mirumi.es.ui.utils.LogrosGlobalViewModel
@@ -144,8 +145,8 @@ fun GastosScreen(
             onDismiss = { viewModel.limpiarBorrador() },
             borradorInicial = borrador,
             miembrosCasa = usuariosCasa,
-            onConfirm = { nombre, importe, categoria, beneficiarios, pagadoPorTodos ->
-                viewModel.crearGasto(nombre, importe, categoria, beneficiarios, pagadoPorTodos)
+            onConfirm = { nombre, importe, categoria, beneficiarios, pagadoresMap ->
+                viewModel.crearGasto(nombre, importe, categoria, beneficiarios, pagadoresMap)
                 viewModel.limpiarBorrador()
             },
         )
@@ -162,9 +163,8 @@ fun GastosScreen(
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             if (mostrarEstadisticas) {
                 VistaEstadisticas(
-                    stats = stats,
-                    onBack = { viewModel.toggleVista(false) },
                     viewModel = viewModel,
+                    onBack = { viewModel.toggleVista(false) },
                 )
             } else if (gastoSeleccionado != null) {
                 VistaDetalleGasto(
@@ -269,11 +269,12 @@ fun GastosScreen(
                     },
                     gastoEditar = if (isEditing) gastoSeleccionado else null,
                     miembrosCasa = usuariosCasa,
-                    onConfirm = { nombre, importe, categoria, beneficiarios, pagadoPorTodos ->
+                    // 🔴 Cambiamos pagadorIdSelected por pagadoresMap
+                    onConfirm = { nombre, importe, categoria, beneficiarios, pagadoresMap ->
                         if (isEditing && gastoSeleccionado != null) {
-                            viewModel.editarGasto(gastoSeleccionado!!.id, nombre, importe, categoria, beneficiarios, pagadoPorTodos)
+                            viewModel.editarGasto(gastoSeleccionado!!.id, nombre, importe, categoria, beneficiarios, pagadoresMap)
                         } else {
-                            viewModel.crearGasto(nombre, importe, categoria, beneficiarios, pagadoPorTodos) {
+                            viewModel.crearGasto(nombre, importe, categoria, beneficiarios, pagadoresMap) {
                                 logrosGlobalViewModel?.comprobarNuevosLogros(silencioso = false)
                             }
                         }
@@ -948,26 +949,107 @@ fun AvatarConInicial(
 
 @Composable
 fun VistaEstadisticas(
-    stats: List<PieChartData>,
     viewModel: GastosViewModel,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
 
+    // Recogemos ambas listas del ViewModel
+    val statsPorPersona by viewModel.statsPorPersona.collectAsState()
+    val statsPorCategoria by viewModel.statsPorCategoria.collectAsState()
+
+    // Estado para controlar qué página vemos (0 = Persona, 1 = Categoría)
+    var paginaActual by remember { mutableIntStateOf(0) }
+
+    // Control del Diálogo del PDF
+    var showPdfDialog by remember { mutableStateOf(false) }
+
+    // Elegimos qué datos mostrar según la página
+    val statsActuales = if (paginaActual == 0) statsPorPersona else statsPorCategoria
+    val tituloActual = if (paginaActual == 0) "¿Cuánto\nhas pagado?" else "¿En qué\ngastamos más?"
+
     Column(modifier = Modifier.fillMaxSize().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        // Botón de Volver
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver") }
             Spacer(modifier = Modifier.weight(1f))
             Text("Estadísticas", color = ColorTextoGris, fontSize = 16.sp)
         }
-        Spacer(modifier = Modifier.height(20.dp))
-        Text("¿Cuánto\nhas pagado?", fontSize = 36.sp, fontWeight = FontWeight.Bold, lineHeight = 40.sp, modifier = Modifier.fillMaxWidth())
-        Spacer(modifier = Modifier.height(40.dp))
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // CARRUSEL CON FLECHAS Y TÍTULO DINÁMICO
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(
+                onClick = { paginaActual = 0 },
+                enabled = paginaActual > 0,
+            ) {
+                Icon(
+                    Icons.Default.ArrowBackIosNew,
+                    contentDescription = "Atrás",
+                    tint =
+                        if (paginaActual >
+                            0
+                        ) {
+                            Color.Black
+                        } else {
+                            Color.Transparent
+                        },
+                )
+            }
+
+            Text(
+                text = tituloActual,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                lineHeight = 34.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f),
+            )
+
+            IconButton(
+                onClick = { paginaActual = 1 },
+                enabled = paginaActual < 1,
+            ) {
+                Icon(
+                    Icons.Default.ArrowForwardIos,
+                    contentDescription = "Adelante",
+                    tint =
+                        if (paginaActual <
+                            1
+                        ) {
+                            Color.Black
+                        } else {
+                            Color.Transparent
+                        },
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(30.dp))
+
+        // BURBUJAS INTERACTIVAS
         Box(modifier = Modifier.size(320.dp)) {
-            if (stats.isEmpty()) {
+            if (statsActuales.isEmpty()) {
                 Text("Sin datos", modifier = Modifier.align(Alignment.Center))
             } else {
-                stats.take(5).forEachIndexed { index, data ->
+                statsActuales.take(5).forEachIndexed { index, data ->
+
+                    val onClickBurbuja = {
+                        if (paginaActual == 1) {
+                            // Si estamos en Categorías, filtramos la lista y cerramos las stats
+                            viewModel.aplicarFiltro(data.categoria)
+                            onBack()
+                        } else {
+                            // Opcional: mostrar un Toast al pulsar en una persona
+                            Toast.makeText(context, "Pagado por: ${data.categoria}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+
                     when (index) {
                         0 ->
                             BubbleShape(
@@ -978,6 +1060,7 @@ fun VistaEstadisticas(
                                 rotation = 10f,
                                 offset = DpOffset(10.dp, 10.dp),
                                 modifier = Modifier.align(Alignment.TopStart),
+                                onClick = onClickBurbuja,
                             )
                         1 ->
                             BubbleShape(
@@ -988,6 +1071,7 @@ fun VistaEstadisticas(
                                 rotation = 0f,
                                 offset = DpOffset(20.dp, (-10).dp),
                                 modifier = Modifier.align(Alignment.BottomStart),
+                                onClick = onClickBurbuja,
                             )
                         2 ->
                             BubbleShape(
@@ -998,6 +1082,7 @@ fun VistaEstadisticas(
                                 rotation = -25f,
                                 offset = DpOffset((-10).dp, 60.dp),
                                 modifier = Modifier.align(Alignment.TopEnd),
+                                onClick = onClickBurbuja,
                             )
                         3 ->
                             BubbleShape(
@@ -1009,14 +1094,29 @@ fun VistaEstadisticas(
                                 rotation = 5f,
                                 offset = DpOffset(0.dp, 0.dp),
                                 modifier = Modifier.align(Alignment.BottomEnd),
+                                onClick = onClickBurbuja,
+                            )
+                        4 ->
+                            BubbleShape(
+                                text = data.textoPorcentaje,
+                                color = data.color,
+                                size = 90.dp,
+                                shape = CircleShape,
+                                rotation = -10f,
+                                offset = DpOffset(120.dp, 120.dp),
+                                modifier = Modifier.align(Alignment.Center),
+                                onClick = onClickBurbuja,
                             )
                     }
                 }
             }
         }
+
         Spacer(modifier = Modifier.weight(1f))
+
+        // LEYENDA
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            stats.take(4).forEach {
+            statsActuales.take(4).forEach {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(12.dp).background(it.color, CircleShape))
                     Spacer(modifier = Modifier.width(8.dp))
@@ -1024,21 +1124,59 @@ fun VistaEstadisticas(
                 }
             }
         }
-        Spacer(modifier = Modifier.height(20.dp))
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(30.dp))
 
+        // BOTÓN DE DESCARGAR PDF
         Button(
-            onClick = { viewModel.descargarPdfCuentas(context) },
+            onClick = { showPdfDialog = true },
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
             colors = ButtonDefaults.buttonColors(containerColor = ColorMoradoOscuro),
+            shape = RoundedCornerShape(12.dp),
         ) {
-            Icon(Icons.Default.Download, contentDescription = "Descargar", tint = Color.White)
+            Icon(Icons.Default.PictureAsPdf, contentDescription = "Descargar PDF", tint = Color.White)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Descargar Cuentas en PDF", color = Color.White)
+            Text("Generar PDF de Cuentas", color = Color.White, fontWeight = FontWeight.Bold)
         }
 
         Spacer(modifier = Modifier.height(20.dp))
+    }
+
+    // DIÁLOGO DE OPCIONES DE PDF
+    if (showPdfDialog) {
+        var incluirDeudas by remember { mutableStateOf(true) }
+
+        AlertDialog(
+            onDismissRequest = { showPdfDialog = false },
+            title = { Text("Opciones del Informe", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text("Selecciona qué deseas incluir en el documento PDF:", color = Color.Gray)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { incluirDeudas = !incluirDeudas }) {
+                        Checkbox(checked = incluirDeudas, onCheckedChange = {
+                            incluirDeudas = it
+                        }, colors = CheckboxDefaults.colors(checkedColor = ColorMoradoOscuro))
+                        Text("Incluir Plan de Pagos (Quién debe a quién)")
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showPdfDialog = false
+                        viewModel.descargarPdfCuentas(context, "Piso")
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = ColorMoradoOscuro),
+                ) {
+                    Text("Descargar", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPdfDialog = false }) { Text("Cancelar", color = Color.Gray) }
+            },
+            containerColor = Color.White,
+        )
     }
 }
 
@@ -1049,10 +1187,11 @@ fun BubbleShape(
     size: Dp? = null,
     width: Dp? = null,
     height: Dp? = null,
-    shape: Shape,
+    shape: androidx.compose.ui.graphics.Shape,
     rotation: Float,
     offset: DpOffset,
     modifier: Modifier,
+    onClick: () -> Unit = {},
 ) {
     Box(
         modifier =
@@ -1061,9 +1200,12 @@ fun BubbleShape(
                 .rotate(rotation)
                 .then(if (size != null) Modifier.size(size) else Modifier.size(width = width!!, height = height!!))
                 .clip(shape)
-                .background(color),
+                .background(color)
+                .clickable { onClick() },
         contentAlignment = Alignment.Center,
-    ) { Text(text = text, color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold, modifier = Modifier.rotate(-rotation)) }
+    ) {
+        Text(text = text, color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold, modifier = Modifier.rotate(-rotation))
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

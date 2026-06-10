@@ -3,6 +3,7 @@ package es.mirumi.es.model
 import com.google.gson.annotations.SerializedName
 
 data class AportacionDTO(
+    val usuarioId: Long,
     val nombre: String,
     val cantidad: Double,
 )
