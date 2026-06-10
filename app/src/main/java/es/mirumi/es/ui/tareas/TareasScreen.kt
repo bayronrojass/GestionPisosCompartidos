@@ -36,7 +36,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CheckCircle
@@ -107,6 +106,20 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+
+fun getIconoTarea(categoria: String?): ImageVector {
+    return when (categoria?.uppercase()) {
+        "COCINA" -> Icons.Default.Restaurant
+        "LIMPIEZA" -> Icons.Default.CleaningServices // O Icons.Default.Brush si da error
+        "BAÑO" -> Icons.Default.Bathtub // O Icons.Default.WaterDrop si da error
+        "COMPRAS", "COMPRA" -> Icons.Default.ShoppingCart
+        else -> Icons.Default.Assignment
+    }
+}
+
 
 fun Context.getActivity(): ComponentActivity? =
     when (this) {
@@ -690,12 +703,21 @@ fun TaskCardPendiente(
             horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.Start),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Top), modifier = Modifier.weight(1f)) {
-                Text(
-                    text = tarea.nombre,
-                    color = Color.Black,
-                    style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Medium),
-                    modifier = Modifier.fillMaxWidth(),
-                )
+
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(
+                        imageVector = getIconoTarea(tarea.descripcion ?: "OTROS"),
+                        contentDescription = "Icono Tarea",
+                        tint = Color(0xff5d427a),
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        text = tarea.nombre,
+                        color = Color.Black,
+                        style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Medium),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start), verticalAlignment = Alignment.CenterVertically) {
                     when (tarea.prioridad?.lowercase() ?: "media") {
