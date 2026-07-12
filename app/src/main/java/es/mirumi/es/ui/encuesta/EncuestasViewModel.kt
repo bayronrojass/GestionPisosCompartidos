@@ -2,7 +2,6 @@ package es.mirumi.es.ui.encuestas
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import es.mirumi.es.data.SessionManager
 import es.mirumi.es.data.repository.repositories.RepositoryEncuesta
 import es.mirumi.es.model.requests.EncuestaRequest
 import es.mirumi.es.model.responses.EncuestaResponse
@@ -14,10 +13,8 @@ import kotlinx.coroutines.launch
 
 class EncuestasViewModel(
     private val casaId: Long,
-    sessionManager: SessionManager, // <-- Recibimos el SessionManager
 ) : ViewModel() {
-    // Le pasamos el SessionManager al repositorio
-    private val repository = RepositoryEncuesta(sessionManager)
+    private val repository = RepositoryEncuesta()
 
     private val _encuestas = MutableStateFlow<List<EncuestaResponse>>(emptyList())
     val encuestas: StateFlow<List<EncuestaResponse>> = _encuestas.asStateFlow()

@@ -5,39 +5,30 @@ import es.mirumi.es.model.responses.EncuestaResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
-import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
 
 interface EncuestaAPI {
-    @POST("api/casa/{casaId}/lista-encuestas")
+    @POST("casas/{casaId}/encuestas")
     suspend fun crearEncuesta(
-        @Header("Authorization") token: String,
-        @Header("X-User-Id") userId: Long, // <- AÑADIDO
         @Path("casaId") casaId: Long,
         @Body request: EncuestaRequest,
     ): Response<EncuestaResponse>
 
-    @GET("api/casa/{casaId}/lista-encuestas")
+    @GET("casas/{casaId}/encuestas")
     suspend fun obtenerEncuestas(
-        @Header("Authorization") token: String,
-        @Header("X-User-Id") userId: Long, // <- AÑADIDO
         @Path("casaId") casaId: Long,
     ): Response<List<EncuestaResponse>>
 
-    @POST("api/encuestas/{encuestaId}/votar-opcion/{opcionId}")
+    @POST("casas/encuestas/{encuestaId}/votar/{opcionId}")
     suspend fun votar(
-        @Header("Authorization") token: String,
-        @Header("X-User-Id") userId: Long, // <- AÑADIDO
         @Path("encuestaId") encuestaId: Long,
         @Path("opcionId") opcionId: Long,
     ): Response<Map<String, String>>
 
-    @PUT("api/encuestas/{encuestaId}/cerrar-encuesta")
+    @PUT("casas/encuestas/{encuestaId}/cerrar")
     suspend fun cerrarEncuesta(
-        @Header("Authorization") token: String,
-        @Header("X-User-Id") userId: Long, // <- AÑADIDO
         @Path("encuestaId") encuestaId: Long,
     ): Response<Map<String, String>>
 }

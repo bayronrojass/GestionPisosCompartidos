@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Encuesta API route alignment**: `EncuestaAPI` endpoints updated to match backend REST standardization (`api/casa/{id}/lista-encuestas` → `casas/{id}/encuestas`; voting and close actions likewise updated).
+- **Removed X-User-Id header from Encuesta calls**: All `EncuestaAPI` methods no longer send the `X-User-Id` header; user identity is now derived server-side from the JWT token (already attached by `AuthInterceptor`).
+- **RepositoryEncuesta**: Constructor no longer requires `SessionManager` — authentication is handled transparently by the OkHttp interceptor.
+- **EncuestasViewModel / EncuestasViewModelFactory**: Removed `SessionManager` dependency (no longer needed by repository).
+
 ## [0.1.0] - 2026-07-12
 
 ### Added

@@ -230,8 +230,7 @@ fun AppNavigation(
                 arguments = listOf(navArgument("casa_id") { type = NavType.LongType }),
             ) { backStackEntry ->
                 val casaId = backStackEntry.arguments?.getLong("casa_id") ?: 0L
-                val sessionManagerLocal = rememberSessionManager()
-                val viewModel: EncuestasViewModel = viewModel(factory = EncuestasViewModelFactory(casaId, sessionManagerLocal))
+                val viewModel: EncuestasViewModel = viewModel(factory = EncuestasViewModelFactory(casaId))
                 EncuestasScreen(viewModel = viewModel)
             }
         }
