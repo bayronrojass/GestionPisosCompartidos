@@ -17,14 +17,18 @@ class RepositoryLogin(
         val fcmToken = sharedPreferences.getString("fcm_token", null)
 
         if (response.isSuccessful) {
-            if (fcmToken != null && response.body()?.user?.id != null) {
+            val loginResponse = response.body() ?: throw Exception("Respuesta de login vacía o inválida")
+            NetworkModule.sessionManager.saveAuthData(
+                loginResponse.authToken,
+                loginResponse.user.id,
+                loginResponse.user.correo,
+            )
+            if (fcmToken != null) {
                 val repository = RepositoryUsuario(NetworkModule.usuarioApiService)
-                repository.updateUsuarioToken(response.body()!!.user.id, fcmToken.toString().replace("\"", ""))
+                repository.updateUsuarioToken(loginResponse.user.id, fcmToken.replace("\"", ""))
                 Log.d("TOKEN", "Token creado")
-                return response.body() ?: throw Exception("Respuesta de login vacía o inválida")
             }
-            Log.d("TOKEN", "Token no creado")
-            return response.body() ?: throw Exception("Respuesta de login vacía o inválida")
+            return loginResponse
         } else {
             val errorBody = response.errorBody()?.string() ?: "Error desconocido"
             val errorMessage =

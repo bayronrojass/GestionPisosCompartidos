@@ -1,5 +1,6 @@
 package es.mirumi.es.data.remote
 
+import android.content.Context
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.Strictness
@@ -7,6 +8,7 @@ import com.google.gson.TypeAdapter
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 import es.mirumi.es.BuildConfig
+import es.mirumi.es.data.SessionManager
 import es.mirumi.es.data.repository.APIs.CasaAPI
 import es.mirumi.es.data.repository.APIs.CatalogoAPI
 import es.mirumi.es.data.repository.APIs.DatabaseAPI
@@ -17,6 +19,8 @@ import es.mirumi.es.data.repository.APIs.ListaAPI
 import es.mirumi.es.data.repository.APIs.LoginAPI
 import es.mirumi.es.data.repository.APIs.TareaAPI
 import es.mirumi.es.data.repository.APIs.UsuarioAPI
+import okhttp3.Interceptor
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.Retrofit.Builder
 import retrofit2.converter.gson.GsonConverterFactory
@@ -24,29 +28,34 @@ import java.io.IOException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-/**
- * Objeto Singleton que gestiona la configuración de Retrofit
- * y proporciona las instancias de los servicios API.
- */
 object NetworkModule {
+    lateinit var sessionManager: SessionManager
+        private set
+
+    fun init(context: Context) {
+        sessionManager = SessionManager(context.applicationContext)
+    }
+
     private val gson: Gson =
         GsonBuilder()
             .setStrictness(Strictness.LENIENT)
             .create()
 
-    private val brokerUrl = "tcp://10.0.2.2:1883"
+    private val client: OkHttpClient by lazy {
+        OkHttpClient
+            .Builder()
+            .addInterceptor(AuthInterceptor { sessionManager.fetchAuthToken() })
+            .build()
+    }
 
     val retrofit: Retrofit by lazy {
         Builder()
             .baseUrl(BuildConfig.BASE_URL)
+            .client(client)
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
 
-    /**
-     * Provee la instancia del servicio DatabaseAPI.
-     * Esta instancia es la que realiza las llamadas HTTP.
-     */
     val databaseApiService: DatabaseAPI by lazy {
         retrofit.create(DatabaseAPI::class.java)
     }
@@ -74,6 +83,7 @@ object NetworkModule {
     val catalogoApiService: CatalogoAPI by lazy {
         retrofit.create(CatalogoAPI::class.java)
     }
+
     val tareaApiService: TareaAPI by lazy {
         retrofit.create(TareaAPI::class.java)
     }
@@ -84,6 +94,24 @@ object NetworkModule {
 
     val eventoAPIService: EventoAPI by lazy {
         retrofit.create(EventoAPI::class.java)
+    }
+
+    private class AuthInterceptor(
+        private val tokenProvider: () -> String?,
+    ) : Interceptor {
+        override fun intercept(chain: Interceptor.Chain): okhttp3.Response {
+            val originalRequest = chain.request()
+            val token = tokenProvider()
+            if (token != null && originalRequest.header("Authorization") == null) {
+                return chain.proceed(
+                    originalRequest
+                        .newBuilder()
+                        .header("Authorization", token)
+                        .build(),
+                )
+            }
+            return chain.proceed(originalRequest)
+        }
     }
 
     class LocalDateTimeAdapter : TypeAdapter<LocalDateTime>() {

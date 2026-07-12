@@ -6,7 +6,7 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.fragment.app.FragmentActivity
-import es.mirumi.es.data.SessionManager
+import es.mirumi.es.data.remote.NetworkModule
 import es.mirumi.es.ui.navigation.AppNavigation
 import es.mirumi.es.ui.navigation.Route
 
@@ -19,11 +19,11 @@ class MainActivity : FragmentActivity() {
                 requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1)
             }
         }
-        val sessionManager = SessionManager(applicationContext)
+        NetworkModule.init(applicationContext)
 
         setContent {
             AppNavigation(
-                sessionManager = sessionManager,
+                sessionManager = NetworkModule.sessionManager,
                 startDestination = Route.InicioCarga.route,
             )
         }

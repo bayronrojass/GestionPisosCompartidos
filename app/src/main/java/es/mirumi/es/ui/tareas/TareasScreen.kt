@@ -110,16 +110,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 
-fun getIconoTarea(categoria: String?): ImageVector {
-    return when (categoria?.uppercase()) {
+fun getIconoTarea(categoria: String?): ImageVector =
+    when (categoria?.uppercase()) {
         "COCINA" -> Icons.Default.Restaurant
         "LIMPIEZA" -> Icons.Default.CleaningServices // O Icons.Default.Brush si da error
         "BAÑO" -> Icons.Default.Bathtub // O Icons.Default.WaterDrop si da error
         "COMPRAS", "COMPRA" -> Icons.Default.ShoppingCart
         else -> Icons.Default.Assignment
     }
-}
-
 
 fun Context.getActivity(): ComponentActivity? =
     when (this) {
@@ -703,13 +701,12 @@ fun TaskCardPendiente(
             horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.Start),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Top), modifier = Modifier.weight(1f)) {
-
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(
                         imageVector = getIconoTarea(tarea.descripcion ?: "OTROS"),
                         contentDescription = "Icono Tarea",
                         tint = Color(0xff5d427a),
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(24.dp),
                     )
                     Text(
                         text = tarea.nombre,

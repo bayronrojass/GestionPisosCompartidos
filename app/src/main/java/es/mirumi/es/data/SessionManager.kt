@@ -2,22 +2,38 @@ package es.mirumi.es.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 
-class SessionManager(
-    context: Context,
+class SessionManager internal constructor(
+    private val prefs: SharedPreferences,
 ) {
+    constructor(context: Context) : this(createEncryptedPrefs(context.applicationContext))
+
     companion object {
-        private const val PREFS_FILENAME = "es.mirumi.es.AUTH_PREFS"
+        private const val PREFS_FILENAME = "es.mirumi.es.AUTH_PREFS_SECURE"
         private const val KEY_AUTH_TOKEN = "AUTH_TOKEN"
         private const val KEY_USER_ID = "USER_ID"
         private const val KEY_USER_EMAIL = "USER_EMAIL"
         private const val KEY_CASA_ACTIVA_ID = "CASA_ACTIVA_ID"
         private const val KEY_CASA_ACTIVA_NOMBRE = "CASA_ACTIVA_NOMBRE"
         private const val KEY_BIOMETRIC_ENABLED = "BIOMETRIC_ENABLED"
-    }
 
-    private val prefs: SharedPreferences =
-        context.applicationContext.getSharedPreferences(PREFS_FILENAME, Context.MODE_PRIVATE)
+        private fun createEncryptedPrefs(context: Context): SharedPreferences {
+            val masterKey =
+                MasterKey
+                    .Builder(context)
+                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                    .build()
+            return EncryptedSharedPreferences.create(
+                context,
+                PREFS_FILENAME,
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+            )
+        }
+    }
 
     fun saveAuthData(
         token: String,

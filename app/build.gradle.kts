@@ -171,5 +171,6 @@ dependencies {
     implementation("com.google.accompanist:accompanist-permissions:0.34.0")
     implementation("nl.dionsegijn:konfetti-compose:2.0.4")
     implementation("androidx.biometric:biometric:1.1.0")
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }
