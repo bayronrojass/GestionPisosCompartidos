@@ -222,7 +222,8 @@ private fun HomeContent(
         Spacer(modifier = Modifier.height(80.dp))
     }
 
-    val pizarraFabActions = listOf(FabActionItem(icon = Icons.Default.NoteAdd, label = "Crear Post-it", action = FabActionType.POST_IT))
+    val pizarraFabActions =
+        listOf(FabActionItem(icon = Icons.Default.NoteAdd, label = "Crear Post-it", action = FabActionType.POST_IT))
     val model =
         androidx.lifecycle.viewmodel.compose.viewModel<DraggableViewModel>(
             key = "Home",
@@ -264,7 +265,11 @@ fun RankingBannerSection(
             Column {
                 Text("Ranking de Convivencia", fontSize = 14.sp, color = Color.DarkGray, fontWeight = FontWeight.Bold)
                 if (topUser != null) {
-                    Text("🏆 ${topUser.nombre} lidera con ${topUser.puntos} pts", fontSize = 12.sp, color = Color(0xFFCD7F32))
+                    Text(
+                        "🏆 ${topUser.nombre} lidera con ${topUser.puntos} pts",
+                        fontSize = 12.sp,
+                        color = Color(0xFFCD7F32),
+                    )
                 } else {
                     Text("🏆 Cargando líder...", fontSize = 12.sp, color = Color(0xFFCD7F32))
                 }
@@ -360,7 +365,11 @@ fun HeaderSection(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column {
-            Text("Hola, $userName", color = Color.Black, style = TextStyle(fontSize = 36.sp, fontWeight = FontWeight.Bold))
+            Text(
+                "Hola, $userName",
+                color = Color.Black,
+                style = TextStyle(fontSize = 36.sp, fontWeight = FontWeight.Bold),
+            )
             Spacer(modifier = Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -432,7 +441,11 @@ fun CalendarSection(
                 val date = ldt.toLocalDate()
                 val isSelected = selectedDate?.let { it == date } ?: false
                 val hasEvent = eventos.any { viewModel.parseFechaSegura(it.fechaInicio) == date }
-                val hasTask = tareas.any { !it.fechaFin.isNullOrEmpty() && viewModel.parseFechaSegura(it.fechaFin) == date }
+                val hasTask =
+                    tareas.any {
+                        !it.fechaFin.isNullOrEmpty() &&
+                            viewModel.parseFechaSegura(it.fechaFin) == date
+                    }
                 DayItem(
                     day = ldt.dayOfMonth.toString(),
                     dayName =
@@ -480,7 +493,11 @@ fun DayItem(
                 if (hasEvent || hasTask) {
                     Spacer(modifier = Modifier.height(2.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                        if (hasEvent) Box(modifier = Modifier.size(4.dp).clip(CircleShape).background(Color(0xffff5686)))
+                        if (hasEvent) {
+                            Box(
+                                modifier = Modifier.size(4.dp).clip(CircleShape).background(Color(0xffff5686)),
+                            )
+                        }
                         if (hasTask) Box(modifier = Modifier.size(4.dp).clip(CircleShape).background(Color(0xFFDDC1FB)))
                     }
                 }
@@ -580,11 +597,18 @@ fun EventItem(
         colors = CardDefaults.cardColors(containerColor = color),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
-        Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Box(modifier = Modifier.size(8.dp).clip(MaterialTheme.shapes.small).background(Color(0xffff5686)))
             Spacer(modifier = Modifier.width(16.dp))
             Text(text = title, style = TextStyle(fontSize = 15.sp), modifier = Modifier.weight(1f))
-            Text(text = "Creado por: ${creadorName ?: "Cargando..."}", style = TextStyle(fontSize = 12.sp), modifier = Modifier.weight(1f))
+            Text(
+                text = "Creado por: ${creadorName ?: "Cargando..."}",
+                style = TextStyle(fontSize = 12.sp),
+                modifier = Modifier.weight(1f),
+            )
         }
     }
 }
@@ -606,7 +630,10 @@ fun TimelineTaskItem(
         colors = CardDefaults.cardColors(containerColor = color),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
-        Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Box(modifier = Modifier.size(8.dp).clip(MaterialTheme.shapes.small).background(Color(0xFFDDC1FB)))
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -619,7 +646,12 @@ fun TimelineTaskItem(
             Text(
                 text = tarea.prioridad ?: "",
                 style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray),
-                modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(priorityColor).padding(horizontal = 6.dp, vertical = 2.dp),
+                modifier =
+                    Modifier
+                        .clip(
+                            RoundedCornerShape(4.dp),
+                        ).background(priorityColor)
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
             )
         }
     }
@@ -628,7 +660,11 @@ fun TimelineTaskItem(
 @Composable
 fun NotificationsSection() {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-        Text("NOTIFICACIONES", color = Color.Black, style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold))
+        Text(
+            "NOTIFICACIONES",
+            color = Color.Black,
+            style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
+        )
         Spacer(modifier = Modifier.height(12.dp))
         NotificationItem("Marta te ha pagado 20€", true)
         Spacer(modifier = Modifier.height(8.dp))
@@ -669,7 +705,11 @@ fun NotificationItem(
 fun PendingTasksSection(viewModel: HomeViewModel) {
     val tareasPendientes = viewModel.tareasDelUsuario.collectAsStateWithLifecycle()
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-        Text("MIS TAREAS PENDIENTES", color = Color.Black, style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold))
+        Text(
+            "MIS TAREAS PENDIENTES",
+            color = Color.Black,
+            style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
+        )
         Spacer(modifier = Modifier.height(12.dp))
         for (tarea in tareasPendientes.value) {
             val (color, textColor) =
@@ -708,7 +748,11 @@ fun PendingTaskItem(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(text = title, style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Medium), modifier = Modifier.weight(1f))
+                Text(
+                    text = title,
+                    style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Medium),
+                    modifier = Modifier.weight(1f),
+                )
                 Text(
                     text = priority,
                     color = textColor,
@@ -723,7 +767,11 @@ fun PendingTaskItem(
             }
             Spacer(modifier = Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(text = taskDate ?: "nil", color = textColor, style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium))
+                Text(
+                    text = taskDate ?: "nil",
+                    color = textColor,
+                    style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
+                )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = "Solicitar cambio",

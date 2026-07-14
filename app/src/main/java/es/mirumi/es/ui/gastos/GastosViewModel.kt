@@ -295,7 +295,12 @@ class GastosViewModel(
         val saldosCalculados =
             balances
                 .map { (nombre, balance) ->
-                    SaldoUsuario(nombre, balance.redondear(), getColorPorNombreDinamico(nombre), getFotoPorNombre(nombre))
+                    SaldoUsuario(
+                        nombre,
+                        balance.redondear(),
+                        getColorPorNombreDinamico(nombre),
+                        getFotoPorNombre(nombre),
+                    )
                 }.sortedByDescending { it.cantidad }
 
         _saldos.value = saldosCalculados
@@ -360,7 +365,12 @@ class GastosViewModel(
             pagosPorPersona
                 .map { (nombre, pagado) ->
                     val porcentaje = (pagado / total).toFloat()
-                    PieChartData(nombre, porcentaje, "${(porcentaje * 100).toInt()}%", getColorPorNombreDinamico(nombre))
+                    PieChartData(
+                        nombre,
+                        porcentaje,
+                        "${(porcentaje * 100).toInt()}%",
+                        getColorPorNombreDinamico(nombre),
+                    )
                 }.sortedByDescending { it.porcentaje }
 
         // Llenamos la lista 2 (Por Categoría)
@@ -381,7 +391,8 @@ class GastosViewModel(
     }
 
     fun obtenerParticipantesGasto(gasto: Gasto): List<ParticipantePago> {
-        val beneficiariosDelGasto = gasto.beneficiarios?.takeIf { it.isNotEmpty() } ?: _usuariosDetectados.value.map { it.nombre }
+        val beneficiariosDelGasto =
+            gasto.beneficiarios?.takeIf { it.isNotEmpty() } ?: _usuariosDetectados.value.map { it.nombre }
         if (beneficiariosDelGasto.isEmpty()) return emptyList()
 
         val cuota = gasto.importe / beneficiariosDelGasto.size
@@ -407,7 +418,11 @@ class GastosViewModel(
                 val requestFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
                 val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
 
-                val res = NetworkModule.casaApiService.escanearTicket(if (token.startsWith("Bearer ")) token else "Bearer $token", body)
+                val res =
+                    NetworkModule.casaApiService.escanearTicket(
+                        if (token.startsWith("Bearer ")) token else "Bearer $token",
+                        body,
+                    )
                 if (res.isSuccessful && res.body() != null) _borradorEscaneado.value = res.body()
             } catch (e: Exception) {
                 Log.e("GASTOS", "Excepción IA: ${e.message}")
@@ -570,5 +585,6 @@ class GastosViewModelFactory(
     private val casaId: Long,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T = GastosViewModel(repository, sessionManager, casaId) as T
+    override fun <T : ViewModel> create(modelClass: Class<T>): T =
+        GastosViewModel(repository, sessionManager, casaId) as T
 }

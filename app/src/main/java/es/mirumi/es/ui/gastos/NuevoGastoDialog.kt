@@ -39,7 +39,11 @@ fun NuevoGastoDialog(
     onConfirm: (String, String, String, List<String>, Map<Long, Double>) -> Unit,
 ) {
     var nombre by remember { mutableStateOf(borradorInicial?.concepto ?: gastoEditar?.nombre ?: "") }
-    var importe by remember { mutableStateOf(borradorInicial?.total?.toString() ?: gastoEditar?.importe?.toString() ?: "") }
+    var importe by remember {
+        mutableStateOf(
+            borradorInicial?.total?.toString() ?: gastoEditar?.importe?.toString() ?: "",
+        )
+    }
     var categoriaSelected by remember { mutableStateOf(gastoEditar?.categoria ?: "COMIDA") }
 
     // Tipado explícito a Set<String>
@@ -156,7 +160,12 @@ fun NuevoGastoDialog(
                             },
                             contentPadding = PaddingValues(0.dp),
                         ) {
-                            Text("A partes iguales", color = ColorMoradoOscuro, fontSize = 12.sp, textDecoration = TextDecoration.Underline)
+                            Text(
+                                "A partes iguales",
+                                color = ColorMoradoOscuro,
+                                fontSize = 12.sp,
+                                textDecoration = TextDecoration.Underline,
+                            )
                         }
                     }
                 }
@@ -273,7 +282,13 @@ fun NuevoGastoDialog(
                     } else if (abs(diferencia) > 0.05) {
                         Toast.makeText(context, "Los pagos no cuadran con el total.", Toast.LENGTH_SHORT).show()
                     } else {
-                        onConfirm(nombre, importeTotal.toString(), categoriaSelected, beneficiariosSelected.toList(), pagadoresMap)
+                        onConfirm(
+                            nombre,
+                            importeTotal.toString(),
+                            categoriaSelected,
+                            beneficiariosSelected.toList(),
+                            pagadoresMap,
+                        )
                         onDismiss()
                     }
                 },

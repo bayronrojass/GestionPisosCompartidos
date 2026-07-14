@@ -38,6 +38,8 @@ import es.mirumi.es.R
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.model.Lista
 import es.mirumi.es.model.Usuario
+import es.mirumi.es.ui.gastos.AvatarConFoto
+import es.mirumi.es.ui.gastos.ColorLila
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModel
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModelFactory
 import es.mirumi.es.ui.pizarra.postits.PizarraScreen
@@ -236,7 +238,11 @@ fun ListaScreen(
             FabActionItem(Icons.Default.NoteAdd, "Crear Post-it", FabActionType.POST_IT),
             FabActionItem(Icons.Default.Add, "Crear Lista", FabActionType.CREAR_LISTA),
         )
-    val model = viewModel<DraggableViewModel>(key = "Lista", factory = DraggableViewModelFactory("Lista", casaId, sessionManager))
+    val model =
+        viewModel<DraggableViewModel>(
+            key = "Lista",
+            factory = DraggableViewModelFactory("Lista", casaId, sessionManager),
+        )
 
     PizarraScreen(
         model,
@@ -466,18 +472,14 @@ fun UserAvatar(
             modifier
                 .size(size)
                 .clip(CircleShape)
-                .background(Color.LightGray)
                 .border(2.dp, Color.White, CircleShape),
         contentAlignment = Alignment.Center,
     ) {
-        // Carga la imagen si existe, sino un placeholder
-        // NOTA: Para producción usar Coil/Glide. Aquí usamos un drawable local.
-        Image(
-            painter = painterResource(id = R.drawable.ic_user),
-            contentDescription = user.nombre,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize(),
-            colorFilter = ColorFilter.tint(Color.DarkGray),
+        AvatarConFoto(
+            nombre = user.nombre,
+            colorFondo = ColorLila,
+            fotoUrl = user.fotoUrl,
+            size = size,
         )
     }
 }

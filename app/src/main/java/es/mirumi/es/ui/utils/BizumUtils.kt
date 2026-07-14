@@ -74,7 +74,12 @@ object BizumUtils {
         }
 
         if (!appAbierta) {
-            Toast.makeText(context, "No se encontró ninguna app bancaria compatible instalada", Toast.LENGTH_LONG).show()
+            Toast
+                .makeText(
+                    context,
+                    "No se encontró ninguna app bancaria compatible instalada",
+                    Toast.LENGTH_LONG,
+                ).show()
         }
     }
 }

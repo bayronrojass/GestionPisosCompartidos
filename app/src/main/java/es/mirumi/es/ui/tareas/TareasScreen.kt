@@ -34,7 +34,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -79,7 +78,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -94,6 +92,8 @@ import es.mirumi.es.R
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.model.Tarea
 import es.mirumi.es.model.Usuario
+import es.mirumi.es.ui.gastos.AvatarConFoto
+import es.mirumi.es.ui.gastos.ColorLila
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModel
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModelFactory
 import es.mirumi.es.ui.pizarra.postits.PizarraScreen
@@ -343,7 +343,11 @@ fun TareasScreen(
                             ) {
                                 Icon(Icons.Default.ExpandMore, contentDescription = "Tinder", tint = Color(0xff5d427a))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Reparto inteligente (Votar tareas)", color = Color(0xff5d427a), fontWeight = FontWeight.Bold)
+                                Text(
+                                    "Reparto inteligente (Votar tareas)",
+                                    color = Color(0xff5d427a),
+                                    fontWeight = FontWeight.Bold,
+                                )
                             }
                         }
 
@@ -431,6 +435,7 @@ fun TareasScreen(
                             items(tareasSemanales) { tarea ->
                                 TaskCardCompletada(
                                     tarea = tarea,
+                                    viewModel = viewModel,
                                     onUncomplete = { viewModel.toggleCompletado(tarea) },
                                     modifier = Modifier.fillMaxWidth(),
                                 )
@@ -544,7 +549,16 @@ fun TareasScreen(
             onDismiss = { taskToEdit = null },
             onSave = { nombre, descripcion, asignadoId, fechaFin, frecuencia, prioridad ->
                 if (nombre.isNotBlank()) {
-                    viewModel.editarTarea(tarea, nombre, descripcion, asignadoId, fechaFin, frecuencia, prioridad, userId)
+                    viewModel.editarTarea(
+                        tarea,
+                        nombre,
+                        descripcion,
+                        asignadoId,
+                        fechaFin,
+                        frecuencia,
+                        prioridad,
+                        userId,
+                    )
                     taskToEdit = null
                 } else {
                     Toast.makeText(context, "El nombre es obligatorio", Toast.LENGTH_SHORT).show()
@@ -591,18 +605,36 @@ fun AsignacionMensualComponent() {
             modifier = Modifier.fillMaxSize().padding(all = 10.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
-            BotonAsignacion(icono = R.drawable.iconorotar, texto = "Rotación", seleccionado = opcionSeleccionada == "Rotación", onClick = {
-                opcionSeleccionada =
-                    "Rotación"
-            })
-            BotonAsignacion(icono = R.drawable.iconoaleatorio, texto = "Aleatorio", seleccionado = opcionSeleccionada == "Aleatorio", onClick = {
-                opcionSeleccionada =
-                    "Aleatorio"
-            })
-            BotonAsignacion(icono = R.drawable.iconomanual, texto = "Manual", seleccionado = opcionSeleccionada == "Manual", onClick = {
-                opcionSeleccionada =
-                    "Manual"
-            })
+            BotonAsignacion(
+                icono = R.drawable.iconorotar,
+                texto = "Rotación",
+                seleccionado =
+                    opcionSeleccionada == "Rotación",
+                onClick = {
+                    opcionSeleccionada =
+                        "Rotación"
+                },
+            )
+            BotonAsignacion(
+                icono = R.drawable.iconoaleatorio,
+                texto = "Aleatorio",
+                seleccionado =
+                    opcionSeleccionada == "Aleatorio",
+                onClick = {
+                    opcionSeleccionada =
+                        "Aleatorio"
+                },
+            )
+            BotonAsignacion(
+                icono = R.drawable.iconomanual,
+                texto = "Manual",
+                seleccionado =
+                    opcionSeleccionada == "Manual",
+                onClick = {
+                    opcionSeleccionada =
+                        "Manual"
+                },
+            )
         }
     }
 }
@@ -701,7 +733,10 @@ fun TaskCardPendiente(
             horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.Start),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Top), modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     Icon(
                         imageVector = getIconoTarea(tarea.descripcion ?: "OTROS"),
                         contentDescription = "Icono Tarea",
@@ -716,7 +751,10 @@ fun TaskCardPendiente(
                     )
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     when (tarea.prioridad?.lowercase() ?: "media") {
                         "alta" -> BadgePrioridad("Alta", Color(0xffff6490), Color(0xff581327))
                         "media" -> BadgePrioridad("Media", Color(0xffddc1fb), Color(0xff5d427a))
@@ -737,7 +775,10 @@ fun TaskCardPendiente(
 
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (esMia) {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { }.padding(vertical = 4.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { }.padding(vertical = 4.dp),
+                    ) {
                         Text(
                             "Solicitar cambio",
                             color = Color(0xff6c6c6c),
@@ -756,7 +797,11 @@ fun TaskCardPendiente(
 
                 OutlinedButton(
                     onClick = onComplete,
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xff6c6c6c), containerColor = Color.Transparent),
+                    colors =
+                        ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color(0xff6c6c6c),
+                            containerColor = Color.Transparent,
+                        ),
                     border = BorderStroke(1.dp, Color(0xff6c6c6c)),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.height(40.dp),
@@ -818,10 +863,21 @@ fun TaskCardOtra(
         shape = RoundedCornerShape(15.dp),
         modifier = modifier.clickable(onClick = onEdit),
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(all = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(all = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = tarea.nombre, color = Color.Black, style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Medium))
+                    Text(
+                        text = tarea.nombre,
+                        color = Color.Black,
+                        style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Medium),
+                    )
                     Text(
                         text = "Asignado a ${tarea.asignadoA?.nombre ?: "Sin asignar"}",
                         color = Color(0xff6c6c6c),
@@ -855,12 +911,19 @@ fun TaskCardOtra(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 if (fechaFinDisplay.isNotBlank()) {
-                    Text(text = fechaFinDisplay, color = Color.Black, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium))
+                    Text(
+                        text = fechaFinDisplay,
+                        color = Color.Black,
+                        style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
+                    )
                 } else {
                     Spacer(modifier = Modifier.weight(1f))
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     when (tarea.prioridad?.lowercase() ?: "media") {
                         "alta" -> BadgePrioridad("Alta", Color(0xffff6490), Color(0xff581327))
                         "media" -> BadgePrioridad("Media", Color(0xffddc1fb), Color(0xff5d427a))
@@ -876,9 +939,21 @@ fun TaskCardOtra(
 @Composable
 fun TaskCardCompletada(
     tarea: Tarea,
+    viewModel: TareasViewModel,
     onUncomplete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Same fix pattern as `GastosScreen.ItemGasto`: observe the members map at the composable
+    // level so a proper Compose subscription is created. Without this, `tarea.asignadoA?.fotoUrl`
+    // is read once at first render — before `cargarMiembros` has emitted — and never refreshes
+    // until the user forces a recomposition (e.g., completing a new task). By deriving `fotoUrl`
+    // from the observed `miembros` list (with the tarea's own `fotoUrl` as fallback for edge cases
+    // where the assignee left the casa), the avatar pops in the microsecond the flow emits.
+    val miembros by viewModel.miembros.observeAsState(emptyList())
+    val fotoUrl =
+        miembros.firstOrNull { it.id == tarea.asignadoA?.id }?.fotoUrl
+            ?: tarea.asignadoA?.fotoUrl
+
     val fechaFinDisplay =
         remember(tarea.fechaFin) {
             tarea.fechaFin?.let {
@@ -946,11 +1021,11 @@ fun TaskCardCompletada(
                                 RoundedCornerShape(20.dp),
                             ).padding(start = 2.dp, end = 14.dp, top = 2.dp, bottom = 2.dp),
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_user),
-                        contentDescription = "Avatar",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.size(34.dp).clip(CircleShape),
+                    AvatarConFoto(
+                        nombre = tarea.asignadoA?.nombre ?: "?",
+                        colorFondo = ColorLila,
+                        fotoUrl = fotoUrl,
+                        size = 34.dp,
                     )
                     Text(
                         "Hecho por ${tarea.asignadoA?.nombre ?: "Alguien"}",
@@ -1073,7 +1148,12 @@ fun BadgePrioridad(
 ) {
     Box(
         contentAlignment = Alignment.Center,
-        modifier = modifier.clip(RoundedCornerShape(17.dp)).background(backgroundColor).padding(horizontal = 10.dp, vertical = 2.dp),
+        modifier =
+            modifier
+                .clip(
+                    RoundedCornerShape(17.dp),
+                ).background(backgroundColor)
+                .padding(horizontal = 10.dp, vertical = 2.dp),
     ) {
         Text(
             text = text,
@@ -1093,7 +1173,12 @@ fun BadgeHora(
 ) {
     Box(
         contentAlignment = Alignment.Center,
-        modifier = modifier.clip(RoundedCornerShape(25.dp)).background(backgroundColor).padding(horizontal = 15.dp, vertical = 6.dp),
+        modifier =
+            modifier
+                .clip(
+                    RoundedCornerShape(25.dp),
+                ).background(backgroundColor)
+                .padding(horizontal = 15.dp, vertical = 6.dp),
     ) {
         Text(
             text = text,
@@ -1182,7 +1267,10 @@ fun NewCreateTaskDialog(
                     )
                 }
 
-                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 15.dp), verticalArrangement = Arrangement.spacedBy(11.dp)) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 15.dp),
+                    verticalArrangement = Arrangement.spacedBy(11.dp),
+                ) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.Start),
                         verticalAlignment = Alignment.CenterVertically,
@@ -1232,7 +1320,11 @@ fun NewCreateTaskDialog(
                             ),
                     )
 
-                    Text("Fecha tarea:", color = Color.Black, style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium))
+                    Text(
+                        "Fecha tarea:",
+                        color = Color.Black,
+                        style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
+                    )
                     InputChip(
                         label = {
                             Text(
@@ -1256,7 +1348,11 @@ fun NewCreateTaskDialog(
                         modifier = Modifier.fillMaxWidth(),
                     )
 
-                    Text("Prioridad de la tarea:", color = Color.Black, style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium))
+                    Text(
+                        "Prioridad de la tarea:",
+                        color = Color.Black,
+                        style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
+                    )
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
                         PrioridadChip(
                             texto = "Alta",
@@ -1284,14 +1380,22 @@ fun NewCreateTaskDialog(
                         )
                     }
 
-                    Text("Frecuencia:", color = Color.Black, style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium))
+                    Text(
+                        "Frecuencia:",
+                        color = Color.Black,
+                        style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
+                    )
                     FrequencyChipSelector(
                         selectedFrequency = frecuencia,
                         onFrequencySelected = { frecuencia = it },
                         modifier = Modifier.fillMaxWidth(),
                     )
 
-                    Text("Asignar a:", color = Color.Black, style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium))
+                    Text(
+                        "Asignar a:",
+                        color = Color.Black,
+                        style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
+                    )
                     UserSelectionExpandable(miembros = miembros, selectedUserId = asignadoAId, onUserSelected = {
                         asignadoAId = it
                     }, modifier = Modifier.fillMaxWidth())
@@ -1314,11 +1418,22 @@ fun NewCreateTaskDialog(
                                 if (nombre.isBlank()) {
                                     Toast.makeText(context, "El nombre es obligatorio", Toast.LENGTH_SHORT).show()
                                 } else {
-                                    onCreate(nombre, descripcion.ifBlank { null }, asignadoAId, fechaFin, frecuencia, prioridad)
+                                    onCreate(
+                                        nombre,
+                                        descripcion.ifBlank { null },
+                                        asignadoAId,
+                                        fechaFin,
+                                        frecuencia,
+                                        prioridad,
+                                    )
                                 }
                             },
                             shape = RoundedCornerShape(20.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xff6c6c6c), contentColor = Color.White),
+                            colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xff6c6c6c),
+                                    contentColor = Color.White,
+                                ),
                             modifier = Modifier.weight(1f),
                         ) { Text("Aceptar") }
                     }
@@ -1361,7 +1476,11 @@ fun FrequencyChipSelector(
         )
         Box(modifier = Modifier.matchParentSize().clickable { expanded = true })
 
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.fillMaxWidth(0.9f)) {
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxWidth(0.9f),
+        ) {
             options.forEach { option ->
                 DropdownMenuItem(
                     text = { Text(option) },
@@ -1444,7 +1563,11 @@ fun UsuarioChip(
             colorFilter = ColorFilter.tint(if (seleccionado) Color.White else Color(0xff6c6c6c)),
             modifier = Modifier.size(16.dp),
         )
-        Text(text = nombre, color = if (seleccionado) Color.White else Color(0xff6c6c6c), style = TextStyle(fontSize = 14.sp))
+        Text(
+            text = nombre,
+            color = if (seleccionado) Color.White else Color(0xff6c6c6c),
+            style = TextStyle(fontSize = 14.sp),
+        )
     }
 }
 
@@ -1492,14 +1615,26 @@ fun EditTaskDialog(
                 OutlinedTextField(value = descripcion, onValueChange = {
                     descripcion = it
                 }, label = { Text("Descripción (opcional)") }, modifier = Modifier.fillMaxWidth())
-                UserSelectionDropdown(miembros = miembros, selectedUserId = asignadoAId, onUserSelected = { asignadoAId = it })
+                UserSelectionDropdown(miembros = miembros, selectedUserId = asignadoAId, onUserSelected = {
+                    asignadoAId =
+                        it
+                })
                 DatePickerField(label = "Fecha Límite", selectedDate = fechaFin, onDateSelected = { fechaFin = it })
                 FrequencySelector(selectedFrequency = frecuencia, onFrequencySelected = { frecuencia = it })
             }
         },
         confirmButton = {
             Button(
-                onClick = { onSave(nombre, descripcion.ifBlank { null }, asignadoAId, fechaFin, frecuencia, prioridad) },
+                onClick = {
+                    onSave(
+                        nombre,
+                        descripcion.ifBlank { null },
+                        asignadoAId,
+                        fechaFin,
+                        frecuencia,
+                        prioridad,
+                    )
+                },
             ) { Text("Guardar") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
@@ -1535,7 +1670,11 @@ fun UserSelectionDropdown(
         )
         Box(modifier = Modifier.matchParentSize().clickable { expanded = true })
 
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.fillMaxWidth(0.8f)) {
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxWidth(0.8f),
+        ) {
             DropdownMenuItem(text = { Text("Sin asignar") }, onClick = {
                 onUserSelected(null)
                 expanded = false
@@ -1579,7 +1718,9 @@ fun DatePickerField(
         label = { Text(label) },
         readOnly = true,
         trailingIcon = {
-            IconButton(onClick = { datePickerDialog.show() }) { Icon(Icons.Default.DateRange, contentDescription = "Seleccionar fecha") }
+            IconButton(onClick = {
+                datePickerDialog.show()
+            }) { Icon(Icons.Default.DateRange, contentDescription = "Seleccionar fecha") }
         },
         modifier = Modifier.fillMaxWidth().clickable { datePickerDialog.show() },
         enabled = false,
@@ -1623,7 +1764,11 @@ fun FrequencySelector(
         )
         Box(modifier = Modifier.matchParentSize().clickable { expanded = true })
 
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.fillMaxWidth(0.8f)) {
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxWidth(0.8f),
+        ) {
             options.forEach { option ->
                 DropdownMenuItem(text = { Text(option) }, onClick = {
                     onFrequencySelected(
@@ -1660,11 +1805,18 @@ fun UserSelectionExpandable(
         ) {
             Column {
                 Row(
-                    modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(horizontal = 16.dp, vertical = 12.dp),
+                    modifier =
+                        Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(
+                            horizontal = 16.dp,
+                            vertical = 12.dp,
+                        ),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
                         Image(
                             painter = painterResource(id = R.drawable.ic_user),
                             contentDescription = "Usuario",
@@ -1717,11 +1869,26 @@ fun UserSelectionExpandable(
                                             Color.Transparent
                                         },
                                 ),
-                        ) { Text(text = "Sin asignar", color = if (selectedUserId == null) Color.White else Color(0xff6c6c6c)) }
+                        ) {
+                            Text(
+                                text = "Sin asignar",
+                                color =
+                                    if (selectedUserId ==
+                                        null
+                                    ) {
+                                        Color.White
+                                    } else {
+                                        Color(0xff6c6c6c)
+                                    },
+                            )
+                        }
 
                         HorizontalDivider(color = Color(0xffe0e0e0))
 
-                        LazyColumn(modifier = Modifier.heightIn(max = 150.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        LazyColumn(
+                            modifier = Modifier.heightIn(max = 150.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
                             items(miembros) { miembro ->
                                 UserSelectionItem(usuario = miembro, selected = selectedUserId == miembro.id, onClick = {
                                     onUserSelected(miembro.id)
@@ -1754,8 +1921,16 @@ fun UserSelectionItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Image(painter = painterResource(id = R.drawable.ic_user), contentDescription = "Usuario", modifier = Modifier.size(32.dp))
-            Text(text = usuario.nombre, color = if (selected) Color.White else Color.Black, style = TextStyle(fontSize = 14.sp))
+            Image(
+                painter = painterResource(id = R.drawable.ic_user),
+                contentDescription = "Usuario",
+                modifier = Modifier.size(32.dp),
+            )
+            Text(
+                text = usuario.nombre,
+                color = if (selected) Color.White else Color.Black,
+                style = TextStyle(fontSize = 14.sp),
+            )
         }
     }
 }
@@ -1809,7 +1984,10 @@ fun RepartoTinderDialog(
                         }
                     }
                 } else {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 40.dp)) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(top = 40.dp),
+                    ) {
                         Icon(
                             Icons.Default.CheckCircle,
                             contentDescription = "Listo",

@@ -251,7 +251,13 @@ fun CrearEncuestaDialog(
                                     ),
                         ) {
                             if (colorSeleccionado == hex) {
-                                Box(modifier = Modifier.fillMaxSize().background(Color.White.copy(alpha = 0.4f), CircleShape))
+                                Box(
+                                    modifier =
+                                        Modifier.fillMaxSize().background(
+                                            Color.White.copy(alpha = 0.4f),
+                                            CircleShape,
+                                        ),
+                                )
                             }
                         }
                     }

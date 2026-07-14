@@ -46,9 +46,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import coil.compose.SubcomposeAsyncImage
+import coil.compose.AsyncImage
 import es.mirumi.es.R
 import es.mirumi.es.data.SessionManager
+import es.mirumi.es.data.remote.resolveImageUrl
 import es.mirumi.es.model.dtos.UsuarioLogroDTO
 import es.mirumi.es.ui.navigation.Route
 import kotlinx.coroutines.launch
@@ -164,43 +165,33 @@ fun PerfilScreen(
                                 },
                         contentAlignment = Alignment.Center,
                     ) {
-                        val fotoUrl = uiState.usuario?.fotoUrl
-                        if (!fotoUrl.isNullOrEmpty()) {
-                            SubcomposeAsyncImage(
+                        val fotoUrl = resolveImageUrl(uiState.usuario?.fotoUrl)
+
+                        // Fallback letter — always drawn behind, visible when image is missing/loading/errored.
+                        Text(
+                            uiState.usuario
+                                ?.nombre
+                                ?.take(1)
+                                ?.uppercase() ?: "?",
+                            fontSize = 40.sp,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                        )
+
+                        if (fotoUrl != null) {
+                            AsyncImage(
                                 model =
                                     coil.request.ImageRequest
-                                        .Builder(
-                                            LocalContext.current,
-                                        ).data(fotoUrl)
+                                        .Builder(LocalContext.current)
+                                        .data(fotoUrl)
                                         .crossfade(true)
                                         .build(),
                                 contentDescription = "Foto",
                                 contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize(),
-                                loading = { CircularProgressIndicator(color = Color.White, modifier = Modifier.padding(30.dp)) },
-                                error = {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Text(
-                                            uiState.usuario
-                                                ?.nombre
-                                                ?.take(1)
-                                                ?.uppercase() ?: "?",
-                                            fontSize = 40.sp,
-                                            color = Color.White,
-                                            fontWeight = FontWeight.Bold,
-                                        )
-                                    }
-                                },
-                            )
-                        } else {
-                            Text(
-                                uiState.usuario
-                                    ?.nombre
-                                    ?.take(1)
-                                    ?.uppercase() ?: "?",
-                                fontSize = 40.sp,
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .clip(CircleShape),
                             )
                         }
                     }
@@ -224,9 +215,16 @@ fun PerfilScreen(
                     }
                 }
 
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top), modifier = Modifier.weight(1.2f)) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top),
+                    modifier = Modifier.weight(1.2f),
+                ) {
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)) {
-                        Text("Ubicación", color = Color(0xff585858), style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium))
+                        Text(
+                            "Ubicación",
+                            color = Color(0xff585858),
+                            style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
+                        )
                         Text(
                             "Escultor José Capuz 29",
                             color = Color.Black,
@@ -234,8 +232,16 @@ fun PerfilScreen(
                         )
                     }
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)) {
-                        Text("Activo desde", color = Color(0xff585858), style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium))
-                        Text("Sep del 2025", color = Color.Black, style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium))
+                        Text(
+                            "Activo desde",
+                            color = Color(0xff585858),
+                            style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
+                        )
+                        Text(
+                            "Sep del 2025",
+                            color = Color.Black,
+                            style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium),
+                        )
                     }
                 }
             }
@@ -319,7 +325,11 @@ fun PerfilScreen(
             ) {
                 PerfilOptionRow("Datos personales", { showEditDialog = true }, R.drawable.frame)
                 HorizontalDivider(color = Color(0xffe0e0e0), thickness = 1.dp)
-                PerfilOptionRow("Cambiar de vivienda", { navController.navigate(Route.ListaCasas.createRoute("")) }, R.drawable.casita)
+                PerfilOptionRow(
+                    "Cambiar de vivienda",
+                    { navController.navigate(Route.ListaCasas.createRoute("")) },
+                    R.drawable.casita,
+                )
                 HorizontalDivider(color = Color(0xffe0e0e0), thickness = 1.dp)
                 PerfilOptionRow(
                     "Datos del piso",
@@ -505,7 +515,9 @@ fun PerfilScreen(
                 viewModel.cerrarSesion()
                 showLogoutDialog =
                     false
-            }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xff8061a2), contentColor = Color.White)) { Text("Sí, salir") }
+            }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xff8061a2), contentColor = Color.White)) {
+                Text("Sí, salir")
+            }
         }, dismissButton = {
             TextButton(onClick = {
                 showLogoutDialog =
@@ -518,12 +530,16 @@ fun PerfilScreen(
             showDeleteDialog = false
         }, title = {
             Text("¿Eliminar cuenta?", color = Color.Black)
-        }, containerColor = Color.White, text = { Text("Esta acción no se puede deshacer.", color = Color.DarkGray) }, confirmButton = {
+        }, containerColor = Color.White, text = {
+            Text("Esta acción no se puede deshacer.", color = Color.DarkGray)
+        }, confirmButton = {
             Button(onClick = {
                 viewModel.eliminarCuenta()
                 showDeleteDialog =
                     false
-            }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935), contentColor = Color.White)) { Text("Eliminar") }
+            }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935), contentColor = Color.White)) {
+                Text("Eliminar")
+            }
         }, dismissButton = {
             TextButton(onClick = {
                 showDeleteDialog =
@@ -534,7 +550,11 @@ fun PerfilScreen(
     if (showPhotoOptionsDialog) {
         AlertDialog(onDismissRequest = {
             showPhotoOptionsDialog = false
-        }, title = { Text("Foto de Perfil") }, text = { Text("¿Qué deseas hacer con tu foto actual?") }, confirmButton = {
+        }, title = {
+            Text(
+                "Foto de Perfil",
+            )
+        }, text = { Text("¿Qué deseas hacer con tu foto actual?") }, confirmButton = {
             Button(onClick = {
                 showPhotoOptionsDialog =
                     false
@@ -593,7 +613,12 @@ fun ItemMedalla(
             modifier = Modifier.size(48.dp).background(colorMedalla.copy(alpha = 0.15f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icono, contentDescription = null, tint = colorMedalla.copy(alpha = opacidad), modifier = Modifier.size(24.dp))
+            Icon(
+                icono,
+                contentDescription = null,
+                tint = colorMedalla.copy(alpha = opacidad),
+                modifier = Modifier.size(24.dp),
+            )
             if (logro.estaCompletado) {
                 Icon(
                     Icons.Default.CheckCircle,
@@ -615,7 +640,12 @@ fun ItemMedalla(
             maxLines = 2,
             minLines = 2,
         )
-        Text(text = logro.nivel, fontSize = 11.sp, color = colorMedalla.copy(alpha = opacidad), fontWeight = FontWeight.ExtraBold)
+        Text(
+            text = logro.nivel,
+            fontSize = 11.sp,
+            color = colorMedalla.copy(alpha = opacidad),
+            fontWeight = FontWeight.ExtraBold,
+        )
 
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -627,7 +657,12 @@ fun ItemMedalla(
             trackColor = Color.LightGray.copy(alpha = 0.3f),
         )
         Spacer(modifier = Modifier.height(6.dp))
-        Text(text = "${logro.progresoActual} / ${logro.meta}", fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
+        Text(
+            text = "${logro.progresoActual} / ${logro.meta}",
+            fontSize = 12.sp,
+            color = Color.Gray,
+            fontWeight = FontWeight.Medium,
+        )
     }
 }
 

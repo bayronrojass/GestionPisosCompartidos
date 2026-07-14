@@ -119,7 +119,10 @@ fun ListaCasasScreen(
             } else if (uiState.casas.isEmpty()) {
                 EmptyState()
             } else {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(bottom = 80.dp)) {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(bottom = 80.dp),
+                ) {
                     items(uiState.casas, key = { it.id }) { casa ->
                         CasaCard(casa) {
                             sessionManager.saveCasaActiva(casa.id, casa.nombre)
@@ -179,12 +182,26 @@ fun CasaCard(
         elevation = CardDefaults.cardElevation(4.dp),
     ) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(48.dp).clip(CircleShape).background(Color(0xFFF0EBF5)), contentAlignment = Alignment.Center) {
-                Icon(painterResource(R.drawable.iconopiso), null, tint = Color(0xFF8061A2), modifier = Modifier.size(24.dp))
+            Box(
+                Modifier.size(48.dp).clip(CircleShape).background(Color(0xFFF0EBF5)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painterResource(R.drawable.iconopiso),
+                    null,
+                    tint = Color(0xFF8061A2),
+                    modifier = Modifier.size(24.dp),
+                )
             }
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
-                Text(casa.nombre, fontWeight = FontWeight.Bold, fontSize = 18.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    casa.nombre,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
                 Text(
                     casa.descripcion ?: "Sin descripción",
                     fontSize = 14.sp,
@@ -205,7 +222,11 @@ fun CasaCard(
 
 @Composable
 fun EmptyState() {
-    Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+    Column(
+        Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
         Image(
             painterResource(R.drawable.casita),
             null,

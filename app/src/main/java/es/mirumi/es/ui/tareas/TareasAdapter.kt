@@ -21,7 +21,8 @@ class TareasAdapter(
     private val onDeleteClick: (Tarea) -> Unit,
     private val onEditClick: (Tarea) -> Unit,
 ) : RecyclerView.Adapter<TareasAdapter.TareaViewHolder>() {
-    override fun getItemViewType(position: Int): Int = if (tareas[position].completado) VIEW_TYPE_COMPLETED else VIEW_TYPE_PENDING
+    override fun getItemViewType(position: Int): Int =
+        if (tareas[position].completado) VIEW_TYPE_COMPLETED else VIEW_TYPE_PENDING
 
     override fun onCreateViewHolder(
         parent: ViewGroup,

@@ -268,14 +268,28 @@ fun AppNavigation(
                             modifier = Modifier.size(32.dp),
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("¡Nuevo Logro Desbloqueado!", fontWeight = FontWeight.Bold, color = Color.Black, fontSize = 20.sp)
+                        Text(
+                            "¡Nuevo Logro Desbloqueado!",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black,
+                            fontSize = 20.sp,
+                        )
                     }
                 },
                 text = {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                        Text(text = "Has conseguido la medalla de ${logro.nivel}:", fontSize = 14.sp, color = Color.Gray)
+                        Text(
+                            text = "Has conseguido la medalla de ${logro.nivel}:",
+                            fontSize = 14.sp,
+                            color = Color.Gray,
+                        )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text(text = logro.nombre, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF8061A2))
+                        Text(
+                            text = logro.nombre,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF8061A2),
+                        )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(text = logro.descripcion, fontSize = 16.sp, color = Color.DarkGray)
                     }

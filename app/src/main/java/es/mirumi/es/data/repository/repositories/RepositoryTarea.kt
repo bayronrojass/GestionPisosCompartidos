@@ -11,7 +11,7 @@ class RepositoryTarea(
     suspend fun getTareasByCasaId(casaId: Long): List<Tarea> {
         val response = apiService.getTareasByCasaId(casaId)
         if (response.isSuccessful) {
-            return response.body() ?: emptyList()
+            return response.body()?.content ?: emptyList()
         } else {
             throw Exception("Error al obtener tareas: ${response.message()}")
         }
@@ -69,5 +69,6 @@ class RepositoryTarea(
         apiService.votarTarea(tareaId, usuarioId, puntuacion)
     }
 
-    suspend fun repartirTareas(casaId: Long): retrofit2.Response<okhttp3.ResponseBody> = apiService.ejecutarRepartoInteligente(casaId)
+    suspend fun repartirTareas(casaId: Long): retrofit2.Response<okhttp3.ResponseBody> =
+        apiService.ejecutarRepartoInteligente(casaId)
 }

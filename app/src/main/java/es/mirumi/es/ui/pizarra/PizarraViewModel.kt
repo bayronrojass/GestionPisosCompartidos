@@ -13,8 +13,12 @@ import es.mirumi.es.utils.ApiResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
@@ -28,6 +32,29 @@ class PizarraViewModel(
     private val repository = RemoteRepository(NetworkModule.retrofit.create(PizarraAPI::class.java))
     val _bitmapState = MutableStateFlow<Bitmap?>(null)
     val bitmapState: StateFlow<Bitmap?> = _bitmapState.asStateFlow()
+
+    /**
+     * Optimistic-UI tracking. A simple `Boolean` isn't enough: a stale save's completion
+     * can clear the flag while a fresh stroke is already in progress, and the next poll
+     * then wipes the local strokes (the "5-second delay on subsequent strokes" bug).
+     *
+     * We track two monotonic version counters:
+     * - [_dirtyVersion] — incremented on every `ACTION_UP` via [markPending]; represents
+     *   the high-water mark of local edits the user has committed to the canvas.
+     * - [_syncedVersion] — advanced to the dirty snapshot captured *at the moment a save
+     *   was dispatched* once that specific save's API call returns. `maxOf` guarantees
+     *   monotonicity even when responses arrive out of order.
+     *
+     * `pendingSave` is `dirty > synced` — true iff there are strokes that have NOT been
+     * covered by any completed save yet, regardless of how many saves are in flight.
+     */
+    private val _dirtyVersion = MutableStateFlow(0L)
+    private val _syncedVersion = MutableStateFlow(0L)
+
+    val pendingSave: StateFlow<Boolean> =
+        combine(_dirtyVersion, _syncedVersion) { dirty, synced -> dirty > synced }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     var color: Byte = 1
     var saveJob: Job? = null
     var loadJob: Job? = null
@@ -38,26 +65,36 @@ class PizarraViewModel(
         if (p != null) puntos.add(p)
     }
 
+    /**
+     * Called on `ACTION_UP` to signal that a stroke has landed on the local canvas.
+     * Simply advances the dirty version; the matching acknowledgement comes from [save].
+     */
+    fun markPending() {
+        _dirtyVersion.update { it + 1L }
+    }
+
     fun save() {
         if (puntos.isEmpty()) return
 
+        // Capture BOTH the version we're about to acknowledge AND a private snapshot of the
+        // deltas, then clear puntos immediately. Subsequent strokes drawn while this save is
+        // in flight now accumulate into a fresh puntos buffer and will not be swallowed by
+        // the success-path `.clear()` — a data-loss bug that previously lived here too.
+        val versionAtDispatch = _dirtyVersion.value
+        val batch = puntos.toList()
+        puntos.clear()
+
         viewModelScope.launch {
-            val result = repository.request { postDelta(lienzoId, puntos) }
+            val result = repository.request { postDelta(lienzoId, batch) }
             when (result) {
-                is ApiResult.Error -> {
-                    puntos.clear()
+                is ApiResult.Error ->
                     Log.d("PizarraViewModel", "Error sending deltas ${result.message}")
-                }
-
-                is ApiResult.Success<*> -> {
-                    puntos.clear()
-                }
-
-                is ApiResult.Throws -> {
-                    puntos.clear()
+                is ApiResult.Success<*> -> Unit
+                is ApiResult.Throws ->
                     Log.d("Q", "Throwed sending deltas ${result.exception.message}")
-                }
             }
+            // Advance the acknowledged version. `maxOf` protects against out-of-order responses.
+            _syncedVersion.update { maxOf(it, versionAtDispatch) }
         }
     }
 

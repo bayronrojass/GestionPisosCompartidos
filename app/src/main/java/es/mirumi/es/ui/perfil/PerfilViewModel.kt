@@ -139,9 +139,21 @@ class PerfilViewModel(
                 val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
 
                 val response = NetworkModule.usuarioApiService.subirFotoPerfil(userId, body)
+                val fresco = response.body()
 
-                if (response.isSuccessful) {
-                    cargarPerfil()
+                if (response.isSuccessful && fresco != null) {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            usuario =
+                                Usuario(
+                                    id = fresco.id,
+                                    nombre = fresco.nombre,
+                                    correo = fresco.correo,
+                                    fotoUrl = fresco.fotoUrl,
+                                ),
+                        )
+                    }
                     _events.send(PerfilEvent.ShowToast("Foto de perfil actualizada"))
                 } else {
                     _uiState.update { it.copy(isLoading = false, error = "Error al subir la foto al servidor") }
@@ -157,8 +169,21 @@ class PerfilViewModel(
         viewModelScope.launch {
             try {
                 val response = NetworkModule.usuarioApiService.eliminarFotoPerfil(userId)
-                if (response.isSuccessful) {
-                    cargarPerfil()
+                val fresco = response.body()
+
+                if (response.isSuccessful && fresco != null) {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            usuario =
+                                Usuario(
+                                    id = fresco.id,
+                                    nombre = fresco.nombre,
+                                    correo = fresco.correo,
+                                    fotoUrl = fresco.fotoUrl,
+                                ),
+                        )
+                    }
                     _events.send(PerfilEvent.ShowToast("Foto de perfil eliminada"))
                 } else {
                     _uiState.update { it.copy(isLoading = false, error = "Error al eliminar la foto") }

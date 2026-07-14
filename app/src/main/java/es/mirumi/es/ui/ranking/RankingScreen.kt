@@ -23,8 +23,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import coil.compose.SubcomposeAsyncImage
+import coil.compose.AsyncImage
 import es.mirumi.es.data.SessionManager
+import es.mirumi.es.data.remote.resolveImageUrl
 import es.mirumi.es.model.dtos.UsuarioRankingDTO
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -128,28 +129,30 @@ fun PodiumItem(
                     .border(3.dp, color, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            if (!user.fotoUrl.isNullOrEmpty()) {
-                SubcomposeAsyncImage(
+            // Fallback letter — drawn behind, visible until (or if) the image loads.
+            Text(
+                user.nombre.take(1).uppercase(),
+                color = Color.White,
+                fontSize = fontSize,
+                fontWeight = FontWeight.Bold,
+            )
+
+            val fotoUrl = resolveImageUrl(user.fotoUrl)
+            if (fotoUrl != null) {
+                AsyncImage(
                     model =
                         coil.request.ImageRequest
                             .Builder(LocalContext.current)
-                            .data("${user.fotoUrl}?v=${System.currentTimeMillis()}")
+                            .data(fotoUrl)
                             .crossfade(true)
                             .build(),
                     contentDescription = "Foto de perfil",
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                    error = {
-                        Text(
-                            user.nombre.take(1).uppercase(),
-                            color = Color.White,
-                            fontSize = fontSize,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    },
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape),
                 )
-            } else {
-                Text(user.nombre.take(1).uppercase(), color = Color.White, fontSize = fontSize, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -189,28 +192,38 @@ fun RankingListItem(user: UsuarioRankingDTO) {
                 .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("${user.posicion}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Gray, modifier = Modifier.width(30.dp))
+        Text(
+            "${user.posicion}",
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+            color = Color.Gray,
+            modifier = Modifier.width(30.dp),
+        )
 
         // Avatar en lista
         Box(
             modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF8061A2)),
             contentAlignment = Alignment.Center,
         ) {
-            if (!user.fotoUrl.isNullOrEmpty()) {
-                SubcomposeAsyncImage(
+            // Fallback letter — drawn behind, visible until (or if) the image loads.
+            Text(user.nombre.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold)
+
+            val fotoUrl = resolveImageUrl(user.fotoUrl)
+            if (fotoUrl != null) {
+                AsyncImage(
                     model =
                         coil.request.ImageRequest
                             .Builder(LocalContext.current)
-                            .data("${user.fotoUrl}?v=${System.currentTimeMillis()}")
+                            .data(fotoUrl)
                             .crossfade(true)
                             .build(),
                     contentDescription = "Foto de perfil",
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                    error = { Text(user.nombre.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold) },
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape),
                 )
-            } else {
-                Text(user.nombre.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -220,7 +233,12 @@ fun RankingListItem(user: UsuarioRankingDTO) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("${user.puntos}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF8061A2))
             Spacer(modifier = Modifier.width(4.dp))
-            Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFF8061A2), modifier = Modifier.size(16.dp))
+            Icon(
+                Icons.Default.Star,
+                contentDescription = null,
+                tint = Color(0xFF8061A2),
+                modifier = Modifier.size(16.dp),
+            )
         }
     }
 }

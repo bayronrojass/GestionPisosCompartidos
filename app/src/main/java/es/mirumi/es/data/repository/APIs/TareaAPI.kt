@@ -2,6 +2,7 @@ package es.mirumi.es.data.repository.APIs
 
 import es.mirumi.es.model.Tarea
 import es.mirumi.es.model.requests.TareaRequest
+import es.mirumi.es.model.responses.PaginatedResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -15,7 +16,11 @@ interface TareaAPI {
     @GET("casas/{casaId}/tareas")
     suspend fun getTareasByCasaId(
         @Path("casaId") casaId: Long,
-    ): Response<List<Tarea>>
+        @Query("completado") completado: Boolean? = null,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 100,
+        @Query("sort") sort: String? = null,
+    ): Response<PaginatedResponse<Tarea>>
 
     @POST("casas/{casaId}/tareas")
     suspend fun crearTareaEnCasa(

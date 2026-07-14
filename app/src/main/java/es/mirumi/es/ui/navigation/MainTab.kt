@@ -128,7 +128,12 @@ fun MainScreenWithNavigation(
                 savedStateHandle.SaveableStateProvider(selectedTab) {
                     when (selectedTab) {
                         0 -> GastosScreen(viewModel = gastosViewModel, casaId = casaId, sessionManager = sessionManager)
-                        1 -> TareasScreen(tareasViewModel, casaId = casaId, userId = sessionManager.fetchCurrentUserId())
+                        1 ->
+                            TareasScreen(
+                                tareasViewModel,
+                                casaId = casaId,
+                                userId = sessionManager.fetchCurrentUserId(),
+                            )
                         2 ->
                             HomeScreen(casaId = casaId, viewModel = homeViewModel, onNavigateToMonthlyView = {
                                 showCalendar = true
@@ -151,7 +156,12 @@ fun NavigationBar(
     val barWidth = 380.dp
 
     Card(
-        modifier = modifier.width(barWidth).height(60.dp).shadow(elevation = 8.dp, shape = RoundedCornerShape(30.dp), clip = false),
+        modifier =
+            modifier
+                .width(
+                    barWidth,
+                ).height(60.dp)
+                .shadow(elevation = 8.dp, shape = RoundedCornerShape(30.dp), clip = false),
         shape = RoundedCornerShape(30.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
@@ -178,18 +188,50 @@ fun NavigationBar(
                 },
                 padding = 12.dp,
             )
-            NavigationItem(icon = ImageVector.vectorResource(id = R.drawable.tareas_icon), isSelected = selectedTab == 1, onClick = {
-                onTabSelected(1)
-            }, padding = 12.dp)
-            NavigationItem(icon = ImageVector.vectorResource(id = R.drawable.casita), isSelected = selectedTab == 2, onClick = {
-                onTabSelected(2)
-            }, padding = 12.dp)
-            NavigationItem(icon = ImageVector.vectorResource(id = R.drawable.exclude), isSelected = selectedTab == 3, onClick = {
-                onTabSelected(3)
-            }, padding = 12.dp)
-            NavigationItem(icon = ImageVector.vectorResource(id = R.drawable.icono_user), isSelected = selectedTab == 4, onClick = {
-                onTabSelected(4)
-            }, padding = 12.dp)
+            NavigationItem(
+                icon =
+                    ImageVector.vectorResource(
+                        id = R.drawable.tareas_icon,
+                    ),
+                isSelected = selectedTab == 1,
+                onClick = {
+                    onTabSelected(1)
+                },
+                padding = 12.dp,
+            )
+            NavigationItem(
+                icon =
+                    ImageVector.vectorResource(
+                        id = R.drawable.casita,
+                    ),
+                isSelected = selectedTab == 2,
+                onClick = {
+                    onTabSelected(2)
+                },
+                padding = 12.dp,
+            )
+            NavigationItem(
+                icon =
+                    ImageVector.vectorResource(
+                        id = R.drawable.exclude,
+                    ),
+                isSelected = selectedTab == 3,
+                onClick = {
+                    onTabSelected(3)
+                },
+                padding = 12.dp,
+            )
+            NavigationItem(
+                icon =
+                    ImageVector.vectorResource(
+                        id = R.drawable.icono_user,
+                    ),
+                isSelected = selectedTab == 4,
+                onClick = {
+                    onTabSelected(4)
+                },
+                padding = 12.dp,
+            )
         }
     }
 }

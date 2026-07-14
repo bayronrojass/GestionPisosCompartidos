@@ -431,7 +431,11 @@ fun rememberQrBitmap(
                 val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
                 for (y in 0 until h) {
                     for (x in 0 until w) {
-                        bmp.setPixel(x, y, if (bits[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
+                        bmp.setPixel(
+                            x,
+                            y,
+                            if (bits[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE,
+                        )
                     }
                 }
                 bitmap = bmp

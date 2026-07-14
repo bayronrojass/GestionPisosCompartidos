@@ -48,7 +48,21 @@ class PizarraView
             load()
         }
 
+        /**
+         * Applies a bitmap received from the polling `load()` (or from a peer's edit) onto
+         * the local canvas. This is a **programmatic** update path — it must never trigger
+         * a save cycle, even indirectly. If [save] is ever invoked from anywhere other than
+         * a real `ACTION_UP` in [onTouchEvent], the guard in [save] itself will refuse to
+         * proceed.
+         */
         fun setBackgroundBitmap(bitmap: Bitmap) {
+            // Optimistic UI: while a stroke is pending server acknowledgement, refresh the baseline
+            // reference but do NOT replace the on-screen bitmap. Otherwise a poll fired seconds
+            // before the server processed our delta will wipe the freshly-drawn strokes for ~5s.
+            if (::model.isInitialized && model.pendingSave.value) {
+                backgroundBitmap = bitmap
+                return
+            }
             if (activatedDraw) {
                 backgroundBitmap = bitmap
                 currentBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
@@ -111,6 +125,8 @@ class PizarraView
                 MotionEvent.ACTION_UP -> {
                     canvasBitmap.drawPath(path, paint)
                     currentmodel.add(PointDeltaDTO(x, y, 0f, currentmodel.color))
+                    // Mark the local canvas as ahead of the server so incoming polls don't wipe it.
+                    currentmodel.markPending()
                     lastPoint = null
                     path.reset()
                     save()
@@ -146,14 +162,32 @@ class PizarraView
             return true
         }
 
+        /**
+         * Scheduled ONLY from the `ACTION_UP` branch of [onTouchEvent]. Guarded against any
+         * accidental non-touch invocation: without a real touch, `pendingSave` is false and
+         * we bail out before scheduling anything.
+         *
+         * Previously this method ALSO called [load] at the end of the debounced coroutine —
+         * effectively restarting the polling loop after every stroke. That coupling (paired
+         * with the version-counter tracking's earlier boolean form) was the mechanism behind
+         * the "server bombarded with `Se están aplicando deltas` every few seconds even
+         * without drawing" bug: overlapping save/load restarts kept the pipeline hot. Polling
+         * is already started once from [onSizeChanged] (initial view mount) and refreshed by
+         * the `AndroidView` `update` block when `lienzoId` changes — those two entry points
+         * are sufficient.
+         */
         private fun save() {
-            model.saveJob?.cancel()
+            if (!::model.isInitialized) return
+            // Physical-touch gate. `pendingSave` is set to true only inside `ACTION_UP` via
+            // `model.markPending()`. Any programmatic call site (a lifecycle callback, a
+            // recomposition, a bitmap-arrival collector) will observe `false` here and no-op.
+            if (!model.pendingSave.value) return
 
+            model.saveJob?.cancel()
             model.saveJob =
                 saveScope.launch {
                     delay(1000L)
                     model.save()
-                    load()
                 }
         }
 

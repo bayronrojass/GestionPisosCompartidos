@@ -20,6 +20,7 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.ResponseBody
+import okhttp3.ResponseBody.Companion.toResponseBody
 import retrofit2.Response
 import java.io.IOException
 import java.util.UUID
@@ -94,7 +95,17 @@ class RepositoryCasa(
     suspend fun getGastosCasa(
         token: String,
         casaId: Long,
-    ): Response<List<Gasto>> = apiService.getGastosCasa(token, casaId)
+    ): Response<List<Gasto>> {
+        val response = apiService.getGastosCasa(token, casaId)
+        return if (response.isSuccessful) {
+            Response.success(response.body()?.content ?: emptyList())
+        } else {
+            Response.error(
+                response.code(),
+                response.errorBody() ?: "".toResponseBody(null),
+            )
+        }
+    }
 
     suspend fun crearGasto(
         token: String,

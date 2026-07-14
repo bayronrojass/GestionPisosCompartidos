@@ -125,7 +125,9 @@ fun PrincipalInicioSesin(
         },
         onRegisterClick = { Toast.makeText(context, "Ir a Registro", Toast.LENGTH_SHORT).show() },
         onForgotPasswordClick = { Toast.makeText(context, "Recuperar contraseña", Toast.LENGTH_SHORT).show() },
-        onSocialLogin = { provider -> Toast.makeText(context, "Iniciar sesión con $provider", Toast.LENGTH_SHORT).show() },
+        onSocialLogin = { provider ->
+            Toast.makeText(context, "Iniciar sesión con $provider", Toast.LENGTH_SHORT).show()
+        },
     )
 }
 
@@ -275,7 +277,11 @@ fun LoginScreenUI(
                 shape = RoundedCornerShape(15.dp),
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.requiredSize(24.dp))
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.requiredSize(24.dp),
+                    )
                 } else {
                     Text("Iniciar sesión", color = Color.White, fontSize = 16.sp)
                 }
@@ -458,7 +464,9 @@ fun LoginScreenUI(
                     withStyle(
                         SpanStyle(color = Color(0xff6c6c6c), fontSize = 15.sp, fontWeight = FontWeight.Medium),
                     ) { append("¿No tienes cuenta todavía?") }
-                    withStyle(SpanStyle(color = Color(0xff581327), fontSize = 15.sp, fontWeight = FontWeight.Medium)) { append(" ") }
+                    withStyle(
+                        SpanStyle(color = Color(0xff581327), fontSize = 15.sp, fontWeight = FontWeight.Medium),
+                    ) { append(" ") }
                     withStyle(SpanStyle(color = Color(0xff581327), fontSize = 15.sp)) { append("Regístrate") }
                 },
             modifier =

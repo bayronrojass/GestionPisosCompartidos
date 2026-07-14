@@ -35,8 +35,16 @@ fun TinderTaskCard(
     var isDragging by remember { mutableStateOf(false) }
 
     val animationDuration = if (isDragging) 0 else 300
-    val animatedOffsetX by animateFloatAsState(targetValue = offsetX, animationSpec = tween(animationDuration), label = "")
-    val animatedRotation by animateFloatAsState(targetValue = rotation, animationSpec = tween(animationDuration), label = "")
+    val animatedOffsetX by animateFloatAsState(
+        targetValue = offsetX,
+        animationSpec = tween(animationDuration),
+        label = "",
+    )
+    val animatedRotation by animateFloatAsState(
+        targetValue = rotation,
+        animationSpec = tween(animationDuration),
+        label = "",
+    )
 
     // Calcular la opacidad de los sellos visuales según lo lejos que arrastres
     val likeAlpha = (offsetX / 200f).coerceIn(0f, 1f)
@@ -98,7 +106,13 @@ fun TinderTaskCard(
                 )
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Text(text = tarea.nombre, fontSize = 26.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, color = Color.Black)
+                Text(
+                    text = tarea.nombre,
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    color = Color.Black,
+                )
 
                 if (!tarea.descripcion.isNullOrBlank()) {
                     Spacer(modifier = Modifier.height(8.dp))

@@ -378,7 +378,10 @@ fun PredictiveAddItemRow(
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
 
-                                Text(producto.nombre, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium))
+                                Text(
+                                    producto.nombre,
+                                    style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
+                                )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(producto.categoria, style = TextStyle(fontSize = 12.sp, color = Color.Gray))
                             }
@@ -421,7 +424,12 @@ fun PredictiveAddItemRow(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
 
-                            Text(popular.nombre, color = Color(0xFF2E7D32), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text(
+                                popular.nombre,
+                                color = Color(0xFF2E7D32),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                            )
                         }
                     }
                 }
@@ -682,7 +690,11 @@ fun ItemDialog(
             Column {
                 OutlinedTextField(value = nombre, onValueChange = { nombre = it }, label = { Text("Nombre") })
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(value = descripcion, onValueChange = { descripcion = it }, label = { Text("Descripción") })
+                OutlinedTextField(
+                    value = descripcion,
+                    onValueChange = { descripcion = it },
+                    label = { Text("Descripción") },
+                )
             }
         },
         confirmButton = {

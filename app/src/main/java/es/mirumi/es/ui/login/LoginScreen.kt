@@ -78,7 +78,12 @@ fun LoginScreen(
             color = MaterialTheme.colorScheme.surface,
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
-                Text(text = "Usuario", color = Color(0xFF0D47A1), fontSize = 14.sp, modifier = Modifier.padding(bottom = 6.dp))
+                Text(
+                    text = "Usuario",
+                    color = Color(0xFF0D47A1),
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(bottom = 6.dp),
+                )
 
                 OutlinedTextField(
                     value = username,
@@ -91,7 +96,12 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                Text(text = "Contraseña", color = Color(0xFF0D47A1), fontSize = 14.sp, modifier = Modifier.padding(bottom = 6.dp))
+                Text(
+                    text = "Contraseña",
+                    color = Color(0xFF0D47A1),
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(bottom = 6.dp),
+                )
 
                 OutlinedTextField(
                     value = password,

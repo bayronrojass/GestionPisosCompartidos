@@ -7,6 +7,7 @@ import es.mirumi.es.model.requests.GastoRequest
 import es.mirumi.es.model.requests.JoinCasaRequest
 import es.mirumi.es.model.responses.CasaDetailsResponseDTO
 import es.mirumi.es.model.responses.CasaResponse
+import es.mirumi.es.model.responses.PaginatedResponse
 import es.mirumi.es.model.Casa
 import es.mirumi.es.model.dtos.BorradorGastoDTO
 import es.mirumi.es.model.dtos.UsuarioRankingDTO
@@ -24,6 +25,7 @@ import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface CasaAPI {
     @Multipart
@@ -74,7 +76,10 @@ interface CasaAPI {
     suspend fun getGastosCasa(
         @Header("Authorization") token: String,
         @Path("id") id: Long,
-    ): Response<List<Gasto>>
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 100,
+        @Query("sort") sort: String? = null,
+    ): Response<PaginatedResponse<Gasto>>
 
     @POST("casas/{casaId}/crearGasto")
     suspend fun postGastoCasa(

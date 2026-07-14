@@ -1162,7 +1162,8 @@ fun EventDialog(
                                         return startDate?.let { !selectedDate.isBefore(it) } ?: true
                                     }
 
-                                    override fun isSelectableYear(year: Int): Boolean = startDate?.let { year >= it.year } ?: true
+                                    override fun isSelectableYear(year: Int): Boolean =
+                                        startDate?.let { year >= it.year } ?: true
                                 },
                         )
 
