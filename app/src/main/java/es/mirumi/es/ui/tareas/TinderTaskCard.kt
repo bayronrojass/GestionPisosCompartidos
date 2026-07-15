@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import es.mirumi.es.R
 import es.mirumi.es.model.Tarea
+import es.mirumi.es.ui.theme.Burgundy
 import kotlin.math.roundToInt
 
 @Composable
@@ -102,7 +103,7 @@ fun TinderTaskCard(
                     painter = painterResource(id = iconRes),
                     contentDescription = "Icono",
                     modifier = Modifier.size(100.dp),
-                    colorFilter = ColorFilter.tint(Color(0xff581327)),
+                    colorFilter = ColorFilter.tint(Burgundy),
                 )
                 Spacer(modifier = Modifier.height(24.dp))
 

@@ -69,6 +69,8 @@ sealed class Route(
 
     object InicioSesion : Route("inicio_sesion")
 
+    object Registro : Route("registro")
+
     object Calendario : Route("calendario")
 
     object Ranking : Route("ranking?casa_id={casa_id}") {

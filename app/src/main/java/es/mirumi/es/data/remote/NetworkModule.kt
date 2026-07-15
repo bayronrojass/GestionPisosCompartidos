@@ -17,6 +17,7 @@ import es.mirumi.es.data.repository.APIs.InvitacionAPI
 import es.mirumi.es.data.repository.APIs.ItemAPI
 import es.mirumi.es.data.repository.APIs.ListaAPI
 import es.mirumi.es.data.repository.APIs.LoginAPI
+import es.mirumi.es.data.repository.APIs.RegistroAPI
 import es.mirumi.es.data.repository.APIs.TareaAPI
 import es.mirumi.es.data.repository.APIs.UsuarioAPI
 import okhttp3.Interceptor
@@ -62,6 +63,10 @@ object NetworkModule {
 
     val loginApiService: LoginAPI by lazy {
         retrofit.create(LoginAPI::class.java)
+    }
+
+    val registroApiService: RegistroAPI by lazy {
+        retrofit.create(RegistroAPI::class.java)
     }
 
     val casaApiService: CasaAPI by lazy {

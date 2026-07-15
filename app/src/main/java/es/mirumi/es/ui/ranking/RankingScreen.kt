@@ -27,6 +27,7 @@ import coil.compose.AsyncImage
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.data.remote.resolveImageUrl
 import es.mirumi.es.model.dtos.UsuarioRankingDTO
+import es.mirumi.es.ui.theme.LilaPrimary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,7 +70,7 @@ fun RankingScreen(
             Spacer(modifier = Modifier.height(40.dp))
 
             if (isLoading) {
-                CircularProgressIndicator(color = Color(0xFF8061A2))
+                CircularProgressIndicator(color = LilaPrimary)
             } else if (rankingLista.isEmpty()) {
                 Text("Aún no hay puntos en esta casa.", color = Color.Gray)
             } else {
@@ -125,7 +126,7 @@ fun PodiumItem(
                 Modifier
                     .size(size)
                     .clip(CircleShape)
-                    .background(Color(0xFF8061A2))
+                    .background(LilaPrimary)
                     .border(3.dp, color, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
@@ -202,7 +203,7 @@ fun RankingListItem(user: UsuarioRankingDTO) {
 
         // Avatar en lista
         Box(
-            modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF8061A2)),
+            modifier = Modifier.size(40.dp).clip(CircleShape).background(LilaPrimary),
             contentAlignment = Alignment.Center,
         ) {
             // Fallback letter — drawn behind, visible until (or if) the image loads.
@@ -231,12 +232,12 @@ fun RankingListItem(user: UsuarioRankingDTO) {
         Text(user.nombre, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("${user.puntos}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF8061A2))
+            Text("${user.puntos}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = LilaPrimary)
             Spacer(modifier = Modifier.width(4.dp))
             Icon(
                 Icons.Default.Star,
                 contentDescription = null,
-                tint = Color(0xFF8061A2),
+                tint = LilaPrimary,
                 modifier = Modifier.size(16.dp),
             )
         }

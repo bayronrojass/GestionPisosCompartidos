@@ -54,17 +54,28 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import es.mirumi.es.ui.theme.ButtonShape
+import es.mirumi.es.ui.theme.CardShape
+import es.mirumi.es.ui.theme.Fondo
+import es.mirumi.es.ui.theme.LilaCard
+import es.mirumi.es.ui.theme.LilaDark
+import es.mirumi.es.ui.theme.LilaLight
+import es.mirumi.es.ui.theme.RojoSaldo
+import es.mirumi.es.ui.theme.TextoGris
+import es.mirumi.es.ui.theme.VerdeSaldo
 import es.mirumi.es.ui.utils.LogrosGlobalViewModel
 import es.mirumi.es.ui.utils.LogrosGlobalViewModelFactory
 
-val ColorFondo = Color(0xFFF8F8F8)
-val ColorLila = Color(0xFFDDC1FB)
-val ColorLilaClaroTarjeta = Color(0xFFE8D5FC)
-val ColorLilaSelected = Color(0xFFDDC1FB)
-val ColorVerdeSaldo = Color(0xFF00C853)
-val ColorRojoSaldo = Color(0xFFFF1744)
-val ColorTextoGris = Color(0xFF6C6C6C)
-val ColorMoradoOscuro = Color(0xFF58337F)
+// Backward-compat aliases — all downstream screens still import these names.
+// The actual hex values live in `ui/theme/AppColors.kt`; this file only re-exports.
+val ColorFondo = Fondo
+val ColorLila = LilaLight
+val ColorLilaClaroTarjeta = LilaCard
+val ColorLilaSelected = LilaLight
+val ColorVerdeSaldo = VerdeSaldo
+val ColorRojoSaldo = RojoSaldo
+val ColorTextoGris = TextoGris
+val ColorMoradoOscuro = LilaDark
 
 fun Context.getActivity(): ComponentActivity? =
     when (this) {
@@ -443,9 +454,9 @@ fun VistaSaldosContent(
     Column {
         Card(
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            shape = RoundedCornerShape(16.dp),
+            shape = CardShape,
             modifier = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(1.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         ) {
             Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Box(
@@ -462,9 +473,10 @@ fun VistaSaldosContent(
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = onSaldarDeudasClick,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().height(52.dp),
             colors = ButtonDefaults.buttonColors(containerColor = ColorLila),
-            shape = RoundedCornerShape(12.dp),
+            shape = ButtonShape,
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp, pressedElevation = 1.dp),
         ) {
             Icon(Icons.Default.Calculate, contentDescription = null, tint = ColorMoradoOscuro)
             Spacer(modifier = Modifier.width(8.dp))
@@ -488,9 +500,9 @@ fun VistaSaldosContent(
 fun ItemSaldo(saldo: SaldoUsuario) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(16.dp),
+        shape = CardShape,
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(0.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp).fillMaxWidth(),
@@ -680,9 +692,11 @@ fun ItemGasto(
         }
 
     Card(
-        shape = RoundedCornerShape(24.dp),
+        shape = CardShape,
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(0.dp),
+        // Premium elevation — lifts cards off the `Fondo` background and gives them depth.
+        // Matches the elevation rhythm used on TareasScreen's task cards.
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp, pressedElevation = 4.dp),
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
     ) {
         Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.Top) {
@@ -776,7 +790,7 @@ fun VistaDetalleGasto(
             Spacer(modifier = Modifier.height(8.dp))
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                shape = RoundedCornerShape(16.dp),
+                shape = CardShape,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Row(
@@ -852,7 +866,7 @@ fun VistaDetalleGasto(
             OutlinedButton(
                 onClick = onEdit,
                 modifier = Modifier.width(200.dp),
-                shape = RoundedCornerShape(50),
+                shape = ButtonShape,
                 border = BorderStroke(1.dp, Color.Gray),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = ColorTextoGris),
             ) {
@@ -887,9 +901,9 @@ fun ItemParticipante(
 
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(16.dp),
+        shape = CardShape,
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(0.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Row(
             modifier = Modifier.padding(16.dp).fillMaxWidth(),

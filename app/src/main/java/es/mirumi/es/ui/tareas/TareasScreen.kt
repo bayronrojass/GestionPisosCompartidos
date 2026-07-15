@@ -95,6 +95,13 @@ import es.mirumi.es.model.Usuario
 import es.mirumi.es.ui.gastos.AvatarConFoto
 import es.mirumi.es.ui.gastos.ColorLila
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModel
+import es.mirumi.es.ui.theme.Burgundy
+import es.mirumi.es.ui.theme.ButtonShape
+import es.mirumi.es.ui.theme.Fondo
+import es.mirumi.es.ui.theme.LilaDark
+import es.mirumi.es.ui.theme.LilaLight
+import es.mirumi.es.ui.theme.LilaPrimary
+import es.mirumi.es.ui.theme.TextoGris
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModelFactory
 import es.mirumi.es.ui.pizarra.postits.PizarraScreen
 import es.mirumi.es.ui.utils.FabActionItem
@@ -237,38 +244,39 @@ fun TareasScreen(
     }
 
     Scaffold(
-        containerColor = Color(0xfff8f8f8),
+        containerColor = Fondo,
     ) { paddingValues ->
 
-        Box(
+        Column(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
-                    .background(Color(0xfff8f8f8)),
+                    .padding(paddingValues),
         ) {
+            Spacer(modifier = Modifier.height(16.dp))
+
             Text(
                 text = "Tareas",
                 color = Color.Black,
                 style = MaterialTheme.typography.displaySmall,
-                modifier = Modifier.align(Alignment.TopStart).offset(x = 20.dp, y = 15.dp),
+                modifier = Modifier.padding(horizontal = 20.dp),
             )
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             Box(
                 modifier =
                     Modifier
-                        .align(Alignment.TopStart)
-                        .offset(x = 65.dp, y = 75.dp)
-                        .requiredWidth(width = 260.dp)
-                        .requiredHeight(height = 24.dp),
+                        .align(Alignment.CenterHorizontally)
+                        .requiredWidth(260.dp)
+                        .requiredHeight(24.dp),
             ) {
                 Box(
                     modifier =
                         Modifier
                             .fillMaxSize()
-                            .clip(
-                                RoundedCornerShape(26.dp),
-                            ).background(Color.White)
+                            .clip(RoundedCornerShape(26.dp))
+                            .background(Color.White)
                             .shadow(4.dp, RoundedCornerShape(26.dp)),
                 )
                 Box(
@@ -277,15 +285,9 @@ fun TareasScreen(
                             .fillMaxWidth(0.5f)
                             .fillMaxHeight()
                             .align(
-                                if (selectedTab ==
-                                    0
-                                ) {
-                                    Alignment.CenterStart
-                                } else {
-                                    Alignment.CenterEnd
-                                },
+                                if (selectedTab == 0) Alignment.CenterStart else Alignment.CenterEnd,
                             ).clip(RoundedCornerShape(26.dp))
-                            .background(Color(0xffddc1fb)),
+                            .background(LilaLight),
                 )
                 Text(
                     text = "Pendientes",
@@ -294,10 +296,8 @@ fun TareasScreen(
                     modifier =
                         Modifier
                             .align(Alignment.CenterStart)
-                            .offset(x = 22.dp)
-                            .clickable {
-                                selectedTab = 0
-                            }.padding(horizontal = 10.dp, vertical = 2.dp),
+                            .clickable { selectedTab = 0 }
+                            .padding(horizontal = 22.dp, vertical = 2.dp),
                 )
                 Text(
                     text = "Completadas",
@@ -306,18 +306,16 @@ fun TareasScreen(
                     modifier =
                         Modifier
                             .align(Alignment.CenterEnd)
-                            .offset(x = (-22).dp)
-                            .clickable {
-                                selectedTab = 1
-                            }.padding(horizontal = 10.dp, vertical = 2.dp),
+                            .clickable { selectedTab = 1 }
+                            .padding(horizontal = 22.dp, vertical = 2.dp),
                 )
             }
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             LazyColumn(
                 modifier =
                     Modifier
-                        .align(Alignment.TopStart)
-                        .offset(y = 115.dp)
                         .fillMaxSize()
                         .padding(horizontal = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -338,14 +336,14 @@ fun TareasScreen(
                             Button(
                                 onClick = { showTinderDialog = true },
                                 modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xffddc1fb)),
+                                colors = ButtonDefaults.buttonColors(containerColor = LilaLight),
                                 shape = RoundedCornerShape(15.dp),
                             ) {
-                                Icon(Icons.Default.ExpandMore, contentDescription = "Tinder", tint = Color(0xff5d427a))
+                                Icon(Icons.Default.ExpandMore, contentDescription = "Tinder", tint = LilaDark)
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     "Reparto inteligente (Votar tareas)",
-                                    color = Color(0xff5d427a),
+                                    color = LilaDark,
                                     fontWeight = FontWeight.Bold,
                                 )
                             }
@@ -687,10 +685,10 @@ fun TaskCardPendiente(
 ) {
     val (colorFondoHora, colorTextoHora) =
         when (tarea.prioridad?.lowercase() ?: "media") {
-            "alta" -> Pair(Color(0xffff6490), Color(0xff581327))
-            "media" -> Pair(Color(0xffddc1fb), Color(0xff5d427a))
+            "alta" -> Pair(Color(0xffff6490), Burgundy)
+            "media" -> Pair(LilaLight, LilaDark)
             "baja" -> Pair(Color(0xFFC8E6C9), Color(0xFF2E7D32))
-            else -> Pair(Color(0xffddc1fb), Color(0xff5d427a))
+            else -> Pair(LilaLight, LilaDark)
         }
 
     val fechaFinDisplay =
@@ -740,7 +738,7 @@ fun TaskCardPendiente(
                     Icon(
                         imageVector = getIconoTarea(tarea.descripcion ?: "OTROS"),
                         contentDescription = "Icono Tarea",
-                        tint = Color(0xff5d427a),
+                        tint = LilaDark,
                         modifier = Modifier.size(24.dp),
                     )
                     Text(
@@ -756,8 +754,8 @@ fun TaskCardPendiente(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     when (tarea.prioridad?.lowercase() ?: "media") {
-                        "alta" -> BadgePrioridad("Alta", Color(0xffff6490), Color(0xff581327))
-                        "media" -> BadgePrioridad("Media", Color(0xffddc1fb), Color(0xff5d427a))
+                        "alta" -> BadgePrioridad("Alta", Color(0xffff6490), Burgundy)
+                        "media" -> BadgePrioridad("Media", LilaLight, LilaDark)
                         "baja" -> BadgePrioridad("Baja", Color(0xFFC8E6C9), Color(0xFF2E7D32))
                     }
                     BadgeHora("de 16 a 17h", colorFondoHora, colorTextoHora)
@@ -781,7 +779,7 @@ fun TaskCardPendiente(
                     ) {
                         Text(
                             "Solicitar cambio",
-                            color = Color(0xff6c6c6c),
+                            color = TextoGris,
                             textDecoration = TextDecoration.Underline,
                             style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
                         )
@@ -789,7 +787,7 @@ fun TaskCardPendiente(
                         Image(
                             painter = painterResource(id = R.drawable.iconocambio),
                             contentDescription = "Cambio",
-                            colorFilter = ColorFilter.tint(Color(0xff6c6c6c)),
+                            colorFilter = ColorFilter.tint(TextoGris),
                             modifier = Modifier.size(24.dp),
                         )
                     }
@@ -799,11 +797,11 @@ fun TaskCardPendiente(
                     onClick = onComplete,
                     colors =
                         ButtonDefaults.outlinedButtonColors(
-                            contentColor = Color(0xff6c6c6c),
+                            contentColor = LilaPrimary,
                             containerColor = Color.Transparent,
                         ),
-                    border = BorderStroke(1.dp, Color(0xff6c6c6c)),
-                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, LilaPrimary),
+                    shape = ButtonShape,
                     modifier = Modifier.height(40.dp),
                 ) {
                     Text("Completar", fontSize = 14.sp, fontWeight = FontWeight.Medium)
@@ -822,10 +820,10 @@ fun TaskCardOtra(
 ) {
     val (colorFondoHora, colorTextoHora) =
         when (tarea.prioridad?.lowercase() ?: "media") {
-            "alta" -> Pair(Color(0xffff6490), Color(0xff581327))
-            "media" -> Pair(Color(0xffddc1fb), Color(0xff5d427a))
+            "alta" -> Pair(Color(0xffff6490), Burgundy)
+            "media" -> Pair(LilaLight, LilaDark)
             "baja" -> Pair(Color(0xFFC8E6C9), Color(0xFF2E7D32))
-            else -> Pair(Color(0xffddc1fb), Color(0xff5d427a))
+            else -> Pair(LilaLight, LilaDark)
         }
 
     val fechaFinDisplay =
@@ -880,7 +878,7 @@ fun TaskCardOtra(
                     )
                     Text(
                         text = "Asignado a ${tarea.asignadoA?.nombre ?: "Sin asignar"}",
-                        color = Color(0xff6c6c6c),
+                        color = TextoGris,
                         style = TextStyle(fontSize = 16.sp),
                     )
                 }
@@ -891,7 +889,7 @@ fun TaskCardOtra(
                 ) {
                     Text(
                         "Recordar",
-                        color = Color(0xff6c6c6c),
+                        color = TextoGris,
                         textDecoration = TextDecoration.Underline,
                         style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
                     )
@@ -899,7 +897,7 @@ fun TaskCardOtra(
                     Image(
                         painter = painterResource(id = R.drawable.iconocampana),
                         contentDescription = "Recordar",
-                        colorFilter = ColorFilter.tint(Color(0xff6c6c6c)),
+                        colorFilter = ColorFilter.tint(TextoGris),
                         modifier = Modifier.size(24.dp),
                     )
                 }
@@ -925,8 +923,8 @@ fun TaskCardOtra(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     when (tarea.prioridad?.lowercase() ?: "media") {
-                        "alta" -> BadgePrioridad("Alta", Color(0xffff6490), Color(0xff581327))
-                        "media" -> BadgePrioridad("Media", Color(0xffddc1fb), Color(0xff5d427a))
+                        "alta" -> BadgePrioridad("Alta", Color(0xffff6490), Burgundy)
+                        "media" -> BadgePrioridad("Media", LilaLight, LilaDark)
                         "baja" -> BadgePrioridad("Baja", Color(0xFFC8E6C9), Color(0xFF2E7D32))
                     }
                     BadgeHora("de 16 a 17h", colorFondoHora, colorTextoHora)
@@ -1029,7 +1027,7 @@ fun TaskCardCompletada(
                     )
                     Text(
                         "Hecho por ${tarea.asignadoA?.nombre ?: "Alguien"}",
-                        color = Color(0xff6c6c6c),
+                        color = TextoGris,
                         style = TextStyle(fontSize = 16.sp),
                         textAlign = TextAlign.End,
                     )
@@ -1262,7 +1260,7 @@ fun NewCreateTaskDialog(
                     Image(
                         painter = painterResource(id = R.drawable.iconocerrar),
                         contentDescription = "Cerrar",
-                        colorFilter = ColorFilter.tint(Color(0xff6c6c6c)),
+                        colorFilter = ColorFilter.tint(TextoGris),
                         modifier = Modifier.size(24.dp),
                     )
                 }
@@ -1285,14 +1283,14 @@ fun NewCreateTaskDialog(
                                     singleLine = true,
                                     colors =
                                         OutlinedTextFieldDefaults.colors(
-                                            focusedBorderColor = Color(0xff6c6c6c),
-                                            unfocusedBorderColor = Color(0xff6c6c6c),
+                                            focusedBorderColor = LilaPrimary,
+                                            unfocusedBorderColor = TextoGris,
                                         ),
                                 )
                             } else {
                                 Text(
                                     "Nombre tarea",
-                                    color = Color(0xff6c6c6c),
+                                    color = TextoGris,
                                     style = MaterialTheme.typography.headlineSmall,
                                     modifier = Modifier.fillMaxWidth(),
                                 )
@@ -1302,7 +1300,7 @@ fun NewCreateTaskDialog(
                             Image(
                                 painter = painterResource(id = R.drawable.iconolapiz),
                                 contentDescription = "Editar",
-                                colorFilter = ColorFilter.tint(Color(0xff6c6c6c)),
+                                colorFilter = ColorFilter.tint(TextoGris),
                             )
                         }
                     }
@@ -1315,8 +1313,8 @@ fun NewCreateTaskDialog(
                         maxLines = 3,
                         colors =
                             OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xff6c6c6c),
-                                unfocusedBorderColor = Color(0xff6c6c6c),
+                                focusedBorderColor = LilaPrimary,
+                                unfocusedBorderColor = TextoGris,
                             ),
                     )
 
@@ -1329,7 +1327,7 @@ fun NewCreateTaskDialog(
                         label = {
                             Text(
                                 if (fechaDisplay.isBlank()) "Seleccionar fecha" else fechaDisplay,
-                                color = Color(0xff6c6c6c),
+                                color = TextoGris,
                                 style = TextStyle(fontSize = 14.sp),
                             )
                         },
@@ -1337,7 +1335,7 @@ fun NewCreateTaskDialog(
                             Image(
                                 painter = painterResource(id = R.drawable.iconocalendario),
                                 contentDescription = "Calendario",
-                                colorFilter = ColorFilter.tint(Color(0xff6c6c6c)),
+                                colorFilter = ColorFilter.tint(TextoGris),
                                 modifier = Modifier.size(24.dp),
                             )
                         },
@@ -1357,15 +1355,15 @@ fun NewCreateTaskDialog(
                         PrioridadChip(
                             texto = "Alta",
                             colorFondo = Color(0xffff6490),
-                            colorTexto = Color(0xff581327),
+                            colorTexto = Burgundy,
                             seleccionado =
                                 prioridad == "alta",
                             onClick = { prioridad = "alta" },
                         )
                         PrioridadChip(
                             texto = "Media",
-                            colorFondo = Color(0xffddc1fb),
-                            colorTexto = Color(0xff5d427a),
+                            colorFondo = LilaLight,
+                            colorTexto = LilaDark,
                             seleccionado =
                                 prioridad == "media",
                             onClick = { prioridad = "media" },
@@ -1407,11 +1405,11 @@ fun NewCreateTaskDialog(
                     ) {
                         OutlinedButton(
                             onClick = onDismiss,
-                            border = BorderStroke(1.dp, Color(0xff6c6c6c)),
+                            border = BorderStroke(1.dp, TextoGris),
                             shape = RoundedCornerShape(20.dp),
                             modifier = Modifier.weight(1f),
                         ) {
-                            Text("Cancelar", color = Color(0xff6c6c6c))
+                            Text("Cancelar", color = TextoGris)
                         }
                         Button(
                             onClick = {
@@ -1428,10 +1426,10 @@ fun NewCreateTaskDialog(
                                     )
                                 }
                             },
-                            shape = RoundedCornerShape(20.dp),
+                            shape = ButtonShape,
                             colors =
                                 ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xff6c6c6c),
+                                    containerColor = LilaPrimary,
                                     contentColor = Color.White,
                                 ),
                             modifier = Modifier.weight(1f),
@@ -1505,8 +1503,8 @@ fun PrioridadChip(
     modifier: Modifier = Modifier,
 ) {
     val backgroundColor = if (seleccionado) colorFondo else Color(0xfffbfafa)
-    val textColor = if (seleccionado) colorTexto else Color(0xff6c6c6c)
-    val borderColor = if (seleccionado) colorFondo else Color(0xff6c6c6c)
+    val textColor = if (seleccionado) colorTexto else TextoGris
+    val borderColor = if (seleccionado) colorFondo else TextoGris
 
     Box(
         contentAlignment = Alignment.Center,
@@ -1539,8 +1537,8 @@ fun UsuarioChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val backgroundColor = if (seleccionado) Color(0xffddc1fb) else Color(0xfffbfafa)
-    val borderColor = if (seleccionado) Color(0xffddc1fb) else Color(0xff6c6c6c)
+    val backgroundColor = if (seleccionado) LilaLight else Color(0xfffbfafa)
+    val borderColor = if (seleccionado) LilaLight else TextoGris
 
     Row(
         horizontalArrangement = Arrangement.spacedBy(7.dp, Alignment.Start),
@@ -1560,12 +1558,12 @@ fun UsuarioChip(
         Image(
             painter = painterResource(id = R.drawable.compartirnotaiconos),
             contentDescription = "Usuario",
-            colorFilter = ColorFilter.tint(if (seleccionado) Color.White else Color(0xff6c6c6c)),
+            colorFilter = ColorFilter.tint(if (seleccionado) Color.White else TextoGris),
             modifier = Modifier.size(16.dp),
         )
         Text(
             text = nombre,
-            color = if (seleccionado) Color.White else Color(0xff6c6c6c),
+            color = if (seleccionado) Color.White else TextoGris,
             style = TextStyle(fontSize = 14.sp),
         )
     }
@@ -1799,7 +1797,7 @@ fun UserSelectionExpandable(
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Card(
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            border = BorderStroke(1.dp, Color(0xff6c6c6c)),
+            border = BorderStroke(1.dp, TextoGris),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth(),
         ) {
@@ -1831,7 +1829,7 @@ fun UserSelectionExpandable(
                     Icon(
                         imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                         contentDescription = if (expanded) "Contraer" else "Expandir",
-                        tint = Color(0xff6c6c6c),
+                        tint = TextoGris,
                     )
                 }
 
@@ -1851,9 +1849,9 @@ fun UserSelectionExpandable(
                                     if (selectedUserId ==
                                         null
                                     ) {
-                                        Color(0xffddc1fb)
+                                        LilaLight
                                     } else {
-                                        Color(0xff6c6c6c)
+                                        TextoGris
                                     },
                                 ),
                             shape = RoundedCornerShape(20.dp),
@@ -1864,7 +1862,7 @@ fun UserSelectionExpandable(
                                         if (selectedUserId ==
                                             null
                                         ) {
-                                            Color(0xffddc1fb)
+                                            LilaLight
                                         } else {
                                             Color.Transparent
                                         },
@@ -1878,7 +1876,7 @@ fun UserSelectionExpandable(
                                     ) {
                                         Color.White
                                     } else {
-                                        Color(0xff6c6c6c)
+                                        TextoGris
                                     },
                             )
                         }
@@ -1911,8 +1909,8 @@ fun UserSelectionItem(
     onClick: () -> Unit,
 ) {
     Card(
-        colors = CardDefaults.cardColors(containerColor = if (selected) Color(0xffddc1fb) else Color.White),
-        border = BorderStroke(1.dp, if (selected) Color(0xffddc1fb) else Color(0xffe0e0e0)),
+        colors = CardDefaults.cardColors(containerColor = if (selected) LilaLight else Color.White),
+        border = BorderStroke(1.dp, if (selected) LilaLight else Color(0xffe0e0e0)),
         shape = RoundedCornerShape(10.dp),
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
     ) {
@@ -2013,12 +2011,12 @@ fun RepartoTinderDialog(
                     }
                     onDismiss()
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xff581327)),
+                colors = ButtonDefaults.buttonColors(containerColor = Burgundy),
             ) {
                 Text(if (currentIndex < tareasPendientes.size) "Cerrar" else "¡Repartir Tareas!", color = Color.White)
             }
         },
-        containerColor = Color(0xfff8f8f8),
+        containerColor = Fondo,
     )
 }
 

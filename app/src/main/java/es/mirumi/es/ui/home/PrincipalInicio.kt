@@ -2,6 +2,7 @@ package es.mirumi.es.ui.home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -34,6 +35,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import es.mirumi.es.R
 import es.mirumi.es.ui.navigation.Route
+import es.mirumi.es.ui.theme.Burgundy
 
 @Composable
 fun PrincipalInicio(
@@ -147,7 +149,7 @@ fun PrincipalInicio(
                     withStyle(
                         style =
                             SpanStyle(
-                                color = Color(0xff581327),
+                                color = Burgundy,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Medium,
                             ),
@@ -155,7 +157,7 @@ fun PrincipalInicio(
                     withStyle(
                         style =
                             SpanStyle(
-                                color = Color(0xff581327),
+                                color = Burgundy,
                                 fontSize = 15.sp,
                             ),
                     ) { append("Regístrate") }
@@ -166,7 +168,7 @@ fun PrincipalInicio(
                     .offset(
                         x = (-0.5).dp,
                         y = 720.dp,
-                    ),
+                    ).clickable { navController.navigate(Route.Registro.route) },
         )
     }
 }

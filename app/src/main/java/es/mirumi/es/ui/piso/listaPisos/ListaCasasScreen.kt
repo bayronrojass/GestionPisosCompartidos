@@ -38,6 +38,7 @@ import es.mirumi.es.R
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.data.remote.NetworkModule
 import es.mirumi.es.data.repository.repositories.RepositoryCasa
+import es.mirumi.es.ui.theme.LilaPrimary
 import es.mirumi.es.model.Casa
 import es.mirumi.es.model.requests.JoinCasaRequest
 import es.mirumi.es.ui.navigation.Route
@@ -114,7 +115,7 @@ fun ListaCasasScreen(
 
             if (uiState.isLoading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color(0xFF8061A2))
+                    CircularProgressIndicator(color = LilaPrimary)
                 }
             } else if (uiState.casas.isEmpty()) {
                 EmptyState()
@@ -161,8 +162,8 @@ fun QuickActionButton(
             horizontalArrangement = Arrangement.Center,
         ) {
             when (icon) {
-                is Int -> Icon(painterResource(icon), null, tint = Color(0xFF8061A2), modifier = Modifier.size(20.dp))
-                is androidx.compose.ui.graphics.vector.ImageVector -> Icon(icon, null, tint = Color(0xFF8061A2))
+                is Int -> Icon(painterResource(icon), null, tint = LilaPrimary, modifier = Modifier.size(20.dp))
+                is androidx.compose.ui.graphics.vector.ImageVector -> Icon(icon, null, tint = LilaPrimary)
             }
             Spacer(Modifier.width(8.dp))
             Text(label, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
@@ -189,7 +190,7 @@ fun CasaCard(
                 Icon(
                     painterResource(R.drawable.iconopiso),
                     null,
-                    tint = Color(0xFF8061A2),
+                    tint = LilaPrimary,
                     modifier = Modifier.size(24.dp),
                 )
             }
@@ -213,7 +214,7 @@ fun CasaCard(
             Icon(
                 painterResource(R.drawable.vector19),
                 null,
-                tint = Color(0xFF8061A2),
+                tint = LilaPrimary,
                 modifier = Modifier.size(16.dp).graphicsLayer(rotationZ = 180f),
             )
         }

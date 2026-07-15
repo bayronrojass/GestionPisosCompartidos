@@ -48,6 +48,11 @@ import es.mirumi.es.ui.login.LoginUiState
 import es.mirumi.es.ui.login.LoginViewModel
 import es.mirumi.es.ui.login.LoginViewModelFactory
 import es.mirumi.es.ui.navigation.Route
+import es.mirumi.es.ui.theme.Burgundy
+import es.mirumi.es.ui.theme.ButtonShape
+import es.mirumi.es.ui.theme.InputShape
+import es.mirumi.es.ui.theme.LilaPrimary
+import es.mirumi.es.ui.theme.TextoGris
 import es.mirumi.es.utils.BiometricHelper
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ArraySerializer
@@ -123,7 +128,7 @@ fun PrincipalInicioSesin(
                 }
             }
         },
-        onRegisterClick = { Toast.makeText(context, "Ir a Registro", Toast.LENGTH_SHORT).show() },
+        onRegisterClick = { navController.navigate(Route.Registro.route) },
         onForgotPasswordClick = { Toast.makeText(context, "Recuperar contraseña", Toast.LENGTH_SHORT).show() },
         onSocialLogin = { provider ->
             Toast.makeText(context, "Iniciar sesión con $provider", Toast.LENGTH_SHORT).show()
@@ -213,16 +218,26 @@ fun LoginScreenUI(
             modifier = Modifier.align(Alignment.TopCenter).offset(x = 1.dp, y = 342.dp).requiredWidth(350.dp),
         )
 
+        // Brand focus states — LilaPrimary on focus, TextoGris @ 40% when idle. Applied to
+        // both text fields uniformly so the whole form reads as a single family.
+        val focusedFieldColors =
+            OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = LilaPrimary,
+                unfocusedBorderColor = TextoGris.copy(alpha = 0.4f),
+                cursorColor = Burgundy,
+            )
+
         // CAMPO USUARIO
         Column(modifier = Modifier.align(Alignment.TopStart).offset(x = 20.dp, y = 410.dp).requiredWidth(350.dp)) {
             OutlinedTextField(
                 value = username,
                 onValueChange = onUsernameChange,
                 modifier = Modifier.fillMaxWidth().height(60.dp),
-                placeholder = { Text("Correo Electrónico", color = Color(0xff6c6c6c)) },
+                placeholder = { Text("Correo Electrónico", color = TextoGris) },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 singleLine = true,
-                shape = RoundedCornerShape(15.dp),
+                shape = InputShape,
+                colors = focusedFieldColors,
             )
         }
 
@@ -232,7 +247,7 @@ fun LoginScreenUI(
                 value = password,
                 onValueChange = onPasswordChange,
                 modifier = Modifier.fillMaxWidth().height(60.dp),
-                placeholder = { Text("Contraseña", color = Color(0xff6c6c6c)) },
+                placeholder = { Text("Contraseña", color = TextoGris) },
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 trailingIcon = {
@@ -240,12 +255,13 @@ fun LoginScreenUI(
                         Icon(
                             imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                             contentDescription = "Toggle password",
-                            tint = Color(0xff6c6c6c),
+                            tint = TextoGris,
                         )
                     }
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(15.dp),
+                shape = InputShape,
+                colors = focusedFieldColors,
             )
 
             // CHECKBOX PARA RECORDAR HUELLA
@@ -257,7 +273,7 @@ fun LoginScreenUI(
                     Checkbox(
                         checked = rememberBiometric,
                         onCheckedChange = onRememberBiometricChange,
-                        colors = CheckboxDefaults.colors(checkedColor = Color(0xff581327)),
+                        colors = CheckboxDefaults.colors(checkedColor = Burgundy),
                     )
                     Text("Usar huella la próxima vez", fontSize = 14.sp, color = Color.DarkGray)
                 }
@@ -271,10 +287,11 @@ fun LoginScreenUI(
         ) {
             Button(
                 onClick = onLoginClick,
-                modifier = Modifier.weight(1f).height(52.dp),
+                modifier = Modifier.weight(1f).height(56.dp),
                 enabled = !isLoading && username.isNotEmpty() && password.isNotEmpty(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xff581327)),
-                shape = RoundedCornerShape(15.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Burgundy),
+                shape = ButtonShape,
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp, pressedElevation = 2.dp),
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
@@ -283,7 +300,7 @@ fun LoginScreenUI(
                         modifier = Modifier.requiredSize(24.dp),
                     )
                 } else {
-                    Text("Iniciar sesión", color = Color.White, fontSize = 16.sp)
+                    Text("Iniciar sesión", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
 
@@ -307,7 +324,7 @@ fun LoginScreenUI(
                     Icon(
                         imageVector = Icons.Default.Fingerprint,
                         contentDescription = "Huella",
-                        tint = Color(0xff581327),
+                        tint = Burgundy,
                         modifier = Modifier.size(32.dp),
                     )
                 }
@@ -317,7 +334,7 @@ fun LoginScreenUI(
         // [TUS ENLACES INFERIORES INTACTOS]
         Text(
             text = "¿Has olvidado tu contraseña?",
-            color = Color(0xff581327),
+            color = Burgundy,
             textAlign = TextAlign.Center,
             style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium),
             modifier =
@@ -465,9 +482,9 @@ fun LoginScreenUI(
                         SpanStyle(color = Color(0xff6c6c6c), fontSize = 15.sp, fontWeight = FontWeight.Medium),
                     ) { append("¿No tienes cuenta todavía?") }
                     withStyle(
-                        SpanStyle(color = Color(0xff581327), fontSize = 15.sp, fontWeight = FontWeight.Medium),
+                        SpanStyle(color = Burgundy, fontSize = 15.sp, fontWeight = FontWeight.Medium),
                     ) { append(" ") }
-                    withStyle(SpanStyle(color = Color(0xff581327), fontSize = 15.sp)) { append("Regístrate") }
+                    withStyle(SpanStyle(color = Burgundy, fontSize = 15.sp)) { append("Regístrate") }
                 },
             modifier =
                 Modifier

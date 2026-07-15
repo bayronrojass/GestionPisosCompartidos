@@ -48,6 +48,8 @@ import es.mirumi.es.ui.item.ItemScreen
 import es.mirumi.es.ui.piso.crearPiso.CrearCasaScreen
 import es.mirumi.es.ui.piso.gestionUsuarios.GestionUsuariosPiso
 import es.mirumi.es.ui.piso.listaPisos.ListaCasasScreen
+import es.mirumi.es.ui.registro.RegistroScreen
+import es.mirumi.es.ui.theme.LilaPrimary
 import es.mirumi.es.ui.utils.LogrosGlobalViewModel
 import es.mirumi.es.ui.utils.LogrosGlobalViewModelFactory
 import kotlinx.serialization.json.Json
@@ -91,6 +93,10 @@ fun AppNavigation(
 
             composable(Route.InicioSesion.route) {
                 PrincipalInicioSesin(navController, sessionManager)
+            }
+
+            composable(Route.Registro.route) {
+                RegistroScreen(navController, sessionManager)
             }
 
             composable(
@@ -288,7 +294,7 @@ fun AppNavigation(
                             text = logro.nombre,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF8061A2),
+                            color = LilaPrimary,
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(text = logro.descripcion, fontSize = 16.sp, color = Color.DarkGray)
@@ -296,7 +302,7 @@ fun AppNavigation(
                 },
                 confirmButton = {
                     TextButton(onClick = { logrosGlobalViewModel.cerrarPopup() }) {
-                        Text("¡Genial!", color = Color(0xFF8061A2), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("¡Genial!", color = LilaPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
                 },
             )

@@ -41,6 +41,10 @@ import es.mirumi.es.model.Usuario
 import es.mirumi.es.ui.gastos.AvatarConFoto
 import es.mirumi.es.ui.gastos.ColorLila
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModel
+import es.mirumi.es.ui.theme.Fondo
+import es.mirumi.es.ui.theme.LilaLight
+import es.mirumi.es.ui.theme.LilaPrimary
+import es.mirumi.es.ui.theme.TextoGris
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModelFactory
 import es.mirumi.es.ui.pizarra.postits.PizarraScreen
 import es.mirumi.es.ui.utils.FabActionItem
@@ -111,32 +115,31 @@ fun ListaScreen(
         }
 
     Scaffold(
-        containerColor = Color(0xfff8f8f8),
+        containerColor = Fondo,
     ) { paddingValues ->
-        Box(
+        Column(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
-                    .background(Color(0xfff8f8f8)),
+                    .padding(paddingValues),
         ) {
+            Spacer(modifier = Modifier.height(24.dp))
+
             // Título
             Text(
                 text = "Listas",
                 color = Color.Black,
                 style = MaterialTheme.typography.displaySmall,
-                modifier =
-                    Modifier
-                        .align(Alignment.TopStart)
-                        .offset(x = 20.dp, y = 25.dp),
+                modifier = Modifier.padding(horizontal = 20.dp),
             )
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Selector de Pestañas
             Box(
                 modifier =
                     Modifier
-                        .align(Alignment.TopStart)
-                        .offset(x = 65.dp, y = 105.dp)
+                        .align(Alignment.CenterHorizontally)
                         .requiredWidth(260.dp)
                         .requiredHeight(24.dp),
             ) {
@@ -158,7 +161,7 @@ fun ListaScreen(
                             .fillMaxHeight()
                             .align(if (selectedTab == 0) Alignment.CenterStart else Alignment.CenterEnd)
                             .clip(RoundedCornerShape(26.dp))
-                            .background(Color(0xffddc1fb)),
+                            .background(LilaLight),
                 )
 
                 // Textos
@@ -169,9 +172,8 @@ fun ListaScreen(
                     modifier =
                         Modifier
                             .align(Alignment.CenterStart)
-                            .offset(x = 22.dp)
                             .clickable { selectedTab = 0 }
-                            .padding(horizontal = 10.dp, vertical = 2.dp),
+                            .padding(horizontal = 22.dp, vertical = 2.dp),
                 )
                 Text(
                     text = "Compartidas",
@@ -180,11 +182,12 @@ fun ListaScreen(
                     modifier =
                         Modifier
                             .align(Alignment.CenterEnd)
-                            .offset(x = (-22).dp)
                             .clickable { selectedTab = 1 }
-                            .padding(horizontal = 10.dp, vertical = 2.dp),
+                            .padding(horizontal = 22.dp, vertical = 2.dp),
                 )
             }
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             // Lista de Elementos
             when {
@@ -194,19 +197,19 @@ fun ListaScreen(
                     }
                 }
                 filteredListas.isEmpty() -> {
-                    Text(
-                        text = "No tienes listas en esta sección",
-                        color = Color.Black,
-                        fontSize = 14.sp,
-                        modifier = Modifier.align(Alignment.TopCenter).offset(y = 400.dp),
-                    )
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                        Text(
+                            text = "No tienes listas en esta sección",
+                            color = Color.Black,
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(top = 40.dp),
+                        )
+                    }
                 }
                 else -> {
                     LazyColumn(
                         modifier =
                             Modifier
-                                .align(Alignment.TopStart)
-                                .offset(y = 160.dp)
                                 .fillMaxSize()
                                 .padding(horizontal = 20.dp),
                         verticalArrangement = Arrangement.spacedBy(20.dp),
@@ -419,7 +422,7 @@ fun ShoppingListItemCard(
                 )
                 Text(
                     text = dateText,
-                    color = Color(0xff6c6c6c),
+                    color = TextoGris,
                     style = TextStyle(fontSize = 13.sp),
                 )
             }
@@ -549,10 +552,10 @@ fun UserCheckboxItem(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(8.dp))
                 .clickable { onCheckedChange(!isChecked) }
-                .background(if (isChecked) Color(0xffddc1fb).copy(alpha = 0.2f) else Color.Transparent)
+                .background(if (isChecked) LilaLight.copy(alpha = 0.2f) else Color.Transparent)
                 .border(
                     width = 1.dp,
-                    color = if (isChecked) Color(0xffddc1fb) else Color.LightGray,
+                    color = if (isChecked) LilaLight else Color.LightGray,
                     shape = RoundedCornerShape(8.dp),
                 ).padding(8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -582,7 +585,7 @@ fun UserCheckboxItem(
             onCheckedChange = onCheckedChange,
             colors =
                 CheckboxDefaults.colors(
-                    checkedColor = Color(0xff8061a2),
+                    checkedColor = LilaPrimary,
                 ),
         )
     }

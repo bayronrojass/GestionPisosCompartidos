@@ -44,14 +44,17 @@ import es.mirumi.es.data.SessionManager
 import es.mirumi.es.data.remote.NetworkModule
 import es.mirumi.es.data.repository.repositories.RepositoryCasa
 import es.mirumi.es.data.repository.repositories.RepositoryInvitacion
+import es.mirumi.es.ui.theme.Fondo
+import es.mirumi.es.ui.theme.LilaPrimary
+import es.mirumi.es.ui.theme.TextoGris
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-// Colores del tema
-val PurplePrimary = Color(0xff8061a2)
-val BackgroundColor = Color(0xfff8f8f8)
+// Backward-compat aliases — the real values live in `ui/theme/AppColors.kt`.
+val PurplePrimary = LilaPrimary
+val BackgroundColor = Fondo
 val TextBlack = Color.Black
-val TextGray = Color(0xff6c6c6c)
+val TextGray = TextoGris
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -191,7 +194,7 @@ fun UsuarioRow(miembro: MiembroPiso) {
                 Modifier
                     .size(45.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF8061A2)),
+                    .background(LilaPrimary),
             // Color de fondo si no hay foto
             contentAlignment = Alignment.Center,
         ) {

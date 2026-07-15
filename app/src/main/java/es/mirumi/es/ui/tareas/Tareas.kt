@@ -37,6 +37,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import es.mirumi.es.R
+import es.mirumi.es.ui.theme.Burgundy
+import es.mirumi.es.ui.theme.LilaDark
 
 @Composable
 fun Tareas(modifier: Modifier = Modifier) {
@@ -518,7 +520,7 @@ fun Property1alta(modifier: Modifier = Modifier) {
     ) {
         Text(
             text = "Alta",
-            color = Color(0xff581327),
+            color = Burgundy,
             textAlign = TextAlign.Center,
             style =
                 TextStyle(
@@ -734,7 +736,7 @@ fun Property1media(modifier: Modifier = Modifier) {
     ) {
         Text(
             text = "Media",
-            color = Color(0xff5d427a),
+            color = LilaDark,
             textAlign = TextAlign.Center,
             style =
                 TextStyle(
@@ -894,7 +896,7 @@ fun Property1Variant2(modifier: Modifier = Modifier) {
     ) {
         Text(
             text = "de 16 a 17h",
-            color = Color(0xff5d427a),
+            color = LilaDark,
             textAlign = TextAlign.Center,
             style =
                 TextStyle(

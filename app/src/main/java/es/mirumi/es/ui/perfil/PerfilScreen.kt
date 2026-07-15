@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
@@ -50,6 +51,9 @@ import coil.compose.AsyncImage
 import es.mirumi.es.R
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.data.remote.resolveImageUrl
+import es.mirumi.es.ui.theme.Burgundy
+import es.mirumi.es.ui.theme.ButtonShape
+import es.mirumi.es.ui.theme.LilaPrimary
 import es.mirumi.es.model.dtos.UsuarioLogroDTO
 import es.mirumi.es.ui.navigation.Route
 import kotlinx.coroutines.launch
@@ -127,16 +131,16 @@ fun PerfilScreen(
 
             Spacer(modifier = Modifier.height(30.dp))
 
-            // TARJETA USUARIO
+            // TARJETA USUARIO — elevated for premium depth over Fondo
             Row(
                 horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(
-                            horizontal = 20.dp,
-                        ).clip(RoundedCornerShape(15.dp))
+                        .padding(horizontal = 20.dp)
+                        .shadow(elevation = 2.dp, shape = RoundedCornerShape(15.dp))
+                        .clip(RoundedCornerShape(15.dp))
                         .background(Color.White)
                         .padding(vertical = 20.dp, horizontal = 10.dp),
             ) {
@@ -152,7 +156,7 @@ fun PerfilScreen(
                                     90.dp,
                                 ).clip(
                                     CircleShape,
-                                ).background(Color(0xFF8061A2))
+                                ).background(LilaPrimary)
                                 .border(BorderStroke(2.dp, Color(0xfff8f8f8)), CircleShape)
                                 .clickable {
                                     if (!uiState.usuario?.fotoUrl.isNullOrEmpty()) {
@@ -258,14 +262,14 @@ fun PerfilScreen(
                             .padding(
                                 horizontal = 20.dp,
                             ).clip(RoundedCornerShape(15.dp))
-                            .background(Color(0xFF8061A2).copy(alpha = 0.15f))
+                            .background(LilaPrimary.copy(alpha = 0.15f))
                             .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
-                            modifier = Modifier.size(40.dp).background(Color(0xFF8061A2), CircleShape),
+                            modifier = Modifier.size(40.dp).background(LilaPrimary, CircleShape),
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(Icons.Default.Star, contentDescription = null, tint = Color.White)
@@ -280,7 +284,7 @@ fun PerfilScreen(
                         "${uiState.gamificacion!!.puntosConvivencia} pts",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF8061A2),
+                        color = LilaPrimary,
                     )
                 }
 
@@ -290,15 +294,15 @@ fun PerfilScreen(
                 OutlinedButton(
                     onClick = { showPantallaLogros = true },
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).height(55.dp),
-                    shape = RoundedCornerShape(15.dp),
-                    border = BorderStroke(1.dp, Color(0xFF8061A2)),
+                    shape = ButtonShape,
+                    border = BorderStroke(1.dp, LilaPrimary),
                     colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White),
                 ) {
-                    Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = Color(0xFF8061A2))
+                    Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = LilaPrimary)
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         "Ver mis ${uiState.gamificacion!!.logros.size} Logros ($medallasConseguidas completados)",
-                        color = Color(0xFF8061A2),
+                        color = LilaPrimary,
                         fontWeight = FontWeight.Bold,
                     )
                 }
@@ -351,24 +355,19 @@ fun PerfilScreen(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(
-                            horizontal = 20.dp,
-                        ).height(
-                            50.dp,
-                        ),
-                shape =
-                    RoundedCornerShape(
-                        12.dp,
-                    ),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xff8061a2), contentColor = Color.White),
+                        .padding(horizontal = 20.dp)
+                        .height(52.dp),
+                shape = ButtonShape,
+                colors = ButtonDefaults.buttonColors(containerColor = LilaPrimary, contentColor = Color.White),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp, pressedElevation = 1.dp),
             ) {
-                Text("Cerrar sesión", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text("Cerrar sesión", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
             }
 
             Spacer(modifier = Modifier.height(20.dp))
             Text(
                 "Eliminar cuenta",
-                color = Color(0xff581327),
+                color = Burgundy,
                 style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold),
                 modifier =
                     Modifier
@@ -489,7 +488,7 @@ fun PerfilScreen(
                 },
                 colors =
                     ButtonDefaults.buttonColors(
-                        containerColor = Color(0xff8061a2),
+                        containerColor = LilaPrimary,
                         contentColor = Color.White,
                     ),
             ) { Text("Guardar") }
@@ -497,7 +496,7 @@ fun PerfilScreen(
             TextButton(onClick = {
                 showEditDialog =
                     false
-            }) { Text("Cancelar", color = Color(0xff8061a2)) }
+            }) { Text("Cancelar", color = LilaPrimary) }
         })
     }
     if (showLogoutDialog) {
@@ -515,14 +514,14 @@ fun PerfilScreen(
                 viewModel.cerrarSesion()
                 showLogoutDialog =
                     false
-            }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xff8061a2), contentColor = Color.White)) {
+            }, colors = ButtonDefaults.buttonColors(containerColor = LilaPrimary, contentColor = Color.White)) {
                 Text("Sí, salir")
             }
         }, dismissButton = {
             TextButton(onClick = {
                 showLogoutDialog =
                     false
-            }) { Text("Cancelar", color = Color(0xff8061a2)) }
+            }) { Text("Cancelar", color = LilaPrimary) }
         })
     }
     if (showDeleteDialog) {
@@ -544,7 +543,7 @@ fun PerfilScreen(
             TextButton(onClick = {
                 showDeleteDialog =
                     false
-            }) { Text("Cancelar", color = Color(0xff8061a2)) }
+            }) { Text("Cancelar", color = LilaPrimary) }
         })
     }
     if (showPhotoOptionsDialog) {
@@ -576,7 +575,7 @@ fun obtenerColoresNivel(nivel: String): Pair<Color, Color> =
         "BRONCE" -> Pair(Color(0xFFCD7F32), Color(0xFFFFF7F0)) // Naranja cobrizo
         "PLATA" -> Pair(Color(0xFF9E9E9E), Color(0xFFF7F7F7)) // Gris plateado
         "ORO" -> Pair(Color(0xFFFFB300), Color(0xFFFFFBF0)) // Amarillo oro
-        else -> Pair(Color(0xFF8061A2), Color(0xFFF3E5F5))
+        else -> Pair(LilaPrimary, Color(0xFFF3E5F5))
     }
 
 // DISEÑO DE MEDALLA
@@ -684,7 +683,7 @@ fun PerfilOptionRow(
             Image(
                 painter = painterResource(id = iconId),
                 contentDescription = null,
-                colorFilter = ColorFilter.tint(Color(0xff8061a2)),
+                colorFilter = ColorFilter.tint(LilaPrimary),
                 modifier = Modifier.size(24.dp),
             )
             Text(text = text, color = Color.Black, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium))
@@ -693,7 +692,7 @@ fun PerfilOptionRow(
             painter = painterResource(id = R.drawable.vector19),
             contentDescription = "Flecha",
             modifier = Modifier.size(16.dp).rotate(180f),
-            colorFilter = ColorFilter.tint(Color(0xff8061a2)),
+            colorFilter = ColorFilter.tint(LilaPrimary),
         )
     }
 }

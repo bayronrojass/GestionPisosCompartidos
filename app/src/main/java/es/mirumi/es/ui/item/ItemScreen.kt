@@ -57,6 +57,7 @@ import es.mirumi.es.ui.pizarra.postits.DialogoGrabarAudio
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModel
 import es.mirumi.es.ui.pizarra.postits.DraggableViewModelFactory
 import es.mirumi.es.ui.pizarra.postits.PizarraScreen
+import es.mirumi.es.ui.theme.Burgundy
 import es.mirumi.es.ui.utils.FabActionItem
 import es.mirumi.es.ui.utils.FabActionType
 import es.mirumi.es.R
@@ -187,7 +188,7 @@ fun ItemScreen(
                 // Lista de Elementos
                 if (isLoading) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = Color(0xFF581327))
+                        CircularProgressIndicator(color = Burgundy)
                     }
                 } else if (itemsOrdenados.isEmpty()) {
                     Text(

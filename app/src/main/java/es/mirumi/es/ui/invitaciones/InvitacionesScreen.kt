@@ -21,6 +21,7 @@ import es.mirumi.es.data.remote.NetworkModule
 import es.mirumi.es.data.repository.repositories.RepositoryInvitacion
 import es.mirumi.es.model.responses.InvitacionResponse
 import es.mirumi.es.ui.navigation.Route
+import es.mirumi.es.ui.theme.LilaPrimary
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -171,7 +172,7 @@ fun InvitacionItem(
                 Button(
                     onClick = onAcceptClick,
                     enabled = !isProcessing,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xff8061a2)),
+                    colors = ButtonDefaults.buttonColors(containerColor = LilaPrimary),
                 ) {
                     Text("Aceptar", color = Color.White)
                 }

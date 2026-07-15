@@ -62,6 +62,7 @@ import androidx.navigation.NavController
 import es.mirumi.es.R
 import es.mirumi.es.data.SessionManager
 import es.mirumi.es.model.Evento
+import es.mirumi.es.ui.theme.Burgundy
 import es.mirumi.es.model.Tarea
 import es.mirumi.es.model.dtos.UsuarioRankingDTO
 import es.mirumi.es.ui.navigation.Route
@@ -714,7 +715,7 @@ fun PendingTasksSection(viewModel: HomeViewModel) {
         for (tarea in tareasPendientes.value) {
             val (color, textColor) =
                 when (tarea.prioridad) {
-                    "Alta" -> Pair(Color(0xFFFF6490), Color(0xFF581327))
+                    "Alta" -> Pair(Color(0xFFFF6490), Burgundy)
                     "Media" -> Pair(Color(0xFFDDC1FB), Color(0xFF5D427A))
                     else -> Pair(Color(0xFFA9E6A8), Color(0xFF2D5C2C))
                 }
