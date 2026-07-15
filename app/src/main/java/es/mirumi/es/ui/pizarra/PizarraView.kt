@@ -197,16 +197,31 @@ class PizarraView
 
             model.loadJob =
                 loadScope.launch {
+                    // FAST PATH — one network call + IO decode. Populates `_bitmapState` and
+                    // toggles `isLoading` for the UI spinner overlay. Skips the redundant
+                    // `isUpdated` boolean-RTT that the poll loop would otherwise pay first.
+                    try {
+                        Log.d("Load", "Initial load ${currentModel.lienzoId}...")
+                        currentModel.initialLoad()
+                    } catch (e: CancellationException) {
+                        Log.e("Load", "Initial load cancelled: ${e.message}")
+                        return@launch
+                    } catch (e: Exception) {
+                        Log.e("Load", "Initial load error: ${e.message}")
+                    }
+
+                    // POLL PATH — subsequent iterations use the cheap `isUpdated` shortcut
+                    // (most cycles return false and never fetch the full bitmap).
                     while (isActive) {
                         try {
-                            Log.d("Load", "Cargando ${currentModel.lienzoId}...")
-                            currentModel.load()
                             delay(5000L)
+                            Log.d("Load", "Polling ${currentModel.lienzoId}...")
+                            currentModel.load()
                         } catch (e: CancellationException) {
-                            Log.e("Load", "Error en carga: ${e.message}")
+                            Log.e("Load", "Poll cancelled: ${e.message}")
                             break
                         } catch (e: Exception) {
-                            Log.e("Load", "Error en carga: ${e.message}")
+                            Log.e("Load", "Poll error: ${e.message}")
                             delay(5000L)
                         }
                     }

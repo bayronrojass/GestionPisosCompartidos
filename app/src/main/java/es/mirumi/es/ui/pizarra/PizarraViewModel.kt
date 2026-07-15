@@ -55,6 +55,14 @@ class PizarraViewModel(
         combine(_dirtyVersion, _syncedVersion) { dirty, synced -> dirty > synced }
             .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
+    /**
+     * True while the initial (or any subsequent forced) bitmap hydration is in flight.
+     * Consumers overlay a `CircularProgressIndicator` on the canvas while true, so the
+     * user sees an immediate spinner instead of a 3-4s blank canvas on Post-It open.
+     */
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     var color: Byte = 1
     var saveJob: Job? = null
     var loadJob: Job? = null
@@ -98,6 +106,29 @@ class PizarraViewModel(
         }
     }
 
+    /**
+     * FAST-PATH initial hydration. Skips the `isUpdated` round-trip that [load] performs
+     * (pointless on the very first open — we always need the bitmap) and goes straight
+     * to `getLienzo`. Halves the initial-open network cost from two RTTs to one.
+     *
+     * Bytes read + decode both happen on `Dispatchers.IO`; only the `_bitmapState` +
+     * `_isLoading` state emissions hop back to Main. Toggles [_isLoading] true during
+     * the whole flow so the UI can show a spinner overlay instead of a blank canvas.
+     */
+    suspend fun initialLoad() {
+        _isLoading.value = true
+        try {
+            fetchAndPublishBitmap()
+        } finally {
+            _isLoading.value = false
+        }
+    }
+
+    /**
+     * Poll-cycle load — the isUpdated shortcut IS worth it here because 90% of poll
+     * iterations return `false` (nothing changed) and cost just one cheap boolean RTT.
+     * Only fetches the (much larger) bitmap when isUpdated confirms server-side change.
+     */
     suspend fun load() {
         try {
             val check =
@@ -111,85 +142,76 @@ class PizarraViewModel(
                 is ApiResult.Error -> {
                     Log.d("PizarraViewModel", "No need loading: ${check.message}")
                 }
-
                 is ApiResult.Success<*> -> {
                     if (check.data as Boolean) {
                         Log.d("PizarraViewModel", "Data updated, loading new content")
-                        val result =
-                            withContext(Dispatchers.IO) {
-                                repository.request { getLienzo(lienzoId) }
-                            }
-
-                        when (result) {
-                            is ApiResult.Error -> {
-                                Log.e(
-                                    "PizarraViewModel",
-                                    "Error loading: ${result.message} ${result.code} $lienzoId",
-                                )
-                            }
-
-                            is ApiResult.Success<*> -> {
-                                val responseBody = result.data as? ResponseBody
-                                responseBody?.let { body ->
-
-                                    try {
-                                        lastLoaded = Instant.now()
-                                        withContext(Dispatchers.IO) {
-                                            val bytes = body.bytes()
-
-                                            if (bytes.isNotEmpty()) {
-                                                val bitmap =
-                                                    BitmapFactory.decodeByteArray(
-                                                        bytes,
-                                                        0,
-                                                        bytes.size,
-                                                    )
-
-                                                if (bitmap != null) {
-                                                    withContext(Dispatchers.Main) {
-                                                        _bitmapState.value = bitmap
-                                                        Log.d(
-                                                            "PizarraViewModel",
-                                                            "Image loaded successfully",
-                                                        )
-                                                    }
-                                                } else {
-                                                    Log.e(
-                                                        "PizarraViewModel",
-                                                        "Failed to decode bitmap",
-                                                    )
-                                                }
-                                            } else {
-                                                Log.e("PizarraViewModel", "Empty bytes array")
-                                            }
-                                        }
-                                    } catch (e: Exception) {
-                                        Log.e("PizarraViewModel", "Error processing image bytes", e)
-                                    }
-                                } ?: run {
-                                    Log.e("PizarraViewModel", "Response body is null")
-                                }
-                            }
-
-                            is ApiResult.Throws -> {
-                                Log.e(
-                                    "PizarraViewModel",
-                                    "Throwed loading: ${result.exception.message}",
-                                )
-                            }
-                        }
+                        fetchAndPublishBitmap()
                     }
                 }
-
                 is ApiResult.Throws -> {
-                    Log.e(
-                        "PizarraViewModel",
-                        "Throwed checking updates: ${check.exception.message}",
-                    )
+                    Log.e("PizarraViewModel", "Throwed checking updates: ${check.exception.message}")
                 }
             }
         } catch (e: Exception) {
             Log.e("PizarraViewModel", "Unexpected error in load function", e)
+        }
+    }
+
+    /**
+     * Shared network + decode + emit path used by both [initialLoad] and [load].
+     * Every heavy operation (network read, byte materialization, `BitmapFactory.decodeByteArray`)
+     * runs on [Dispatchers.IO]; only the terminal `_bitmapState.value = …` emission hops to Main.
+     */
+    private suspend fun fetchAndPublishBitmap() {
+        val result =
+            withContext(Dispatchers.IO) {
+                repository.request { getLienzo(lienzoId) }
+            }
+
+        when (result) {
+            is ApiResult.Error -> {
+                Log.e(
+                    "PizarraViewModel",
+                    "Error loading: ${result.message} ${result.code} $lienzoId",
+                )
+            }
+            is ApiResult.Success<*> -> {
+                val responseBody = result.data as? ResponseBody
+                if (responseBody == null) {
+                    Log.e("PizarraViewModel", "Response body is null")
+                    return
+                }
+                try {
+                    lastLoaded = Instant.now()
+                    // Bytes read + decode both on IO — decoding a full-canvas PNG can cost
+                    // 100-500ms on mid-range devices; doing it on Main would drop frames and
+                    // freeze the drawing UI during navigation.
+                    val bitmap =
+                        withContext(Dispatchers.IO) {
+                            val bytes = responseBody.bytes()
+                            if (bytes.isEmpty()) {
+                                Log.e("PizarraViewModel", "Empty bytes array")
+                                null
+                            } else {
+                                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                            }
+                        }
+
+                    if (bitmap != null) {
+                        withContext(Dispatchers.Main) {
+                            _bitmapState.value = bitmap
+                            Log.d("PizarraViewModel", "Image loaded successfully")
+                        }
+                    } else {
+                        Log.e("PizarraViewModel", "Failed to decode bitmap")
+                    }
+                } catch (e: Exception) {
+                    Log.e("PizarraViewModel", "Error processing image bytes", e)
+                }
+            }
+            is ApiResult.Throws -> {
+                Log.e("PizarraViewModel", "Throwed loading: ${result.exception.message}")
+            }
         }
     }
 

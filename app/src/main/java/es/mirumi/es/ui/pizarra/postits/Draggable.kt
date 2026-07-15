@@ -50,6 +50,7 @@ import es.mirumi.es.R
 import es.mirumi.es.ui.pizarra.PizarraView
 import es.mirumi.es.ui.pizarra.PizarraViewModel
 import es.mirumi.es.ui.pizarra.PizarraViewModelFactory
+import es.mirumi.es.ui.theme.LilaPrimary
 import es.mirumi.es.ui.utils.DynamicFloatingActionButton
 import es.mirumi.es.ui.utils.FabActionItem
 import es.mirumi.es.ui.utils.FabActionType
@@ -424,9 +425,13 @@ fun ExpandedPostIt(
                 val lifecycleOwner = LocalLifecycleOwner.current
 
                 pizarraViewModel?.let { viewModel ->
+                    // Fast-path hydration on entry. Skips the `isUpdated` RTT that the poll
+                    // cycle would pay first, halving the initial network cost. Idempotent
+                    // with `view.load()` below — both converge on the same shared bitmap
+                    // fetch inside the ViewModel.
                     LaunchedEffect(viewModel, lifecycleOwner) {
                         lifecycleOwner.lifecycleScope.launch {
-                            viewModel.load()
+                            viewModel.initialLoad()
                         }
                     }
 
@@ -446,8 +451,9 @@ fun ExpandedPostIt(
                             }
                         },
                         update = { view ->
-                            // 🔴 MAGIA AQUÍ: Solo cargamos si el post-it es NUEVO.
-                            // Así evitamos que la sincronización borre tu dibujo.
+                            // Solo cargamos si el post-it es NUEVO — evita que la
+                            // sincronización borre tu dibujo local si vuelves a un post-it
+                            // ya abierto.
                             if (viewModel.lienzoId != state.lienzoId) {
                                 viewModel.lienzoId = state.lienzoId
                                 viewModel.lastLoaded = Instant.ofEpochMilli(1000000)
@@ -456,6 +462,26 @@ fun ExpandedPostIt(
                         },
                         modifier = Modifier.fillMaxSize(),
                     )
+
+                    // Async-hydration spinner overlay — visible only while `_isLoading` is
+                    // true (initial hydration in flight). Sits on top of the still-empty
+                    // canvas so the user gets an immediate signal that content is coming,
+                    // instead of a blank 3-4s stall on Post-It open. Once the ViewModel
+                    // emits the fetched bitmap, `isLoading` flips false and the spinner
+                    // disappears, revealing the freshly-loaded canvas underneath.
+                    val isLoading by viewModel.isLoading.collectAsState()
+                    if (isLoading) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator(
+                                color = LilaPrimary,
+                                strokeWidth = 3.dp,
+                                modifier = Modifier.size(40.dp),
+                            )
+                        }
+                    }
                 }
             }
         }
