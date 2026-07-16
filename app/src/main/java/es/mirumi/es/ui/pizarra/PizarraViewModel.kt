@@ -92,6 +92,15 @@ class PizarraViewModel(
         val batch = puntos.toList()
         puntos.clear()
 
+        // PESSIMISTIC CACHE INVALIDATION — happens SYNCHRONOUSLY, before dispatching the
+        // network coroutine. Even if `viewModelScope` cancels this launch mid-flight (user
+        // minimizes fast after drawing → ExpandedPostIt disposed → VM cleared), the stale
+        // cache entry is already gone. The next reopen simply misses the cache and pays a
+        // one-time spinner + fresh fetch, guaranteeing correctness. Without this eager
+        // eviction, the cache could hold the pre-edit snapshot indefinitely and every
+        // subsequent open would serve stale pixels.
+        PizarraBitmapCache.remove(lienzoId)
+
         viewModelScope.launch {
             val result = repository.request { postDelta(lienzoId, batch) }
             when (result) {
@@ -101,21 +110,77 @@ class PizarraViewModel(
                 is ApiResult.Throws ->
                     Log.d("Q", "Throwed sending deltas ${result.exception.message}")
             }
-            // Advance the acknowledged version. `maxOf` protects against out-of-order responses.
+            // Advance the acknowledged version FIRST. `maxOf` protects against out-of-order
+            // responses. Doing this before the cache warm below flips `pendingSave` to false
+            // (assuming no newer strokes) so the follow-up `fetchAndPublishBitmap` emission
+            // is allowed by `setBackgroundBitmap`'s optimistic-UI guard.
             _syncedVersion.update { maxOf(it, versionAtDispatch) }
+
+            if (result is ApiResult.Success<*>) {
+                // INSTANT BASELINE UPDATE — the server has just persisted our deltas. Pin
+                // `lastLoaded` to now so the next poll cycle's `isUpdated(lienzoId, now)`
+                // has an accurate reference point instead of the pre-save timestamp.
+                lastLoaded = Instant.now()
+
+                // WARM THE CACHE with the freshly-composited server bitmap. Uses the shared
+                // `fetchAndPublishBitmap()` — which writes to the cache on decode success AND
+                // emits to `_bitmapState`. The emission is safe: if the user is still on the
+                // drawing screen, `setBackgroundBitmap` either applies it (no newer local
+                // strokes → visible pixels stay identical because the server has our strokes)
+                // or skips it (`pendingSave` still true → newer local strokes preserved).
+                // Either way the CACHE is now warm with the correct bitmap for the next
+                // reopen, so `initialLoad()` will hit the cache and stay zero-latency.
+                try {
+                    fetchAndPublishBitmap()
+                } catch (e: Exception) {
+                    Log.e("PizarraViewModel", "Post-save cache warm failed: ${e.message}")
+                }
+            }
         }
     }
 
     /**
-     * FAST-PATH initial hydration. Skips the `isUpdated` round-trip that [load] performs
-     * (pointless on the very first open — we always need the bitmap) and goes straight
-     * to `getLienzo`. Halves the initial-open network cost from two RTTs to one.
+     * INSTANT-PATH initial hydration with silent background refresh.
      *
-     * Bytes read + decode both happen on `Dispatchers.IO`; only the `_bitmapState` +
-     * `_isLoading` state emissions hop back to Main. Toggles [_isLoading] true during
-     * the whole flow so the UI can show a spinner overlay instead of a blank canvas.
+     * Ordering (three tiers, fastest to slowest):
+     *   1. **In-memory cache hit** — [PizarraBitmapCache] holds a decoded bitmap for this
+     *      `lienzoId`. Emit it immediately, seed [lastLoaded] from the cached timestamp so
+     *      the follow-up `isUpdated` check has an accurate baseline (otherwise the default
+     *      epoch value would trivially "lose" and trigger a wasted full-bitmap re-fetch),
+     *      leave `isLoading = false` from the start (no spinner needed), and dispatch a
+     *      **silent background refresh** via [load] — which uses the cheap `isUpdated`
+     *      shortcut and only re-fetches + re-emits if the server has actually changed.
+     *   2. **Network fetch with spinner** — cache miss. Toggle `isLoading = true`, run the
+     *      shared [fetchAndPublishBitmap] (single RTT + IO decode), toggle false when done.
+     *      Result gets cached automatically for subsequent opens.
+     *   3. (Not this method.) The 5-second poll loop in [load] handles ongoing sync.
      */
     suspend fun initialLoad() {
+        val cachedBitmap = PizarraBitmapCache.get(lienzoId)
+        if (cachedBitmap != null) {
+            _bitmapState.value = cachedBitmap
+            _isLoading.value = false
+
+            // Restore lastLoaded from the cache timestamp so the follow-up isUpdated check
+            // has a real baseline to compare against. Without this, the default epoch value
+            // would cause the isUpdated call to always return true, negating the refresh
+            // shortcut and paying the full-bitmap RTT even when nothing changed server-side.
+            PizarraBitmapCache.timestampFor(lienzoId)?.let { lastLoaded = it }
+
+            // SILENT BACKGROUND REFRESH — cheap isUpdated boolean check. Only re-fetches
+            // the full bitmap if the server has changed since we cached it. Failure is a
+            // no-op (cache stays, user keeps seeing the last-known-good drawing).
+            viewModelScope.launch {
+                try {
+                    load()
+                } catch (e: Exception) {
+                    Log.e("PizarraViewModel", "Silent background refresh failed: ${e.message}")
+                }
+            }
+            return
+        }
+
+        // Cache miss — pay the full round-trip and show a spinner.
         _isLoading.value = true
         try {
             fetchAndPublishBitmap()
@@ -198,6 +263,14 @@ class PizarraViewModel(
                         }
 
                     if (bitmap != null) {
+                        // Cache the fresh bitmap for instant reopen. The next `initialLoad()`
+                        // for this `lienzoId` (even on a brand-new ViewModel instance after
+                        // navigation) will hit the cache and skip the network entirely.
+                        // The bitmap emitted to Main and the one stashed in the cache are
+                        // the same object reference — Bitmap is immutable enough for our
+                        // read-only render path that sharing is safe (setBackgroundBitmap
+                        // does `.copy()` before drawing new strokes onto its own canvas).
+                        PizarraBitmapCache.put(lienzoId, bitmap)
                         withContext(Dispatchers.Main) {
                             _bitmapState.value = bitmap
                             Log.d("PizarraViewModel", "Image loaded successfully")
