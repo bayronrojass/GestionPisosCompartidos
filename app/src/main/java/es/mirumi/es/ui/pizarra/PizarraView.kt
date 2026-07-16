@@ -45,6 +45,21 @@ class PizarraView
             oldh: Int,
         ) {
             super.onSizeChanged(w, h, oldw, oldh)
+            // Safety-net initialization: allocate a blank white canvas the instant the
+            // view has real dimensions, BEFORE any network bitmap arrives. Without this,
+            // the ~50-200ms window between layout completion and the cache/network
+            // bitmap landing was where touches got dropped by the onTouchEvent crash
+            // guard. Any stroke drawn onto this placeholder will be safely replaced by
+            // setBackgroundBitmap when the real bitmap arrives — the pendingSave guard
+            // there protects against overwriting mid-stroke work.
+            if (!::canvasBitmap.isInitialized && w > 0 && h > 0) {
+                val placeholder =
+                    Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).apply {
+                        eraseColor(Color.WHITE)
+                    }
+                currentBitmap = placeholder
+                canvasBitmap = Canvas(placeholder)
+            }
             load()
         }
 
@@ -56,10 +71,14 @@ class PizarraView
          * proceed.
          */
         fun setBackgroundBitmap(bitmap: Bitmap) {
-            // Optimistic UI: while a stroke is pending server acknowledgement, refresh the baseline
-            // reference but do NOT replace the on-screen bitmap. Otherwise a poll fired seconds
-            // before the server processed our delta will wipe the freshly-drawn strokes for ~5s.
-            if (::model.isInitialized && model.pendingSave.value) {
+            // Optimistic UI guards — skip applying the incoming bitmap while either:
+            //  - a local stroke is pending server acknowledgement (pendingSave) — else the
+            //    poll would wipe the freshly-drawn strokes for ~5s, OR
+            //  - a server-side clear is in flight (isClearing) — else a poll racing the
+            //    clear would restore the pre-clear bitmap onto our locally-blank canvas
+            //    before the server has actually persisted the wipe.
+            // In both cases we still refresh `backgroundBitmap` as the baseline reference.
+            if (::model.isInitialized && (model.pendingSave.value || model.isClearing.value)) {
                 backgroundBitmap = bitmap
                 return
             }
@@ -85,14 +104,31 @@ class PizarraView
 
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)
+            // `currentBitmap` is nullable so this `?.let` is inherently safe — no
+            // UninitializedPropertyAccessException risk here. onDraw fires many times
+            // during measure/layout before any bitmap has arrived; we just draw nothing.
             currentBitmap?.let { canvas.drawBitmap(it, 0f, 0f, null) }
         }
 
         override fun onTouchEvent(event: MotionEvent): Boolean {
-            var currentmodel = model
             if (!activatedDraw) {
                 return false
             }
+            // CRASH GUARD — `canvasBitmap` and `model` are `lateinit`; touch events
+            // routinely fire during the split second between the AndroidView factory
+            // returning and the first `setBackgroundBitmap` call (fast reopen from
+            // `PizarraBitmapCache` hit, or a recomposition triggered by the "Color de
+            // la nota" pastel selector swapping the outer sheet's background). Accessing
+            // an uninitialized `lateinit` throws `UninitializedPropertyAccessException`
+            // straight to the input-event dispatcher, killing the process — see the
+            // Logcat trace at `PizarraView.kt:122` (ACTION_MOVE → canvasBitmap.drawPath).
+            // Returning `true` here consumes the event silently until the bitmap is
+            // ready; the user's next touch (a few frames later) will work normally.
+            if (!::model.isInitialized || !::canvasBitmap.isInitialized || currentBitmap == null) {
+                return true
+            }
+
+            val currentmodel = model
             val x = event.x
             val y = event.y
 
@@ -109,11 +145,21 @@ class PizarraView
                 }
 
                 MotionEvent.ACTION_MOVE -> {
+                    // Extra defense: ACTION_MOVE can arrive without a preceding
+                    // ACTION_DOWN if the user was already touching mid-recomposition.
+                    // `lastPoint` would be null in that case — fall back to a simple
+                    // moveTo so we don't NPE on `lastPoint!!`.
+                    val prev =
+                        lastPoint ?: run {
+                            path.moveTo(x, y)
+                            lastPoint = Point(x, y)
+                            return true
+                        }
                     path.quadTo(
-                        lastPoint!!.x,
-                        lastPoint!!.y,
-                        (x + lastPoint!!.x) / 2,
-                        (y + lastPoint!!.y) / 2,
+                        prev.x,
+                        prev.y,
+                        (x + prev.x) / 2,
+                        (y + prev.y) / 2,
                     )
                     canvasBitmap.drawPath(path, paint)
                     lastPoint = Point(x, y)
@@ -137,13 +183,19 @@ class PizarraView
         }
 
         private fun createPaint(colorByte: Byte): Paint {
+            // Brush palette matches the "Color del pincel" selector in the expanded Post-It
+            // view. Byte encoding is deliberately compact for the delta wire protocol
+            // (`PointDeltaDTO.color: Byte`). Legacy bytes (RED = 2 was pre-redesign) survive
+            // through the default `else -> BLACK` branch — no stroke ever crashes on unknown.
             val c =
                 when (colorByte) {
-                    1.toByte() -> Color.BLACK
-                    2.toByte() -> Color.RED
-                    3.toByte() -> Color.GREEN
-                    4.toByte() -> Color.BLUE
-                    8.toByte() -> Color.WHITE
+                    1.toByte() -> android.graphics.Color.rgb(0xFB, 0xC0, 0x2D) // Yellow  #FBC02D
+                    2.toByte() -> android.graphics.Color.rgb(0x38, 0x8E, 0x3C) // Green   #388E3C
+                    3.toByte() -> android.graphics.Color.rgb(0x19, 0x76, 0xD2) // Blue    #1976D2
+                    4.toByte() -> android.graphics.Color.rgb(0x67, 0x3A, 0xB7) // Purple  #673AB7
+                    5.toByte() -> android.graphics.Color.rgb(0xE9, 0x1E, 0x63) // Fuchsia #E91E63
+                    6.toByte() -> Color.BLACK
+                    7.toByte() -> Color.WHITE
                     else -> Color.BLACK
                 }
 
@@ -230,5 +282,55 @@ class PizarraView
 
         fun setModel(newModel: PizarraViewModel) {
             model = newModel
+        }
+
+        /**
+         * Wipe the local canvas to a blank white bitmap of the current view size.
+         * Called from the "Borrar" control-panel button.
+         *
+         * Full-state cleanup — every source of "ghost strokes" is severed:
+         *  - Fresh `Bitmap` + `Canvas` + `backgroundBitmap` — the on-screen surface is
+         *    truly empty; `onDraw` from now on paints a blank image.
+         *  - `path.reset()` + `lastPoint = null` — the in-flight touch path is wiped so
+         *    the next `ACTION_MOVE` starts from scratch instead of appending to the
+         *    previous stroke's Path object.
+         *  - `saveJob?.cancel()` — cancels any debounced save waiting to flush the
+         *    pre-clear `puntos` to the server; without this a save queued 300 ms before
+         *    the Borrar tap would still race through and re-post the stale strokes.
+         *  - `model.clearLocalBuffer()` — drops the ViewModel's queued `puntos` list AND
+         *    re-syncs the `pendingSave` version pair (`syncedVersion = dirtyVersion`) so
+         *    `setBackgroundBitmap`'s optimistic-UI guard doesn't lock the canvas.
+         *  - `PizarraBitmapCache.remove(model.lienzoId)` — guarantees no reopen serves
+         *    the pre-clear cached bitmap.
+         *
+         * NOTE: the current delta-only wire protocol has no explicit "clear canvas"
+         * opcode. The server-composited bitmap still holds pre-clear strokes until a
+         * dedicated `POST /lienzo/{id}/clear` endpoint is added — flagged as follow-up.
+         * For now the ghost only reappears if the user closes the Post-It and reopens
+         * it (cache miss → server bitmap fetch → shows the historical strokes). The
+         * "immediate reappearance on next stroke" symptom the user reported IS gone.
+         */
+        fun clearCanvas() {
+            if (!::model.isInitialized) return
+            val w = width.coerceAtLeast(1)
+            val h = height.coerceAtLeast(1)
+            val blank =
+                Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).apply {
+                    eraseColor(Color.WHITE)
+                }
+            currentBitmap = blank
+            canvasBitmap = Canvas(blank)
+            backgroundBitmap = blank
+            path.reset()
+            lastPoint = null
+            model.saveJob?.cancel()
+            model.clearLocalBuffer()
+            PizarraBitmapCache.remove(model.lienzoId)
+            invalidate()
+            // Fire the server-side clear so subsequent polls / reopens don't resurrect
+            // pre-clear strokes from the server's composited bitmap. Passes our local
+            // blank so `clearOnServer` can seed the cache with the exact same bitmap
+            // the user is looking at right now — subsequent reopen stays zero-latency.
+            model.clearOnServer(blank)
         }
     }

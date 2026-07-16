@@ -5,7 +5,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.mirumi.es.data.SessionManager
+import es.mirumi.es.data.remote.NetworkModule
+import es.mirumi.es.data.repository.repositories.RepositoryCasa
 import es.mirumi.es.data.repository.repositories.RepositoryPostIt
+import es.mirumi.es.model.Usuario
 import es.mirumi.es.model.dtos.PostItDTO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,8 +27,32 @@ class DraggableViewModel(
     private val _postIts = MutableStateFlow<List<PostItState>>(emptyList())
     val postIts: StateFlow<List<PostItState>> = _postIts.asStateFlow()
 
+    // House members — used by the ExpandedPostIt control panel's "Enviar nota a" chips.
+    // Fetched once on VM init from the same endpoint the Tareas / Gastos screens use,
+    // so the chip section is populated the moment the user opens any Post-It.
+    private val _miembros = MutableStateFlow<List<Usuario>>(emptyList())
+    val miembros: StateFlow<List<Usuario>> = _miembros.asStateFlow()
+    private val casaRepository = RepositoryCasa(NetworkModule.casaApiService)
+
     init {
         startPeriodicSync()
+        loadMiembros()
+    }
+
+    private fun loadMiembros() {
+        viewModelScope.launch {
+            try {
+                val token = sessionManager.fetchAuthToken() ?: return@launch
+                val response = casaRepository.getPisoMiembros(token, casaId)
+                if (response.isSuccessful) {
+                    _miembros.value = response.body() ?: emptyList()
+                } else {
+                    Log.e("DraggableViewModel", "Error loading miembros: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e("DraggableViewModel", "Exception loading miembros: ${e.message}")
+            }
+        }
     }
 
     private fun startPeriodicSync() {
@@ -52,6 +79,7 @@ class DraggableViewModel(
                         isExpanded = _postIts.value.find { it.id == dto.id }?.isExpanded ?: false,
                         tipo = dto.tipo ?: "DIBUJO",
                         rutaAudio = dto.rutaAudio,
+                        colorNota = dto.colorNota,
                     )
                 }
             _postIts.value = newPostItStates
@@ -131,6 +159,26 @@ class DraggableViewModel(
                     Log.e("DRAG_END", "Error al actualizar la posición del Post-it: ${e.message}")
                 }
             }
+        }
+    }
+
+    /**
+     * Optimistic local update of a Post-It's `colorNota`. Called from `ExpandedPostIt`
+     * the instant the user taps a new pastel — updates the `_postIts` StateFlow source
+     * of truth so subsequent recompositions (including a close/reopen cycle) see the
+     * new value **before** the 60-second `syncPostIts` tick catches up.
+     *
+     * Without this, `ExpandedPostIt`'s `remember(state.id, state.colorNota)` would see
+     * `state.colorNota == null` on reopen (the sync hasn't refreshed yet) and reset the
+     * pastel picker back to yellow — even though the PUT to the backend already
+     * succeeded and the server has the correct value.
+     */
+    fun updatePostItColorLocal(
+        postItId: Long,
+        newColorHex: String?,
+    ) {
+        _postIts.update { list ->
+            list.map { if (it.id == postItId) it.copy(colorNota = newColorHex) else it }
         }
     }
 

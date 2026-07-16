@@ -148,11 +148,6 @@ fun RegistroScreenUI(
             modifier
                 .fillMaxSize()
                 .background(Fondo)
-                // CRITICAL: push the whole layout below the system status bar. Without this the
-                // back-arrow IconButton at the top gets clipped under the notification bar and
-                // the touch region is intercepted by the system, making the arrow a dead button
-                // on real devices (was visible in emulators only because the emulator's chrome
-                // was hiding the issue).
                 .statusBarsPadding(),
     ) {
         Column(

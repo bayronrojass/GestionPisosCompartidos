@@ -107,6 +107,117 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Net result**: draw → strokes appear instantly (optimistic UI, unchanged) → save fires in background → cache is evicted the moment save is called, re-warmed with the fresh server bitmap the moment save succeeds → next reopen shows the drawing WITH the new strokes at zero latency. No 5-second poll wait, no stale pre-draw snapshot, no permanent stuck state even under fast minimize.
 
+### Added (Post-It customization — new bottom control panel)
+
+- **`PostItControlPanel` — new bottom sheet on `ExpandedPostIt`** (`ui/pizarra/postits/Draggable.kt`). Matches the "Crear post it" design mockup: a white rounded-top sheet flush against the outer note, hosting four labeled sections in a tight 10dp vertical rhythm:
+  1. **"Color de la nota"** — `NoteColorSelector` — horizontal row of 5 pastel dots (`NOTE_PASTELS`: Yellow / Green / Blue / Purple / Pink). Selecting instantly changes the outer note sheet's background color via hoisted `noteColor` state.
+  2. **"Color del pincel"** — `BrushColorSelector` — horizontal row of 7 vibrant dots (`BRUSH_SWATCHES`: Yellow / Green / Blue / Purple / Fuchsia / Black / White). Each swatch carries a `byteCode` matching the wire protocol (`PointDeltaDTO.color: Byte`). Selection pushes the byte straight into `PizarraViewModel.color` via `LaunchedEffect(brushByte)` — the very next `ACTION_DOWN` `createPaint()` call reads the new byte and renders strokes in the chosen color.
+  3. **"Enviar nota a"** — `AssigneeChips` — horizontal row of pill-shaped member chips (`⊕ Name`). Selection toggles: tapping the selected chip clears the assignment. In-memory only for this pass (backend assignee relation is a follow-up); shows "Cargando miembros…" placeholder when no member list is passed.
+  4. **Action row** — `PostItActionRow` — three equal-weight OutlinedButtons with `ButtonShape` (12dp) corners:
+     - **Borrar** (DeleteOutline icon, `TextoGris` accent) → calls the new `PizarraView.clearCanvas()` imperatively via a captured view ref → wipes local `currentBitmap` to a fresh white bitmap, evicts `PizarraBitmapCache` entry, marks `pendingSave` dirty so the next save flush picks up the cleared state.
+     - **Dibujar** (Create/pencil icon, `LilaPrimary` accent) → currently a visual affordance; brush selection is already active in real time via the `LaunchedEffect(brushByte)` above. Reserved for future palette-mode toggles (eraser vs brush).
+     - **Enviar** (Send icon, `Burgundy` accent) → stops the ViewModel's polling, clears `_bitmapState`, and calls `onMinimize()` to return to the pizarra board. Any in-flight strokes flush via the existing debounced save.
+- **New palette + swatch data classes** in the same file — `NOTE_PASTELS: List<Color>`, `BrushSwatch(byteCode: Byte, color: Color)`, `BRUSH_SWATCHES: List<BrushSwatch>`, `Color.toHex()` extension for the future `PUT /postits/{id}/color-nota` persistence call.
+- **`ColorSwatchDot` composable** — 28dp idle / 32dp selected circle with a burgundy-bordered "selected" state. Special-cased white-swatch border (gray at 47.4% instead of default 74%) so the white brush option doesn't disappear into the card background.
+
+### Changed (ExpandedPostIt layout + brush palette)
+
+- **`ExpandedPostIt` restructured to `Column [ TopBar(pills + smiley), Canvas, ControlPanel ]`** (`Draggable.kt`). Outer sheet dropped the fixed `requiredHeight(420dp)` and now wraps content so the sheet grows to fit the control panel. Width bumped `350 → 360dp` for the extra chip breathing room. Padding restructured (`top = 16, start = 16, end = 16, bottom = 4`) so the panel sits flush against the sheet's bottom edge — the panel itself owns its inner padding.
+- **Pill header restyled** — `InputChip` colors swapped from the ad-hoc `Color(0xffb1395b)` / `Color(0xFFFFE9EF)` to the `Burgundy` / `Color.White` token pair from `AppColors.kt`, matching the mockup's dark-burgundy header. Smiley (`R.drawable.cararosa`) pinned to the top-right via `Modifier.weight(1f)` + `alignment = Alignment.CenterEnd` instead of the previous `.offset(0.dp, 5.dp).fillMaxWidth()` hack.
+- **Sheet background dynamic** — the outer Column's `background(...)` now reads from the hoisted `noteColor` state (starts at `NOTE_PASTELS.first()` = pastel yellow) instead of the hardcoded `Color(0xffffcddb)`. Selecting a new pastel in "Color de la nota" recolors the entire note in real time.
+- **`PizarraView.createPaint` brush palette expanded** — was 5 colors keyed on bytes 1-4 + 8 (Black / Red / Green / Blue / White). Now 7 colors keyed on bytes 1-7 matching `BRUSH_SWATCHES`: 1=Yellow, 2=Green, 3=Blue, 4=Purple, 5=Fuchsia, 6=Black, 7=White. Unknown bytes still fall back to Black — legacy strokes drawn with the old palette (e.g. old `2` = Red) will render Green now, an intentional migration trade-off since re-encoding historical strokes would require a canvas-level version bump.
+
+### Added (PizarraView method)
+
+- **`PizarraView.clearCanvas()`** — new public method invoked by the "Borrar" control-panel button. Creates a fresh white `Bitmap` of the current view size, resets `currentBitmap`, `canvasBitmap`, `backgroundBitmap`, `path`, and `lastPoint`, then calls `PizarraBitmapCache.remove(model.lienzoId)` + `model.markPending()` + `invalidate()`. The cache eviction guarantees no future reopen serves the pre-clear bitmap. Note: the current delta-only wire protocol has no explicit "clear" opcode — server-side stroke composition will still show old strokes until the server adds a `POST /lienzo/{id}/clear` endpoint (documented as follow-up).
+
+### Notes
+
+- **Deferred to a follow-up pass**: (a) backend `PostIt.asignadoA: Usuario?` relation — required for real "Enviar nota a" persistence (the chip is in-memory only right now); (b) server-side "clear canvas" endpoint so the Borrar button can truly reset both client and server state; (c) `PUT /postits/{id}/color-nota` client wire-up — the backend endpoint is in place but the frontend hasn't started calling it on `noteColor` change, so pastel choices are lost across sessions.
+- **Members list wiring**: `ExpandedPostIt` accepts `members: List<Usuario> = emptyList()`; the chip section shows a "Cargando miembros…" placeholder when the list is empty. `PizarraScreen` (the caller) doesn't currently fetch member data — future work should surface `TareasViewModel.miembros` or a shared `RepositoryCasa.getPisoMiembros` result down to this composable.
+
+### Fixed (post-release control-panel bugs)
+
+- **Action-row buttons ellipsized "Bo…", "Di…", "En…" (`PostItActionRow`)**: default `OutlinedButton.contentPadding` is `PaddingValues(horizontal = 24.dp, vertical = 8.dp)`. With three equal-weight buttons on a ~324dp-wide row that leaves ≈5dp per button for icon + label after the 48dp of horizontal padding — labels have nowhere to render. Compressed the buttons: icon `18→16dp`, text `14→12sp`, inner spacer `6→4dp`, height `44→42dp`, row gap `10→8dp`, and — crucially — overrode `contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp)`. Renamed middle label `"Dibujar" → "Pintar"` (shorter + closer to the mockup intent). Added `maxLines = 1` on every Text as belt-and-braces protection against overflow.
+- **Control panel sat behind the system nav bar**: added `.navigationBarsPadding()` to `PostItControlPanel`'s outer Column so the action row always clears the Android gesture handle / 3-button chrome. Also trimmed panel padding `18/16 → 14/14` and vertical rhythm `10 → 8dp` to reclaim ~12dp for the panel content — everything now fits comfortably above the OS chrome on 5" and 6" devices.
+- **"Enviar nota a" stuck on "Cargando miembros…" (`DraggableViewModel` + `PizarraScreen`)**: the placeholder rendered forever because `PizarraScreen` was passing the default `members = emptyList()` down to `ExpandedPostIt` — no code path was fetching the house's Usuario list for the Pizarra context. Fixed by (a) adding `miembros: StateFlow<List<Usuario>>` on `DraggableViewModel`, populated on init via a `loadMiembros()` coroutine that calls the existing `RepositoryCasa.getPisoMiembros(token, casaId)` (same endpoint TareasViewModel uses), and (b) collecting it in `PizarraScreen` and passing to `ExpandedPostIt(members = miembros)`. Chips now render the real house-member names (Daniel, Natalia, Raquel, Marta, …) the moment the Post-It expands.
+- **"Borrar" ghost effect — deleted strokes reappeared on the next drawn stroke (`PizarraView.clearCanvas` + `PizarraViewModel.clearLocalBuffer`)**: the previous `clearCanvas` wiped the on-screen bitmap but left three sources of ghost state untouched:
+  1. Any debounced `saveJob` waiting to fire — would still POST the pre-clear `puntos` list to the server 1 s later.
+  2. `PizarraViewModel.puntos` — the queued delta buffer — still held every stroke drawn before the clear. Even if the debounce fired zero saves before the tap, the very next `ACTION_UP` would flush the accumulated puntos INCLUDING the pre-clear strokes.
+  3. `_dirtyVersion` was advanced (via the old `markPending()` at the end of clearCanvas) but `_syncedVersion` wasn't — leaving `pendingSave = true` indefinitely, which locked `setBackgroundBitmap` into skip mode and prevented ANY future poll from applying a fresh bitmap (contributed to a stuck state on peer edits).
+  - **Fix**:
+    - New `PizarraViewModel.clearLocalBuffer()` — clears `puntos` AND `_syncedVersion.value = _dirtyVersion.value` so `pendingSave` returns to `false`.
+    - `PizarraView.clearCanvas` now:
+      1. Wipes `currentBitmap` / `canvasBitmap` / `backgroundBitmap` to blank white (unchanged).
+      2. `path.reset()` + `lastPoint = null` — in-flight touch path erased so the next `ACTION_MOVE` doesn't append to a pre-clear path (unchanged).
+      3. `model.saveJob?.cancel()` — **NEW** — cancels any debounced save so the stale puntos never post.
+      4. `model.clearLocalBuffer()` — **NEW** — drops queued puntos + resyncs the pending-save version pair.
+      5. `PizarraBitmapCache.remove(model.lienzoId)` — evicts the cache so a reopen doesn't rehydrate from the pre-clear snapshot (unchanged).
+      6. Dropped the now-unnecessary trailing `model.markPending()` — it was leaving the ViewModel in a permanently-dirty state.
+  - **Server-side ghost remaining**: the delta wire protocol has no "clear" opcode, so the server's composited bitmap still holds pre-clear strokes. If the user closes the Post-It and reopens later, they'll see the historical strokes (cache-miss → server fetch). Fixing this needs a new `POST /lienzo/{id}/clear` backend endpoint — flagged as follow-up. The "immediate reappearance on next stroke" symptom the user reported IS fully gone.
+
+### Fixed (server-side Borrar — truly permanent clear)
+
+- **`PizarraAPI.clearLienzo` — new Retrofit method** hitting the backend `PUT /lienzos/{id}/clear` endpoint. Mirrors the existing `postDelta` / `isUpdated` / `getLienzo` triad on the same base path.
+- **`PizarraViewModel.isClearing: StateFlow<Boolean>` + `clearOnServer(localBlank: Bitmap)` method** — coordinated network + cache + state-flow update in a single suspending flow:
+  1. Sets `_isClearing = true` immediately so `setBackgroundBitmap`'s guard blocks any in-flight poll from restoring the pre-clear bitmap onto our locally-blank canvas.
+  2. Fires the `PUT /lienzos/{id}/clear` call via the shared `RemoteRepository`.
+  3. On success: overwrites `PizarraBitmapCache[lienzoId]` with the `localBlank` bitmap the caller already computed (so reopen stays zero-latency and shows blank), advances `lastLoaded = Instant.now()` (silent-refresh baseline stays accurate — server bitmap now matches our blank as of NOW), emits the blank to `_bitmapState` so any observer is in sync with the visible canvas.
+  4. On network failure: local canvas stays blank (the wipe already happened on the client), server will re-emit the old bitmap on next poll — user can retry Borrar.
+  5. `finally` block always resets `_isClearing = false` so the guard doesn't lock the canvas permanently even on error.
+- **`PizarraView.setBackgroundBitmap` — guard extended** — was previously `if (model.pendingSave.value) skip`. Now `if (model.pendingSave.value || model.isClearing.value) skip`. Same behavioral pattern: refresh `backgroundBitmap` reference as the baseline but leave `currentBitmap` alone. Once the clear round-trip completes and `isClearing` returns to false, the next poll can freely apply the fresh (blank) server bitmap.
+- **`PizarraView.clearCanvas` now calls `model.clearOnServer(blank)`** at the end — passes the same locally-computed blank bitmap so the ViewModel seeds the cache with the exact pixels the user is looking at. No decode round-trip needed to warm the cache post-clear.
+
+**Net result**: tapping "Borrar" now truly resets the drawing everywhere. Local canvas blanks instantly (unchanged). Cache is evicted synchronously, then re-warmed with the blank bitmap once the server acks. Any poll fired between the tap and the server ack is blocked by `isClearing` from restoring the old bitmap. Closing and reopening the Post-It shows a blank canvas from the cache. If a peer draws a new stroke after the clear, it lands on a white surface — no ghost strokes underneath.
+
+### Fixed (fatal touch-during-recomposition crash)
+
+- **`UninitializedPropertyAccessException: lateinit property canvasBitmap has not been initialized` (`PizarraView.kt:122`)**: crash reproduced when the user touched the canvas during the ~50-200ms window between (a) the AndroidView factory returning a fresh `PizarraView` and (b) the first `setBackgroundBitmap` call landing (either from the `PizarraBitmapCache` hit collector or the network fetch). Reproducible reliably on fast reopen from cache and on pastel background color changes (each pastel selection recomposed `ExpandedPostIt`, briefly leaving `canvasBitmap` unset while the composition re-attached the AndroidView). `ACTION_MOVE`'s `canvasBitmap.drawPath(path, paint)` hit the uninitialized lateinit → exception propagated straight to Android's input-event dispatcher → process death.
+  - **Fix**: two-layer defense in `PizarraView`:
+    1. **Crash guard in `onTouchEvent`** — checks `!::model.isInitialized || !::canvasBitmap.isInitialized || currentBitmap == null` right after the `activatedDraw` gate. If ANY of those hold, consume the event with `return true` silently. The next touch (a few frames later, after the bitmap has arrived) works normally. Also added a `lastPoint ?: run { moveTo(x, y); … }` fallback in `ACTION_MOVE` — protects against a `MotionEvent.ACTION_MOVE` arriving without a preceding `ACTION_DOWN` (which the previous `lastPoint!!` non-null assertion would NPE on).
+    2. **Placeholder initialization in `onSizeChanged`** — the moment the view has real dimensions (`w > 0 && h > 0`), allocate a blank white `Bitmap` + `Canvas` and assign to `currentBitmap` / `canvasBitmap` if `canvasBitmap` isn't already set. This means the "empty window" between layout and network-bitmap arrival is now populated with a valid drawing surface — the crash guard rarely triggers, and when the real bitmap lands, `setBackgroundBitmap` overwrites the placeholder cleanly (its existing `pendingSave` guard protects any mid-stroke work).
+- **`onDraw` was already null-safe** via `currentBitmap?.let { canvas.drawBitmap(it, 0f, 0f, null) }` — no change needed, but added a comment explaining why it can't throw the same exception (`currentBitmap` is nullable, not lateinit).
+- **`clearCanvas` was already safe** — its `width.coerceAtLeast(1)` fallback and unconditional `canvasBitmap = Canvas(blank)` assignment mean it can never leave the lateinit unset.
+
+### Fixed (note background color reverted to yellow on reopen)
+
+- **Pastel `colorNota` didn't survive reopen (`ExpandedPostIt` + `PostItState` + `PostItDTO`)**: user picked purple / pink / blue, minimized, reopened → sheet came back yellow. Root cause: `ExpandedPostIt.noteColor` was initialized as `mutableStateOf(NOTE_PASTELS.first())` unconditionally, ignoring the server-persisted `state.colorNota` — and the frontend model didn't even have a `colorNota` field to READ, so the data-model level had already lost the round-trip.
+  - **Frontend `PostItDTO.colorNota: String? = null` added** so JSON body-mapping now carries the field on GET / POST responses.
+  - **Frontend `PostItState.colorNota: String? = null` added** so the ViewModel's canonical UI-state carries the pastel hex.
+  - **`DraggableViewModel.syncPostIts` now assigns `colorNota = dto.colorNota`** on every DTO → PostItState mapping. Every subsequent recomposition of `PizarraScreen` propagates the persisted hex through to `ExpandedPostIt`.
+  - **`ExpandedPostIt.noteColor` initialization rewritten**:
+    ```kotlin
+    var noteColor by remember(state.id, state.colorNota) {
+        mutableStateOf(parseNoteColor(state.colorNota) ?: NOTE_PASTELS.first())
+    }
+    ```
+    Includes `state.colorNota` in the `remember` key so a background sync landing a fresh color also updates the local pick — no need to close and reopen to see peer edits.
+  - **New `parseNoteColor(hex: String?): Color?` helper** in `Draggable.kt` — inverse of the existing `Color.toHex()`. Handles both `#RRGGBB` (adds `0xFF` alpha) and `#AARRGGBB` variants, `null` fallback on unparseable input. Round-trips exactly the values `Color.toHex` emits, so parsed colors match `NOTE_PASTELS` by ARGB and the `ColorSwatchDot`'s selected check lights up the correct dot.
+
+### Added (colorNota persistence via `PUT /postits/{id}/color-nota`)
+
+- **`PostItAPI.updateColorNota(id, colorHex)` — new Retrofit method** hitting the backend endpoint that's been in place since the earlier PostIt customization pass. Spring `@RequestBody String` accepts a JSON-encoded string body — Retrofit's GsonConverter serializes our `colorHex: String` argument as the JSON string `"#FFF9C4"`, which Spring's Jackson deserializes back to a Kotlin `String`.
+- **`RepositoryPostIt.updateColorNota(id, colorHex)` — thin wrapper** that logs errors but returns `null` on any failure (non-fatal by design — the color is already applied locally).
+- **`ExpandedPostIt.onNoteColorSelect` now fires the PUT** alongside the local `noteColor = newColor` update. Uses `rememberCoroutineScope()` so the request is scoped to the composable's lifetime — a fast minimize mid-request cancels cleanly, and any color that DID reach the server is picked up on next open. Network failure is non-fatal: user keeps seeing their pick until session end; server value takes over on next restart.
+
+**Net result**: pastel choice fully round-trips. Open a Post-It → tap purple → minimize → reopen → sheet is purple. Close the app → reopen → sheet is still purple. Have a peer change the color from their device → wait for the 60s DraggableViewModel sync tick → local sheet re-tints to their pick without needing a manual close/reopen.
+
+### Fixed (immediate close/reopen still reverted the pastel to yellow)
+
+- **Optimistic local propagation was missing** — the initial fix persisted the pick to the backend, but the local `_postIts` StateFlow (the source of truth for `state.colorNota`) was only refreshed on the 60-second `syncPostIts` tick. If the user picked purple, minimized, and reopened within that window, `state.colorNota` was still `null` and `ExpandedPostIt`'s `remember(state.id, state.colorNota)` initializer fell through to `NOTE_PASTELS.first()` = yellow.
+  - **New `DraggableViewModel.updatePostItColorLocal(postItId, newColorHex)`** — surgically `.copy(colorNota = newColorHex)` the matching PostItState in the `_postIts` StateFlow. Called from `ExpandedPostIt` the instant the user picks, before the network PUT even fires.
+  - **`ExpandedPostIt.onColorNotaChanged: (String) -> Unit` param added** and wired from `PizarraScreen` to `viewModel.updatePostItColorLocal(expandedPostIt.id, hex)`.
+  - **`onNoteColorSelect` handler restructured** into a clear three-step propagation (in order of increasing durability):
+    1. Local `noteColor = newColor` — sheet re-tints in the same frame.
+    2. `onColorNotaChanged(hex)` — parent VM's `_postIts` gets the new value so close/reopen sees the truth.
+    3. `postItRepository.updateColorNota(state.id, hex)` — backend PUT for durable persistence across restart / other devices.
+- **Sync-back semantics preserved**: the 60s `syncPostIts` tick still overrides the local optimistic value with whatever the server returns. If our PUT succeeded, the server value matches and nothing visible changes. If the PUT failed, the sync tick would eventually revert the sheet to the previous color — the correct behavior, since our local pick was never durable.
+
+## Follow-ups still open
+
+- **`PostIt.asignadoA: Usuario?` backend relation** — "Enviar nota a" chip is still in-memory-only.
+- **Historical stroke color migration** — existing `Lienzo.bytes` re-decode with the new palette's ARGB values (acceptable pre-1.0).
+
 ### Added
 
 - **`PaginatedResponse<T>` generic network wrapper** (`es.mirumi.es.model.responses.PaginatedResponse`): One data class that mirrors Spring Data's `Page` JSON schema — `content`, `totalElements`, `totalPages`, `size`, `number`, `numberOfElements`, `first`, `last`, `empty`. Every field carries a safe default so a partial JSON payload never crashes deserialization. Used by every endpoint the backend paginated in `[0.4.0]`.

@@ -10,4 +10,7 @@ data class PostItState(
     val isExpanded: Boolean = false,
     val tipo: String = "DIBUJO",
     val rutaAudio: String? = null,
+    // Pastel background hex (`#FFF9C4`, etc.). Restored from the server so a reopened
+    // post-it comes back in the color the user picked, not the default yellow.
+    val colorNota: String? = null,
 )

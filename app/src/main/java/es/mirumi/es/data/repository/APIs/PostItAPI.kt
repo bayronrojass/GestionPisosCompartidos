@@ -9,6 +9,7 @@ import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -50,4 +51,17 @@ interface PostItAPI {
         @Part("location") location: RequestBody,
         @Part file: MultipartBody.Part,
     ): Response<PostItDTO>
+
+    /**
+     * Persist the pastel background color chosen from the "Color de la nota" selector.
+     * Body is the hex string (`#FFF9C4`). Backend endpoint: `PUT /postits/{id}/color-nota`
+     * (Spring `@RequestBody String` accepts a JSON-encoded string body — Retrofit's
+     * GsonConverter serializes our `colorHex: String` argument as the JSON string
+     * `"#FFF9C4"`, which Spring's Jackson deserializes back to a Kotlin `String`).
+     */
+    @PUT("postits/{id}/color-nota")
+    suspend fun updateColorNota(
+        @Path("id") id: Long,
+        @Body colorHex: String,
+    ): Response<Boolean>
 }

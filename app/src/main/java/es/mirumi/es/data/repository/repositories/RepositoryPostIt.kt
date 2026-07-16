@@ -127,6 +127,31 @@ class RepositoryPostIt {
         }
     }
 
+    /**
+     * Persist the pastel background color chosen from the "Color de la nota" selector.
+     * Called fire-and-forget from `ExpandedPostIt` the instant the user taps a swatch —
+     * network failures are non-fatal: the color already applied locally will continue
+     * showing until the user restarts the session, at which point the server's stored
+     * value takes over.
+     */
+    suspend fun updateColorNota(
+        id: Long,
+        colorHex: String,
+    ): Boolean? {
+        val request = repository.request { updateColorNota(id, colorHex) }
+        return when (request) {
+            is ApiResult.Error -> {
+                Log.e("Postit", "Error persisting colorNota ${request.code}: ${request.message}")
+                null
+            }
+            is ApiResult.Success<Boolean> -> request.data
+            is ApiResult.Throws -> {
+                Log.e("Postit", "Throws persisting colorNota: ${request.exception.message}")
+                null
+            }
+        }
+    }
+
     suspend fun createAudioPostIt(
         casaId: Long,
         location: String,

@@ -63,6 +63,15 @@ class PizarraViewModel(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    /**
+     * True while a server-side clear is in flight. `PizarraView.setBackgroundBitmap`
+     * guards on this the same way it guards on [pendingSave] — so any poll fired
+     * mid-clear can't restore the pre-clear server bitmap onto our locally-blank
+     * canvas before the server has actually persisted the wipe.
+     */
+    private val _isClearing = MutableStateFlow(false)
+    val isClearing: StateFlow<Boolean> = _isClearing.asStateFlow()
+
     var color: Byte = 1
     var saveJob: Job? = null
     var loadJob: Job? = null
@@ -79,6 +88,71 @@ class PizarraViewModel(
      */
     fun markPending() {
         _dirtyVersion.update { it + 1L }
+    }
+
+    /**
+     * Wipe every trace of local drawing state — used by `PizarraView.clearCanvas()`
+     * when the user taps "Borrar".
+     *
+     * Without this, `clearCanvas` visually blanks the bitmap but leaves the pre-clear
+     * `puntos` buffer intact — so the next `save()` flushes the stale points to the
+     * server, the server composites them onto its (still-unblanked) canvas, the poll
+     * fetches that bitmap back, and `setBackgroundBitmap` replaces the local blank
+     * with the "resurrected" strokes. That's the "ghost effect" the user reports.
+     *
+     * Advancing `_syncedVersion` to match `_dirtyVersion` flips `pendingSave` back
+     * to `false` so the next poll's `setBackgroundBitmap` is free to apply the server
+     * bitmap (which we then evict via cache invalidation on the View side). Cache
+     * eviction there guarantees no reopen resurrects the pre-clear state either.
+     */
+    fun clearLocalBuffer() {
+        puntos.clear()
+        _syncedVersion.value = _dirtyVersion.value
+    }
+
+    /**
+     * Fire the server-side "Borrar" — asks the backend to wipe the composited bitmap
+     * for this `lienzoId` to a blank white surface. Called from `PizarraView.clearCanvas`
+     * so the clear is truly permanent: no ghost strokes resurrect on the next stroke
+     * (server had been compositing new deltas onto the old bitmap) or on reopen
+     * (fetch was returning old bytes).
+     *
+     * Concurrency contract:
+     *  - `_isClearing = true` for the entire duration; `PizarraView.setBackgroundBitmap`
+     *    checks this flag and refuses to apply incoming poll bitmaps while true,
+     *    protecting the local blank canvas from a mid-flight poll restore.
+     *  - On network success: overwrites the cache with the [localBlank] the caller
+     *    already computed, advances [lastLoaded] so the follow-up isUpdated check has
+     *    an accurate baseline (server bitmap == our blank as of now), and emits the
+     *    blank to `_bitmapState` so any observer is in sync.
+     *  - On network failure: still keeps `_isClearing = false` on exit (finally block)
+     *    so the guard doesn't lock the canvas permanently. Local canvas stays blank
+     *    (PizarraView already wiped it), but the server will fight back on next poll
+     *    and the user can retry Borrar.
+     */
+    fun clearOnServer(localBlank: android.graphics.Bitmap) {
+        _isClearing.value = true
+        viewModelScope.launch {
+            try {
+                val result = repository.request { clearLienzo(lienzoId) }
+                when (result) {
+                    is ApiResult.Success<*> -> {
+                        PizarraBitmapCache.put(lienzoId, localBlank)
+                        lastLoaded = Instant.now()
+                        withContext(Dispatchers.Main) {
+                            _bitmapState.value = localBlank
+                        }
+                        Log.d("PizarraViewModel", "Server-side clear succeeded for lienzo $lienzoId")
+                    }
+                    is ApiResult.Error ->
+                        Log.e("PizarraViewModel", "Server clear failed: ${result.message}")
+                    is ApiResult.Throws ->
+                        Log.e("PizarraViewModel", "Server clear threw: ${result.exception.message}")
+                }
+            } finally {
+                _isClearing.value = false
+            }
+        }
     }
 
     fun save() {
